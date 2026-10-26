@@ -33,10 +33,13 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
   const live = org.status === "active";
   const canGive = can(org, "withdrawals.record") && live;
   const canCollect = can(org, "payments.record") && live;
-  const [members, accounts, requests] = canGive
-    ? await Promise.all([getActiveMembers(orgId), getAccounts(orgId), api<{ items: UpadRequest[]; availablePaise: number }>(`/orgs/${orgId}/upad-requests`)])
-    : [[], [], { items: [] as UpadRequest[], availablePaise: 0 }];
-  const claims = can(org, "payments.view") ? await api<UpadPaymentClaim[]>(`/orgs/${orgId}/upad-payments`) : [];
+  // everything else in one parallel batch
+  const [members, accounts, requests, claims] = await Promise.all([
+    canGive ? getActiveMembers(orgId) : Promise.resolve([]),
+    canGive ? getAccounts(orgId) : Promise.resolve([]),
+    canGive ? api<{ items: UpadRequest[]; availablePaise: number }>(`/orgs/${orgId}/upad-requests`) : Promise.resolve({ items: [] as UpadRequest[], availablePaise: 0 }),
+    can(org, "payments.view") ? api<UpadPaymentClaim[]>(`/orgs/${orgId}/upad-payments`) : Promise.resolve([] as UpadPaymentClaim[]),
+  ]);
   const canVerify = can(org, "payments.verify") && live;
   const t = data.totals;
   return (

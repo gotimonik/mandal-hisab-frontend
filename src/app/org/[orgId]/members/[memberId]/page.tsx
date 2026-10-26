@@ -23,13 +23,13 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
   const sp = await searchParams;
   const from = typeof sp.from === "string" ? sp.from : "";
   const to = typeof sp.to === "string" ? sp.to : "";
-  const [org, detail, statement, ledger] = await Promise.all([
+  const [org, detail, statement, ledger, fundLoans] = await Promise.all([
     getOrg(orgId),
     api<{ member: Member; enrollments: any[]; loans: any[] }>(`/orgs/${orgId}/members/${memberId}`),
     api<Statement>(`/orgs/${orgId}/members/${memberId}/statement${qs({ from, to })}`),
     api<MemberLedger>(`/orgs/${orgId}/members/${memberId}/ledger${qs({ from, to })}`),
+    api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status: "all", memberId })}`),
   ]);
-  const fundLoans = await api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status: "all", memberId })}`);
   const memberLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
   const m = detail.member;
   const live = org.status === "active";

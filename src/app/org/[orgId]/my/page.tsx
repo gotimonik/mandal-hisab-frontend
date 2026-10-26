@@ -21,8 +21,7 @@ export const metadata = { title: "My savings" };
 export default async function MyPage({ params, searchParams }: PageProps<"/org/[orgId]/my">) {
   const { orgId } = await params;
   const tab = (await searchParams).tab === "upad" ? "fundloans" : "savings";
-  const org = await getOrg(orgId);
-  const me = await api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`);
+  const [org, me] = await Promise.all([getOrg(orgId), api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`)]);
   if (!me.linked) {
     return (
       <>

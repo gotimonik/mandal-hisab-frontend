@@ -19,8 +19,7 @@ export const metadata = { title: "Dashboard" };
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DashboardPage({ params }: PageProps<"/org/[orgId]">) {
   const { orgId } = await params;
-  const org = await getOrg(orgId);
-  const d = await api<any>(`/orgs/${orgId}/dashboard`);
+  const [org, d] = await Promise.all([getOrg(orgId), api<any>(`/orgs/${orgId}/dashboard`)]);
   if (d.role === "member") return <MemberDashboard orgId={orgId} data={d} org={org} />;
   const t = d.totals;
   const base = `/org/${orgId}`;
