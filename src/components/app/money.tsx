@@ -1,11 +1,8 @@
 import { cn } from "@/lib/utils";
-import { formatINR } from "@/lib/format";
+import { formatINR, formatINRShort } from "@/lib/format";
 
-export function Money({ paise, className, colored = false }: { paise: number | null | undefined; className?: string; colored?: boolean }) {
+/** ₹ amount with tabular digits. `short` drops ".00" for whole rupees (big figures, buttons). */
+export function Money({ paise, className, colored = false, short = false }: { paise: number | null | undefined; className?: string; colored?: boolean; short?: boolean }) {
   const v = paise ?? 0;
-  return (
-    <span className={cn("tabular-nums whitespace-nowrap", colored && v < 0 && "text-destructive", colored && v > 0 && "text-success", className)}>
-      {formatINR(v)}
-    </span>
-  );
+  return <span className={cn("tabular-nums whitespace-nowrap", colored && v < 0 && "text-destructive", colored && v > 0 && "text-success", className)}>{short ? formatINRShort(v) : formatINR(v)}</span>;
 }

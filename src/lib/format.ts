@@ -87,3 +87,9 @@ export function newIdempotencyKey(prefix = "k") {
   const rnd = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
   return `${prefix}-${rnd}`;
 }
+
+/** ₹500 for whole rupees, ₹500.50 otherwise — for buttons and big figures. */
+export function formatINRShort(paise: number | null | undefined): string {
+  const p = paise ?? 0;
+  return formatINR(p, { decimals: p % 100 !== 0 });
+}
