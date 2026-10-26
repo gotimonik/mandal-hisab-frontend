@@ -365,6 +365,70 @@ test("Upad request: a member asks within the available cash and the admin approv
   await memberCtx.close();
 });
 
+test("Invite by email: adding a member with an email invites them; they register and see their own savings", async ({ page, browser }) => {
+  const adminEmail = `invadmin-${stamp}@example.com`;
+  const memberEmail = `invited-${stamp}@example.com`;
+  const orgName = `Invite Mandal ${stamp}`;
+  const month = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 7);
+
+  await page.goto("/register");
+  await page.getByLabel("Full name").fill("Vipul Admin");
+  await page.getByLabel("Email").fill(adminEmail);
+  await page.getByLabel("Password", { exact: true }).fill("secret123");
+  await page.getByLabel("Confirm password").fill("secret123");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/onboarding/);
+  await page.getByLabel("Mandal / trust name").fill(orgName);
+  await page.getByLabel("Monthly hapta per member (₹)").fill("500");
+  await page.getByLabel("From month").fill(month);
+  await page.getByRole("button", { name: "Register Mandal" }).click();
+  await expect(page).toHaveURL(/\/org\/[a-f0-9]{24}$/);
+  const orgUrl = page.url();
+  const pa = await (await browser.newContext()).newPage();
+  await login(pa, ADMIN_EMAIL, ADMIN_PASSWORD);
+  await pa.goto(`/platform?q=${encodeURIComponent(orgName)}`);
+  const row = pa.getByRole("row", { name: new RegExp(orgName) });
+  await row.getByRole("button", { name: "Approve" }).click();
+  await expect(row.getByText("active")).toBeVisible();
+
+  // add the member with an email — "Invite to the app" is ticked by default
+  await page.goto(`${orgUrl}/members`);
+  await page.getByRole("button", { name: "Add member" }).click();
+  const dlg = page.getByRole("dialog");
+  await dlg.getByLabel("Full name").fill("Hema Invited");
+  await dlg.getByLabel("Email").fill(memberEmail);
+  await expect(dlg.getByRole("checkbox", { name: "Invite to the app" })).toBeChecked();
+  await dlg.getByRole("button", { name: "Add member" }).click();
+  await expect(page.getByRole("heading", { name: "Hema Invited" })).toBeVisible();
+  await expect(page.getByText(/Invitation sent/)).toBeVisible();
+
+  // get a fresh link from the member page (as when email isn't set up)
+  await page.getByRole("button", { name: "Send again" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Send invitation" }).click();
+  await expect(page.getByRole("dialog").getByText(/register\?email=/)).toBeVisible();
+  const link = (await page.getByRole("dialog").getByText(/register\?email=/).textContent())!.trim();
+
+  // the invitee opens it: registration with the email filled in, then the invitation
+  const inv = await (await browser.newContext()).newPage();
+  await inv.goto(link);
+  await expect(inv.getByText("You're invited — create your account")).toBeVisible();
+  await expect(inv.getByLabel("Email")).toHaveValue(memberEmail);
+  await inv.getByLabel("Full name").fill("Hema Invited");
+  await inv.getByLabel("Password", { exact: true }).fill("secret123");
+  await inv.getByLabel("Confirm password").fill("secret123");
+  await inv.getByRole("button", { name: "Create account" }).click();
+  await expect(inv).toHaveURL(/\/invite\?token=/);
+  await expect(inv.getByRole("heading", { name: orgName })).toBeVisible();
+  await expect(inv.getByText(/savings, hapta and upad of/)).toBeVisible();
+  await inv.getByRole("button", { name: `Join ${orgName}` }).click();
+  await expect(inv).toHaveURL(new RegExp(`${orgUrl.replace(/.*\/org\//, "/org/")}$`));
+  await expect(inv.getByRole("heading", { name: "Namaste, Hema" })).toBeVisible();
+
+  // the admin now sees the member signs in
+  await page.reload();
+  await expect(page.getByText("Signs in to the app")).toBeVisible();
+});
+
 test("unauthenticated users are sent to login and cannot open organization pages", async ({ page }) => {
   await page.goto("/org/0123456789abcdef01234567/members");
   await expect(page).toHaveURL(/\/login\?next=/);

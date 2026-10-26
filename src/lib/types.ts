@@ -26,6 +26,8 @@ export interface MyOrg {
 export interface Me {
   user: User;
   organizations: MyOrg[];
+  /** pending invitations to other Mandals (shown as a banner) */
+  invitations?: { id: string; role: string; organization: { _id: string; name: string }; invitedByName: string | null }[];
 }
 
 export interface ExpenseCategory {

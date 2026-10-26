@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { HandCoins } from "lucide-react";
+import { CheckCircle2, HandCoins } from "lucide-react";
+import { InviteMemberButton } from "@/features/members/invite-member";
 import { api, qs } from "@/lib/server/api";
 import { getAccounts, getOrg, can } from "@/lib/server/data";
 import type { FundLoanList, Member, MemberLedger } from "@/lib/types";
@@ -23,13 +24,17 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
   const sp = await searchParams;
   const from = typeof sp.from === "string" ? sp.from : "";
   const to = typeof sp.to === "string" ? sp.to : "";
-  const [org, detail, statement, ledger, fundLoans] = await Promise.all([
-    getOrg(orgId),
+  const orgP = getOrg(orgId);
+  const [org, detail, statement, ledger, fundLoans, invitations] = await Promise.all([
+    orgP,
     api<{ member: Member; enrollments: any[]; loans: any[] }>(`/orgs/${orgId}/members/${memberId}`),
     api<Statement>(`/orgs/${orgId}/members/${memberId}/statement${qs({ from, to })}`),
     api<MemberLedger>(`/orgs/${orgId}/members/${memberId}/ledger${qs({ from, to })}`),
     api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status: "all", memberId })}`),
+    orgP.then((o) => (can(o, "memberships.manage") ? api<{ _id: string; email: string; memberId: string | null; createdAt: string }[]>(`/orgs/${orgId}/invitations`) : [])),
   ]);
+  const pendingInvite = invitations.find((i) => i.memberId === memberId);
+  const canInvite = can(org, "memberships.manage") && org.status !== "archived";
   const memberLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
   const m = detail.member;
   const live = org.status === "active";
@@ -74,7 +79,26 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             <span>{m.email ?? "No email"}</span>
             {m.address && <span className="text-muted-foreground">{m.address}</span>}
             {m.notes && <p className="mt-2 text-muted-foreground">{m.notes}</p>}
-            <span className="mt-2 text-xs text-muted-foreground">{m.userId ? "Linked to an app login" : "No app login linked"}</span>
+            <div className="mt-3 rounded-xl bg-secondary/50 p-3">
+              {m.userId ? (
+                <span className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  <CheckCircle2 className="size-4" /> Signs in to the app
+                </span>
+              ) : pendingInvite ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs">
+                    <span className="block font-medium">Invitation sent {formatDate(pendingInvite.createdAt)}</span>
+                    <span className="text-muted-foreground">to {pendingInvite.email} · waiting for them to join</span>
+                  </span>
+                  {canInvite && <InviteMemberButton orgId={orgId} memberId={m._id} memberName={m.name} email={pendingInvite.email} again />}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">No app login yet</span>
+                  {canInvite && <InviteMemberButton orgId={orgId} memberId={m._id} memberName={m.name} email={m.email} />}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
         <Card size="sm">

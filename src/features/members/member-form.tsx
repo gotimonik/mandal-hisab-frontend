@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, Pencil } from "lucide-react";
+import { Loader2, Mail, Plus, Pencil } from "lucide-react";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +35,20 @@ const Schema = z.object({
   joiningDate: z.string().optional(),
   status: z.enum(["active", "inactive", "left"]),
   notes: z.string().max(1000).optional(),
+  inviteToApp: z.boolean(),
 });
+
+type Created = Member & { invitation: null | { ok: true; inviteLink: string; existingUser: boolean; emailed: boolean } | { ok: false; error: string } };
+
+/** After adding a member with an email: say what happened to the invitation (and offer the link when email isn't set up). */
+function announceInvitation(m: Created) {
+  const inv = m.invitation;
+  if (!inv) return toast.success("Member added");
+  if (!inv.ok) return toast.warning(`Member added — invitation not sent: ${inv.error}`);
+  const copy = { label: "Copy invite link", onClick: () => void navigator.clipboard.writeText(inv.inviteLink) };
+  if (inv.emailed) return toast.success(`Member added — invitation emailed to ${m.email}`, { description: inv.existingUser ? "They already use MandalHisab: they can join with one tap." : "They create their account from the email and join straight away.", action: copy, duration: 8000 });
+  return toast.success("Member added", { description: "Email isn't set up yet, so share the invite link with them (WhatsApp, SMS).", action: copy, duration: 15000 });
+}
 type V = z.infer<typeof Schema>;
 
 function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
@@ -50,8 +65,10 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       joiningDate: member ? isoDate(member.joiningDate) : todayISO(),
       status: member?.status ?? "active",
       notes: member?.notes ?? "",
+      inviteToApp: true,
     },
   });
+  const emailValue = form.watch("email");
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
@@ -59,14 +76,18 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       noValidate
       className="grid gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) => {
-        const body = { ...v, membershipNumber: v.membershipNumber || undefined, email: v.email || undefined, phone: v.phone || undefined };
-        submit<Member>(
-          member ? { path: `/orgs/${orgId}/members/${member._id}`, method: "PATCH", body } : { path: `/orgs/${orgId}/members`, body },
+        const { inviteToApp, ...rest } = v;
+        const body = { ...rest, membershipNumber: v.membershipNumber || undefined, email: v.email || undefined, phone: v.phone || undefined };
+        submit<Created>(
+          member ? { path: `/orgs/${orgId}/members/${member._id}`, method: "PATCH", body } : { path: `/orgs/${orgId}/members`, body: { ...body, inviteToApp: !!v.email && inviteToApp } },
           {
-            success: member ? "Member updated" : "Member added",
+            success: member ? "Member updated" : undefined,
             onSuccess: (m) => {
               close();
-              if (!member) router.push(`/org/${orgId}/members/${m._id}`);
+              if (!member) {
+                announceInvitation(m);
+                router.push(`/org/${orgId}/members/${m._id}`);
+              }
             },
           },
         );
@@ -90,6 +111,17 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       <Field label="Email" htmlFor="m-email" error={e.email?.message}>
         <Input id="m-email" type="email" {...form.register("email")} />
       </Field>
+      {!member && emailValue && !e.email && (
+        <label className="flex items-start gap-3 rounded-xl bg-secondary/60 p-3 text-sm sm:col-span-2">
+          <Checkbox checked={form.watch("inviteToApp")} onCheckedChange={(c) => form.setValue("inviteToApp", !!c)} className="mt-0.5" aria-label="Invite to the app" />
+          <span>
+            <span className="flex items-center gap-1.5 font-medium">
+              <Mail className="size-4 text-primary" /> Invite to the app by email
+            </span>
+            <span className="text-xs text-muted-foreground">They create their own password and see their savings, hapta and upad. Already on MandalHisab? They just tap Join.</span>
+          </span>
+        </label>
+      )}
       <Field label="Address" htmlFor="m-addr" className="sm:col-span-2">
         <Input id="m-addr" {...form.register("address")} />
       </Field>

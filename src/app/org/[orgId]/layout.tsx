@@ -5,6 +5,8 @@ import { api } from "@/lib/server/api";
 import { buildNav, buildQuickActions } from "@/lib/nav";
 import { BottomNavContent, MobileHeaderContent, ShellFrame, SidebarContent, TopbarContent, type ShellData } from "@/components/app/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MailOpen } from "lucide-react";
+import { ActionButton } from "@/components/app/action-button";
 
 /**
  * The frame and {children} render without waiting for the session. Everything that
@@ -43,6 +45,9 @@ export default function OrgLayout({ children, params }: LayoutProps<"/org/[orgId
     >
       <Suspense fallback={null}>
         <StatusBanner params={params} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <InvitationsBanner />
       </Suspense>
       {children}
     </ShellFrame>
@@ -87,6 +92,36 @@ async function StatusBanner({ params }: P) {
     );
   if (org.status === "archived") return <div className="mb-4 rounded-lg bg-muted px-3 py-2 text-sm">This organization is archived and read-only.</div>;
   return null;
+}
+
+/** "Ramesh invited you to join Shree Ganesh Mandal" — for people already using the app. */
+async function InvitationsBanner() {
+  const me = await getMe();
+  const list = me.invitations ?? [];
+  if (list.length === 0) return null;
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      {list.map((i) => (
+        <div key={i.id} className="flex flex-col gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-2 ring-primary/25 sm:flex-row sm:items-center">
+          <span className="bg-hero flex size-10 shrink-0 items-center justify-center rounded-xl">
+            <MailOpen className="size-5" />
+          </span>
+          <p className="min-w-0 flex-1 text-sm">
+            <b>{i.invitedByName ?? "Someone"}</b> invited you to join <b>{i.organization.name}</b>
+            <span className="block text-xs text-muted-foreground capitalize">as {i.role}</span>
+          </p>
+          <div className="flex gap-2">
+            <ActionButton path={`/invitations/${i.id}/decline`} variant="ghost" successMessage="Invitation declined">
+              Decline
+            </ActionButton>
+            <ActionButton path={`/invitations/${i.id}/accept`} variant="default" successMessage={`Welcome to ${i.organization.name}`} redirectTo={`/org/${i.organization._id}`}>
+              Join
+            </ActionButton>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function SidebarSkeleton() {

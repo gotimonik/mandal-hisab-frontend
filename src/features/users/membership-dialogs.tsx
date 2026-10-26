@@ -130,13 +130,14 @@ function InviteForm({ members }: { members: Mem[] }) {
   const { orgId } = useParams<{ orgId: string }>();
   const [link, setLink] = useState<string | null>(null);
   const [existing, setExisting] = useState(false);
+  const [emailed, setEmailed] = useState(false);
   const form = useForm<z.infer<typeof InviteSchema>>({ resolver: zodResolver(InviteSchema), defaultValues: { email: "", role: "member", memberId: "" } });
   const { submit, pending, error } = useApiSubmit(form);
   return (
     <form
       noValidate
       className="flex flex-col gap-3"
-      onSubmit={form.handleSubmit((v) => submit<{ inviteLink: string; existingUser: boolean }>({ path: `/orgs/${orgId}/invitations`, body: { ...v, memberId: v.memberId || undefined } }, { success: "Invitation sent", onSuccess: (r) => { setLink(r.inviteLink); setExisting(r.existingUser); }, refresh: true }))}
+      onSubmit={form.handleSubmit((v) => submit<{ inviteLink: string; existingUser: boolean; emailed: boolean }>({ path: `/orgs/${orgId}/invitations`, body: { ...v, memberId: v.memberId || undefined } }, { success: "Invitation sent", onSuccess: (r) => { setLink(r.inviteLink); setExisting(r.existingUser); setEmailed(r.emailed); }, refresh: true }))}
     >
       <FormError message={error} />
       <Field label="Email" htmlFor="inv-email" error={form.formState.errors.email?.message}>
@@ -162,8 +163,12 @@ function InviteForm({ members }: { members: Mem[] }) {
       <Button type="submit" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />} Send invitation
       </Button>
-      {link && existing && <p className="text-sm text-success">They already use MandalHisab — the invitation is waiting for them in the app.</p>}
-      {link && !existing && <p className="text-sm text-muted-foreground">They don&apos;t have an account yet. Share this link (WhatsApp, SMS) — they register and join in one step.</p>}
+      {link && (
+        <p className="text-sm text-muted-foreground">
+          {emailed ? "Invitation emailed. " : "Email isn't set up yet — share this link (WhatsApp, SMS). "}
+          {existing ? "They already use MandalHisab: the invitation is also waiting for them in the app." : "They create their account with that email and join in one step."}
+        </p>
+      )}
       {link && (
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-xs">
           <span className="min-w-0 flex-1 truncate">{link}</span>

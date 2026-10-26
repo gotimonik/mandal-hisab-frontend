@@ -35,7 +35,7 @@ export function LoginForm() {
   return (
     <AuthCard
       title="Sign in"
-      description="Welcome back to MandalHisab."
+      description={next?.startsWith("/invite") ? "Sign in to accept your Mandal invitation. New to MandalHisab? Create an account below." : "Welcome back to MandalHisab."}
       footer={
         <>
           New here?{" "}

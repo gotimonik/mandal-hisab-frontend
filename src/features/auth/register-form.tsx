@@ -21,7 +21,8 @@ export function RegisterForm() {
   const next = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<z.infer<typeof RegisterSchema>>({ resolver: zodResolver(RegisterSchema), defaultValues: { name: "", email: "", phone: "", password: "", confirm: "" } });
+  const invited = !!next?.startsWith("/invite");
+  const form = useForm<z.infer<typeof RegisterSchema>>({ resolver: zodResolver(RegisterSchema), defaultValues: { name: "", email: sp.get("email") ?? "", phone: "", password: "", confirm: "" } });
   const e = form.formState.errors;
 
   const onSubmit = form.handleSubmit(({ confirm: _c, phone, ...values }) =>
@@ -39,8 +40,8 @@ export function RegisterForm() {
 
   return (
     <AuthCard
-      title="Create your account"
-      description="Then create a new Mandal or join an existing one with its code."
+      title={invited ? "You're invited — create your account" : "Create your account"}
+      description={invited ? "Set your own password. You'll join the Mandal right after." : "Then create a new Mandal or join an existing one with its code."}
       footer={
         <>
           Already registered?{" "}
@@ -55,7 +56,7 @@ export function RegisterForm() {
         <Field label="Full name" htmlFor="name" error={e.name?.message}>
           <Input id="name" autoComplete="name" aria-invalid={!!e.name} {...form.register("name")} />
         </Field>
-        <Field label="Email" htmlFor="email" error={e.email?.message}>
+        <Field label="Email" htmlFor="email" error={e.email?.message} hint={invited ? "Use the email the invitation was sent to." : undefined}>
           <Input id="email" type="email" autoComplete="email" inputMode="email" aria-invalid={!!e.email} {...form.register("email")} />
         </Field>
         <Field label="Mobile (optional)" htmlFor="phone" error={e.phone?.message}>
