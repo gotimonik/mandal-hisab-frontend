@@ -60,7 +60,7 @@ export function ActionButton({ path, method = "POST", body, children, variant = 
   const needReason = confirm.reason === "required";
   return (
     <>
-      <Button variant={variant} size={size} disabled={pending} onClick={() => setOpen(true)}>
+      <Button variant={variant} size={size} disabled={pending} onClick={() => setOpen(true)} className={className}>
         {children}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
