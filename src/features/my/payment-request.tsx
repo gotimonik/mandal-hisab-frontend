@@ -10,11 +10,12 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate, apiRead } from "@/app/actions/api";
-import { METHOD_LABEL, formatINR, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { METHOD_LABEL, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees, rupeesOrZero } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/client";
 import { intlLocale, type Key, type Lang } from "@/i18n/core";
+import { useMoney } from "@/components/app/currency";
 
 type Purpose = "hapta" | "upad" | "other";
 
@@ -27,6 +28,7 @@ interface Options {
 const monthName = (lang: Lang, m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
 
 function Form({ methods }: { methods: string[] }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -105,8 +107,8 @@ function Form({ methods }: { methods: string[] }) {
   }
 
   const choices: { key: Purpose; title: string; hint: React.ReactNode; icon: React.ReactNode; show: boolean }[] = [
-    { key: "hapta", title: t("pay.monthly"), icon: <CalendarDays />, show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: formatINR(opts.hapta.duePaise) }) : t("pay.nothingNow") },
-    { key: "upad", title: t("pay.upad"), icon: <HandCoins />, show: opts.upads.length > 0, hint: t("pay.upadInterestDue", { amount: formatINR(opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)) }) },
+    { key: "hapta", title: t("pay.monthly"), icon: <CalendarDays />, show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: money.fmt(opts.hapta.duePaise) }) : t("pay.nothingNow") },
+    { key: "upad", title: t("pay.upad"), icon: <HandCoins />, show: opts.upads.length > 0, hint: t("pay.upadInterestDue", { amount: money.fmt(opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)) }) },
     { key: "other", title: t("pay.other"), icon: <Heart />, show: true, hint: t("pay.otherHint") },
   ];
 
@@ -158,7 +160,7 @@ function Form({ methods }: { methods: string[] }) {
       )}
       {purpose === "hapta" && opts.hapta.pendingPaise > 0 && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs">
-          {t("pay.waiting", { amount: formatINR(opts.hapta.pendingPaise) })}
+          {t("pay.waiting", { amount: money.fmt(opts.hapta.pendingPaise) })}
         </p>
       )}
 
@@ -169,7 +171,7 @@ function Form({ methods }: { methods: string[] }) {
               <NativeSelect id="pr-upad" value={loanId} onChange={(e) => pickUpad(e.target.value)}>
                 {opts.upads.map((u) => (
                   <option key={u._id} value={u._id}>
-                    {t("pay.optOutstanding", { number: u.number, amount: formatINR(u.outstandingPaise) })}
+                    {t("pay.optOutstanding", { number: u.number, amount: money.fmt(u.outstandingPaise) })}
                   </option>
                 ))}
               </NativeSelect>
@@ -177,7 +179,7 @@ function Form({ methods }: { methods: string[] }) {
           )}
           {upad && (
             <p className="rounded-lg bg-muted px-3 py-2 text-xs">
-              {t("pay.outstandingAt", { number: upad.number, amount: formatINR(upad.outstandingPaise), rate: upad.monthlyRate, due: formatINR(upad.interestDuePaise) })}
+              {t("pay.outstandingAt", { number: upad.number, amount: money.fmt(upad.outstandingPaise), rate: upad.monthlyRate, due: money.fmt(upad.interestDuePaise) })}
               {upad.unpaidMonths.length > 0 && <> ({upad.unpaidMonths.map((m) => monthName(lang, m)).join(", ")})</>}
             </p>
           )}

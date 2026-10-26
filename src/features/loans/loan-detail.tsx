@@ -8,8 +8,9 @@ import { StatCard } from "@/components/app/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { METHOD_LABEL, formatDate, formatDateTime, formatINR, label } from "@/lib/format";
+import { METHOD_LABEL, formatDate, formatDateTime, label } from "@/lib/format";
 import { METHOD_INFO } from "./constants";
+import { getMoney } from "@/lib/server/data";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface LoanDetailData {
@@ -21,7 +22,8 @@ export interface LoanDetailData {
 
 const METHOD_NAME: Record<string, string> = { reducing_balance: "Reducing balance (EMI)", flat: "Flat rate", simple: "Simple interest", compound: "Compound (bullet)" };
 
-export function LoanDetail({ data, orgId, receiptBase, repaymentAction }: { data: LoanDetailData; orgId: string; receiptBase: string; repaymentAction?: (rep: any, isLatest: boolean) => ReactNode }) {
+export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: { data: LoanDetailData; orgId: string; receiptBase: string; repaymentAction?: (rep: any, isLatest: boolean) => ReactNode }) {
+  const money = await getMoney(orgId);
   const l = data.loan;
   const s = l.summary;
   const verified = data.repayments.filter((r) => r.status === "verified");
@@ -29,10 +31,10 @@ export function LoanDetail({ data, orgId, receiptBase, repaymentAction }: { data
   return (
     <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Principal" value={formatINR(l.principalPaise ?? l.approvedPaise ?? l.requestedPaise)} hint={l.principalPaise ? `disbursed ${formatDate(l.disbursedOn)}` : l.approvedPaise ? "approved" : "requested"} />
-        <StatCard label="Outstanding principal" value={formatINR(l.outstandingPrincipalPaise)} tone={l.outstandingPrincipalPaise > 0 ? "warn" : "good"} />
-        <StatCard label="Interest paid / due" value={formatINR(l.totalInterestPaidPaise)} hint={s ? `${formatINR(s.interestOutstandingPaise)} due & unpaid` : undefined} />
-        <StatCard label="Overdue" value={formatINR(s?.overdueAmountPaise ?? 0)} tone={(s?.overdueAmountPaise ?? 0) > 0 ? "bad" : "good"} hint={s?.nextDue ? `next ${formatINR(s.nextDue.amountPaise)} on ${formatDate(s.nextDue.dueDate)}` : undefined} />
+        <StatCard label="Principal" value={money.fmt(l.principalPaise ?? l.approvedPaise ?? l.requestedPaise)} hint={l.principalPaise ? `disbursed ${formatDate(l.disbursedOn)}` : l.approvedPaise ? "approved" : "requested"} />
+        <StatCard label="Outstanding principal" value={money.fmt(l.outstandingPrincipalPaise)} tone={l.outstandingPrincipalPaise > 0 ? "warn" : "good"} />
+        <StatCard label="Interest paid / due" value={money.fmt(l.totalInterestPaidPaise)} hint={s ? `${money.fmt(s.interestOutstandingPaise)} due & unpaid` : undefined} />
+        <StatCard label="Overdue" value={money.fmt(s?.overdueAmountPaise ?? 0)} tone={(s?.overdueAmountPaise ?? 0) > 0 ? "bad" : "good"} hint={s?.nextDue ? `next ${money.fmt(s.nextDue.amountPaise)} on ${formatDate(s.nextDue.dueDate)}` : undefined} />
       </div>
       <Card size="sm" className="mt-4">
         <CardHeader>
@@ -190,9 +192,9 @@ export function LoanDetail({ data, orgId, receiptBase, repaymentAction }: { data
                     <span className="text-xs text-muted-foreground">{formatDateTime(c.createdAt)}</span>
                   </div>
                   <p className="text-muted-foreground">
-                    {METHOD_NAME[c.method]} · principal {formatINR(c.principalPaise)} · {c.annualRate}% p.a. · {formatDate(c.periodStart)} → {formatDate(c.periodEnd)}
+                    {METHOD_NAME[c.method]} · principal {money.fmt(c.principalPaise)} · {c.annualRate}% p.a. · {formatDate(c.periodStart)} → {formatDate(c.periodEnd)}
                     {c.days !== undefined && c.days !== null ? ` · ${c.days} days` : ""}
-                    {c.periods ? ` · ${c.periods} periods` : ""} · interest <span className="font-medium text-foreground">{formatINR(c.interestPaise)}</span>
+                    {c.periods ? ` · ${c.periods} periods` : ""} · interest <span className="font-medium text-foreground">{money.fmt(c.interestPaise)}</span>
                   </p>
                 </li>
               ))}

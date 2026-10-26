@@ -11,10 +11,11 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CollectDialog } from "./collect-dialog";
 import { useT } from "@/i18n/client";
+import { useMoney } from "@/components/app/currency";
 
 type Filter = "" | "due" | "paid";
 
@@ -60,6 +61,7 @@ export function MonthSwitcher({ month, label, base, prev, next }: { month: strin
  * each unpaid row has one big "Collect" button showing the amount.
  */
 export function MonthList({ orgId, rows, period, canCollect, initialFilter }: { orgId: string; rows: MonthRow[]; period: string; canCollect: boolean; initialFilter: string }) {
+  const money = useMoney();
   const [filter, setFilter] = useState<Filter>(initialFilter === "due" || initialFilter === "paid" ? initialFilter : "");
   const [q, setQ] = useState("");
   const t = useT();
@@ -136,7 +138,7 @@ export function MonthList({ orgId, rows, period, canCollect, initialFilter }: { 
                     <StatusBadge status={r.status} />
                     {r.collectedPaise > 0 && due && (
                       <span>
-                        {t("monthly.paidOf", { a: formatINR(r.collectedPaise), b: formatINR(r.expectedPaise) })}
+                        {t("monthly.paidOf", { a: money.fmt(r.collectedPaise), b: money.fmt(r.expectedPaise) })}
                       </span>
                     )}
                     {r.lastPaymentDate && !due && (

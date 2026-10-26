@@ -1,9 +1,9 @@
-import { getOrg } from "@/lib/server/data";
+import { getOrg, getMoney } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "@/features/settings/settings-form";
 import { ChangeHaptaDialog, HaptaSetupForm } from "@/features/monthly/hapta-setup";
-import { formatDate, formatINR, paiseToRupeeInput } from "@/lib/format";
+import { formatDate, paiseToRupeeInput } from "@/lib/format";
 import { requestMonth } from "@/lib/server/today";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const monthAfter = (month: string) => {
 
 export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/settings">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const org = await getOrg(orgId);
   const h = org.settings.monthlyHapta;
   const thisMonth = await requestMonth();
@@ -34,7 +35,7 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
           {h ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm">
-                <span className="text-lg font-semibold">{formatINR(h.amountPaise)}</span> per member per month · due by day {h.dueDay} · since {formatDate(h.startDate)}
+                <span className="text-lg font-semibold">{money.fmt(h.amountPaise)}</span> per member per month · due by day {h.dueDay} · since {formatDate(h.startDate)}
               </p>
               {org.status === "active" && <ChangeHaptaDialog currentRupees={paiseToRupeeInput(h.amountPaise)} nextMonth={monthAfter(thisMonth)} />}
             </div>

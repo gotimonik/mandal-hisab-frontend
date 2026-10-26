@@ -11,9 +11,10 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
-import { formatDate, newIdempotencyKey, paiseToRupeeInput } from "@/lib/format";
+import { formatDate, newIdempotencyKey } from "@/lib/format";
 import { rupeesOrZero } from "@/lib/schemas";
 import type { InterestSettings } from "@/lib/types";
+import { useMoney } from "@/components/app/currency";
 
 interface PreviewRow {
   memberId: string;
@@ -46,6 +47,7 @@ const BASIS_LABEL: Record<string, string> = {
  * The server recalculates rate-mode amounts and refuses members already credited for the month.
  */
 export function InterestDistributor({ defaults, defaultPeriod }: { defaults: InterestSettings; defaultPeriod: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const [period, setPeriod] = useState(defaultPeriod);
@@ -207,7 +209,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
             <Input id="i-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. As decided in the monthly meeting" />
           </Field>
           <Button onClick={finalize} disabled={pending || total <= 0} className="justify-self-start">
-            {pending && <Loader2 className="animate-spin" />} Credit {paiseToRupeeInput(total) ? `₹${paiseToRupeeInput(total)}` : ""} interest
+            {pending && <Loader2 className="animate-spin" />} Credit {total ? money.short(total) : ""} interest
           </Button>
           <p className="text-xs text-muted-foreground">Once credited, interest can&apos;t be edited or credited again for this month. Corrections are made as member balance adjustments.</p>
         </div>

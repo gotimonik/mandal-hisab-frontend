@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { makeT, type Lang, type T } from "./core";
+import { useMoney } from "@/components/app/currency";
 
 const Ctx = createContext<{ lang: Lang; t: T }>({ lang: "en", t: makeT("en") });
 
@@ -14,5 +15,10 @@ export function I18nProvider({ lang, children }: { lang: Lang; children: ReactNo
   return <Ctx value={value}>{children}</Ctx>;
 }
 
-export const useT = () => useContext(Ctx).t;
+/** Translator for client components; {cur} is filled with the Mandal's currency symbol. */
+export function useT(): T {
+  const { lang } = useContext(Ctx);
+  const money = useMoney();
+  return useMemo(() => makeT(lang, { cur: money.symbol }), [lang, money]);
+}
 export const useLang = () => useContext(Ctx).lang;

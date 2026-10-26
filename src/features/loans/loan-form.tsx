@@ -19,6 +19,7 @@ import { apiMutate } from "@/app/actions/api";
 import { formatDate, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { METHOD_INFO } from "./constants";
+import { useMoney } from "@/components/app/currency";
 
 
 const Schema = z.object({
@@ -55,6 +56,7 @@ function nextMonth(iso: string) {
 }
 
 export function LoanForm({ orgId, members, canSetRate }: { orgId: string; members: { _id: string; name: string; membershipNumber: string }[]; canSetRate: boolean }) {
+  const money = useMoney();
   const router = useRouter();
   const today = todayISO();
   const form = useForm<In, unknown, Out>({
@@ -106,7 +108,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
                 ))}
               </NativeSelect>
             </Field>
-            <Field label="Requested amount (₹)" htmlFor="l-amt" error={e.amount?.message}>
+            <Field label={`Requested amount (${money.symbol})`} htmlFor="l-amt" error={e.amount?.message}>
               <Input id="l-amt" inputMode="decimal" {...form.register("amount")} />
             </Field>
             <Field label="Purpose" htmlFor="l-purpose">

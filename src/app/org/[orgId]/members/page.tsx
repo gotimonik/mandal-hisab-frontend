@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MemberAvatar } from "@/components/app/bits";
 import { SharesChip } from "@/features/monthly/month-list";
 import { api, qs } from "@/lib/server/api";
-import { getOrg, can } from "@/lib/server/data";
+import { getOrg, can, getMoney } from "@/lib/server/data";
 import type { Member, Paged } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { Pagination } from "@/components/app/pagination";
@@ -13,7 +13,7 @@ import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Input } from "@/components/ui/input";
-import { formatINRShort } from "@/lib/format";
+
 import {
   Table,
   TableBody,
@@ -33,6 +33,7 @@ export default async function MembersPage({
   searchParams,
 }: PageProps<"/org/[orgId]/members">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
   const status = typeof sp.status === "string" ? sp.status : "";
@@ -133,7 +134,7 @@ export default async function MembersPage({
                   <div className="flex shrink-0 items-center gap-1.5">
                     {due > 0 ? (
                       <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
-                        {t("members.due", { amount: formatINRShort(due) })}
+                        {t("members.due", { amount: money.short(due) })}
                       </span>
                     ) : (
                       <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">

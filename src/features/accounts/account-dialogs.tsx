@@ -14,6 +14,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees, rupeesOrZero } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 type Acc = { _id: string; name: string };
 
@@ -29,6 +30,7 @@ const NewSchema = z.object({
 });
 
 function NewAccountForm() {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.input<typeof NewSchema>, unknown, z.output<typeof NewSchema>>({ resolver: zodResolver(NewSchema), defaultValues: { name: "", type: "bank", bankName: "", accountNumberLast4: "", ifsc: "", upiId: "", openingBalance: "0", openingDate: todayISO() } });
@@ -69,7 +71,7 @@ function NewAccountForm() {
           <Input id="a-upi" {...form.register("upiId")} />
         </Field>
       )}
-      <Field label="Opening balance (₹)" htmlFor="a-open" error={e.openingBalance?.message} hint="Posted once as an opening entry; balances are always calculated from the ledger.">
+      <Field label={`Opening balance (${money.symbol})`} htmlFor="a-open" error={e.openingBalance?.message} hint="Posted once as an opening entry; balances are always calculated from the ledger.">
         <Input id="a-open" inputMode="decimal" {...form.register("openingBalance")} />
       </Field>
       <Field label="As of" htmlFor="a-opendate">
@@ -93,6 +95,7 @@ export function NewAccountDialog() {
 const TransferSchema = z.object({ fromAccountId: z.string().min(1), toAccountId: z.string().min(1), amount: rupees, date: z.string().min(10), reference: z.string().max(100).optional(), notes: z.string().max(300).optional() }).refine((v) => v.fromAccountId !== v.toAccountId, { path: ["toAccountId"], message: "Choose a different account" });
 
 function TransferForm({ accounts }: { accounts: Acc[] }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("trf"));
@@ -123,7 +126,7 @@ function TransferForm({ accounts }: { accounts: Acc[] }) {
           ))}
         </NativeSelect>
       </Field>
-      <Field label="Amount (₹)" htmlFor="t-amt" error={e.amount?.message}>
+      <Field label={`Amount (${money.symbol})`} htmlFor="t-amt" error={e.amount?.message}>
         <Input id="t-amt" inputMode="decimal" {...form.register("amount")} />
       </Field>
       <Field label="Date" htmlFor="t-date">
@@ -150,6 +153,7 @@ export function TransferDialog({ accounts }: { accounts: Acc[] }) {
 const AdjSchema = z.object({ accountId: z.string().min(1), direction: z.enum(["increase", "decrease"]), amount: rupees, date: z.string().min(10), reason: z.string().trim().min(3, "A reason is required").max(500) });
 
 function AdjustForm({ accounts }: { accounts: Acc[] }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("adj"));
@@ -177,7 +181,7 @@ function AdjustForm({ accounts }: { accounts: Acc[] }) {
           <option value="increase">Increase balance</option>
         </NativeSelect>
       </Field>
-      <Field label="Amount (₹)" htmlFor="j-amt" error={e.amount?.message}>
+      <Field label={`Amount (${money.symbol})`} htmlFor="j-amt" error={e.amount?.message}>
         <Input id="j-amt" inputMode="decimal" {...form.register("amount")} />
       </Field>
       <Field label="Date" htmlFor="j-date">

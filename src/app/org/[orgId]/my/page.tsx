@@ -2,7 +2,7 @@ import Link from "next/link";
 import { HandCoins } from "lucide-react";
 import { IconChip } from "@/components/app/bits";
 import { api, qs } from "@/lib/server/api";
-import { getOrg } from "@/lib/server/data";
+import { getOrg, getMoney } from "@/lib/server/data";
 import type { FundLoanList, MyUpadRequests, UpadPaymentClaim, Installment, Loan, MemberLedger, Paged, Payment, Receipt, Withdrawal } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { Money } from "@/components/app/money";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { METHOD_LABEL, formatDate, formatINR, formatINRShort, label } from "@/lib/format";
+import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
 import { SavingsLedgerTable, SavingsSummary } from "@/features/savings/savings-ledger";
@@ -24,6 +24,7 @@ export const metadata = { title: "My savings" };
 
 export default async function MyPage({ params, searchParams }: PageProps<"/org/[orgId]/my">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const sp = await searchParams;
   const tab = sp.tab === "upad" ? "fundloans" : "savings";
   const { t } = await getT();
@@ -56,7 +57,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
     <>
       <PageHeader title={me.member!.name} description={t("my.memberNo", { no: me.member!.membershipNumber })} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} defaultOpen={sp.pay === "1"} />} />
       <div className="mb-4">
-        <SavingsSummary l={ledger} />
+        <SavingsSummary l={ledger} currency={money.code} />
       </div>
       {fundLoans.totals.activeLoans > 0 && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-card p-3.5 text-sm shadow-card ring-2 ring-orange-400/30">
@@ -65,7 +66,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
           </IconChip>
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">
-              {t("my.myUpad", { amount: formatINRShort(fundLoans.totals.outstandingPaise) })}
+              {t("my.myUpad", { amount: money.short(fundLoans.totals.outstandingPaise) })}
             </span>
             <span className="text-xs text-muted-foreground">{t("my.payInterest")}</span>
           </span>
@@ -102,7 +103,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 {upadReqs.items.map((r) => (
                   <li key={r._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      {t("my.requestFor", { amount: formatINR(r.amountPaise) })} <span className="text-muted-foreground">· {formatDate(r.createdAt)}</span>
+                      {t("my.requestFor", { amount: money.fmt(r.amountPaise) })} <span className="text-muted-foreground">· {formatDate(r.createdAt)}</span>
                       {r.purpose && <span className="block text-xs text-muted-foreground">{r.purpose}</span>}
                       {r.status === "rejected" && r.decisionReason && <span className="block text-xs text-destructive">{t("my.notApproved", { reason: r.decisionReason })}</span>}
                     </span>
@@ -123,11 +124,11 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 {upadClaims.map((x) => (
                   <li key={x._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      {t("my.paidOn", { amount: formatINR(x.interestPaise + x.principalPaise), number: x.loanNumber })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
+                      {t("my.paidOn", { amount: money.fmt(x.interestPaise + x.principalPaise), number: x.loanNumber })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {x.interestPaise > 0 && t("my.interestX", { amount: formatINR(x.interestPaise) })}
+                        {x.interestPaise > 0 && t("my.interestX", { amount: money.fmt(x.interestPaise) })}
                         {x.interestPaise > 0 && x.principalPaise > 0 && " + "}
-                        {x.principalPaise > 0 && t("my.upadReturnedX", { amount: formatINR(x.principalPaise) })}
+                        {x.principalPaise > 0 && t("my.upadReturnedX", { amount: money.fmt(x.principalPaise) })}
                       </span>
                       {x.status === "rejected" && x.rejectedReason && <span className="block text-xs text-destructive">{t("my.notVerified", { reason: x.rejectedReason })}</span>}
                     </span>
@@ -144,7 +145,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                     <span>
                       <span className="font-mono">{l.number}</span> <span className="text-muted-foreground">· {formatDate(l.date)} · {t("my.rateMonth", { rate: l.monthlyRate })}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {t("my.loanLine", { outstanding: formatINR(l.outstandingPaise), due: formatINR(l.interestDuePaise) })}
+                        {t("my.loanLine", { outstanding: money.fmt(l.outstandingPaise), due: money.fmt(l.interestDuePaise) })}
                       </span>
                     </span>
                     <StatusBadge status={l.status} />
@@ -270,7 +271,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                     <span>
                       <span className="font-mono">{l.loanNumber}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {t("my.loanRate", { rate: l.annualRate, amount: formatINR(l.outstandingPrincipalPaise) })}
+                        {t("my.loanRate", { rate: l.annualRate, amount: money.fmt(l.outstandingPrincipalPaise) })}
                       </span>
                     </span>
                     <StatusBadge status={l.status} />

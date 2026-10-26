@@ -14,6 +14,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 const Schema = z.object({
   direction: z.enum(["in", "out"]),
@@ -30,6 +31,7 @@ interface Props {
 }
 
 function Form({ accounts, categories }: Props) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("cash"));
@@ -53,7 +55,7 @@ function Form({ accounts, categories }: Props) {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (₹)" htmlFor="ce-amt" error={e.amount?.message}>
+        <Field label={`Amount (${money.symbol})`} htmlFor="ce-amt" error={e.amount?.message}>
           <Input id="ce-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
         <Field label="Date" htmlFor="ce-date">

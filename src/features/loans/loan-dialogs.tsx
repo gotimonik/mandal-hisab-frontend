@@ -17,6 +17,7 @@ import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiMutate, apiRead } from "@/app/actions/api";
 import { METHOD_LABEL, formatDate, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 type Acc = { _id: string; name: string };
 
@@ -24,6 +25,7 @@ type Acc = { _id: string; name: string };
 const ApproveSchema = z.object({ approvedAmount: rupees, rate: z.string().regex(/^(\d{1,3}(\.\d{1,4})?)?$/, "Invalid rate").optional(), tenure: z.coerce.number().int().min(0).max(360), notes: z.string().max(500).optional() });
 
 function ApproveForm({ loanId, requestedPaise, canChangeRate, tenure, rate }: { loanId: string; requestedPaise: number; canChangeRate: boolean; tenure: number; rate: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.input<typeof ApproveSchema>, unknown, z.output<typeof ApproveSchema>>({ resolver: zodResolver(ApproveSchema), defaultValues: { approvedAmount: paiseToRupeeInput(requestedPaise), rate: "", tenure, notes: "" } });
@@ -36,7 +38,7 @@ function ApproveForm({ loanId, requestedPaise, canChangeRate, tenure, rate }: { 
       onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/loans/${loanId}/approve`, body: { approvedAmount: v.approvedAmount, rate: v.rate || undefined, tenure: v.tenure || undefined, notes: v.notes || undefined } }, { success: "Loan approved", onSuccess: close }))}
     >
       <FormError message={error} />
-      <Field label="Approved amount (₹)" htmlFor="ap-amt" error={e.approvedAmount?.message}>
+      <Field label={`Approved amount (${money.symbol})`} htmlFor="ap-amt" error={e.approvedAmount?.message}>
         <Input id="ap-amt" inputMode="decimal" {...form.register("approvedAmount")} />
       </Field>
       {canChangeRate && (
@@ -102,7 +104,7 @@ function DisburseForm({ loanId, accounts, amountPaise }: { loanId: string; accou
         </Field>
       </div>
       <label className="flex items-center gap-2 text-sm">
-        <Checkbox checked={form.watch("roundEmiToRupee")} onCheckedChange={(c) => form.setValue("roundEmiToRupee", !!c)} /> Round EMI up to whole rupees
+        <Checkbox checked={form.watch("roundEmiToRupee")} onCheckedChange={(c) => form.setValue("roundEmiToRupee", !!c)} /> Round EMI up to a whole amount (no paise or cents)
       </label>
       <Button type="submit" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />} Disburse
@@ -138,6 +140,7 @@ interface Quote {
 }
 
 function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { loanId: string; accounts: Acc[]; methods: string[]; nextDuePaise: number; allowPrepay: boolean }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key, setKey] = useState(() => newIdempotencyKey("rep"));
@@ -199,7 +202,7 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (₹)" htmlFor="rp-amt" error={form.formState.errors.amount?.message}>
+        <Field label={`Amount (${money.symbol})`} htmlFor="rp-amt" error={form.formState.errors.amount?.message}>
           <Input id="rp-amt" inputMode="decimal" readOnly={closeLoan} {...form.register("amount", { onChange: () => setPreview(null) })} />
         </Field>
         <Field label="Date" htmlFor="rp-date">

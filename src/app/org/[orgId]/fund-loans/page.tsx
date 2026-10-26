@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HandCoins } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
-import { can, getAccounts, getActiveMembers, getOrg } from "@/lib/server/data";
+import { can, getAccounts, getActiveMembers, getOrg, getMoney } from "@/lib/server/data";
 import type { FundLoanList, UpadPaymentClaim, UpadRequest } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
@@ -9,7 +9,7 @@ import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { METHOD_LABEL, formatDate, formatINR, label } from "@/lib/format";
+import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { MemberAvatar } from "@/components/app/bits";
 import { GiveLoanDialog } from "@/features/fund-loans/give-loan-dialog";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
@@ -28,6 +28,7 @@ const TABS = [
 
 export default async function FundLoansPage({ params, searchParams }: PageProps<"/org/[orgId]/fund-loans">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const sp = await searchParams;
   const status = typeof sp.status === "string" && ["active", "closed", "all"].includes(sp.status) ? sp.status : "active";
   const [org, data] = await Promise.all([getOrg(orgId), api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status })}`)]);
@@ -101,9 +102,9 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     {x.member?.name ?? tr("common.member")} · {x.loanNumber}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {x.interestPaise > 0 && tr("upad.claimInterest", { amount: formatINR(x.interestPaise) })}
+                    {x.interestPaise > 0 && tr("upad.claimInterest", { amount: money.fmt(x.interestPaise) })}
                     {x.interestPaise > 0 && x.principalPaise > 0 && " + "}
-                    {x.principalPaise > 0 && tr("upad.claimUpad", { amount: formatINR(x.principalPaise) })}
+                    {x.principalPaise > 0 && tr("upad.claimUpad", { amount: money.fmt(x.principalPaise) })}
                     {" · "}
                     {formatDate(x.date)} · {label(METHOD_LABEL, x.method)}
                     {x.reference ? ` · ${tr("upad.ref", { ref: x.reference })}` : ""}
@@ -112,7 +113,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                 </div>
                 {x.alreadyRecorded && (
                   <p className="w-full rounded-lg bg-emerald-500/10 px-3 py-2 text-xs text-emerald-800 sm:order-last dark:text-emerald-200">
-                    {tr("upad.alreadyRecorded", { date: formatDate(x.alreadyRecorded.date), amount: [x.alreadyRecorded.interestPaise ? tr("upad.recInterest", { amount: formatINR(x.alreadyRecorded.interestPaise) }) : "", x.alreadyRecorded.principalPaise ? tr("upad.recUpad", { amount: formatINR(x.alreadyRecorded.principalPaise) }) : ""].filter(Boolean).join(" + ") })}
+                    {tr("upad.alreadyRecorded", { date: formatDate(x.alreadyRecorded.date), amount: [x.alreadyRecorded.interestPaise ? tr("upad.recInterest", { amount: money.fmt(x.alreadyRecorded.interestPaise) }) : "", x.alreadyRecorded.principalPaise ? tr("upad.recUpad", { amount: money.fmt(x.alreadyRecorded.principalPaise) }) : ""].filter(Boolean).join(" + ") })}
                   </p>
                 )}
                 {canVerify && x.alreadyRecorded ? (
@@ -126,7 +127,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     <ActionButton path={`/orgs/${orgId}/upad-payments/${x._id}/reject`} size="xs" variant="ghost" successMessage={tr("upad.payRejected")} confirm={{ title: tr("upad.rejectPayConfirm"), reason: "required", reasonLabel: tr("upad.reasonShown"), destructive: true, confirmLabel: tr("common.reject") }}>
                       {tr("common.reject")}
                     </ActionButton>
-                    <ActionButton path={`/orgs/${orgId}/upad-payments/${x._id}/verify`} size="xs" variant="default" successMessage={tr("upad.verified")} confirm={{ title: tr("upad.verifyConfirm", { name: x.member?.name ?? tr("common.member"), amount: formatINR(x.interestPaise + x.principalPaise) }), description: tr("upad.verifyDesc"), confirmLabel: tr("common.verify") }}>
+                    <ActionButton path={`/orgs/${orgId}/upad-payments/${x._id}/verify`} size="xs" variant="default" successMessage={tr("upad.verified")} confirm={{ title: tr("upad.verifyConfirm", { name: x.member?.name ?? tr("common.member"), amount: money.fmt(x.interestPaise + x.principalPaise) }), description: tr("upad.verifyDesc"), confirmLabel: tr("common.verify") }}>
                       {tr("common.verify")}
                     </ActionButton>
                   </div>
@@ -151,7 +152,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {r.purpose ? `${r.purpose} · ` : ""}{tr("upad.asked", { date: formatDate(r.createdAt) })}
-                    {r.member?.balancePaise !== undefined ? tr("upad.savingsX", { amount: formatINR(r.member.balancePaise) }) : null}
+                    {r.member?.balancePaise !== undefined ? tr("upad.savingsX", { amount: money.fmt(r.member.balancePaise) }) : null}
                   </p>
                   {!r.withinAvailable && <p className="text-xs text-destructive">{tr("upad.moreThanCash")}</p>}
                 </div>
@@ -233,7 +234,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     </Link>
                     <div className="font-medium sm:hidden">{l.member?.name ?? "—"}</div>
                     <div className="text-xs text-muted-foreground">
-                      {tr("upad.onDate", { amount: formatINR(l.principalPaise), date: formatDate(l.date) })}
+                      {tr("upad.onDate", { amount: money.fmt(l.principalPaise), date: formatDate(l.date) })}
                       <span className="sm:hidden"> · {l.monthlyRate}%{l.status !== "active" ? ` · ${l.status}` : ""}</span>
                     </div>
                   </TableCell>

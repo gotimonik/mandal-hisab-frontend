@@ -15,6 +15,7 @@ import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { FREQUENCY_LABEL, todayISO } from "@/lib/format";
 import { optionalRupees, rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 const MONTH_BASED = ["monthly", "bimonthly", "every_three_months", "quarterly", "half_yearly", "yearly"];
 
@@ -52,6 +53,7 @@ type In = z.input<typeof Schema>;
 type Out = z.output<typeof Schema>;
 
 export function SchemeForm({ orgId }: { orgId: string }) {
+  const money = useMoney();
   const router = useRouter();
   const form = useForm<In, unknown, Out>({
     resolver: zodResolver(Schema),
@@ -120,7 +122,7 @@ export function SchemeForm({ orgId }: { orgId: string }) {
           <Field label="Description" htmlFor="s-desc" className="sm:col-span-2">
             <Textarea id="s-desc" rows={2} {...form.register("description")} />
           </Field>
-          <Field label="Amount per installment (₹)" htmlFor="s-amt" error={e.amount?.message}>
+          <Field label={`Amount per installment (${money.symbol})`} htmlFor="s-amt" error={e.amount?.message}>
             <Input id="s-amt" inputMode="decimal" placeholder="1000" {...form.register("amount")} />
           </Field>
           <Field label="Amount type" htmlFor="s-mode" hint="Member-specific lets you set a different amount per member when enrolling.">
@@ -183,7 +185,7 @@ export function SchemeForm({ orgId }: { orgId: string }) {
                 </Field>
               )}
               {limitBy === "target" && (
-                <Field label="Target amount per member (₹)" htmlFor="s-target" error={e.targetAmount?.message}>
+                <Field label={`Target amount per member (${money.symbol})`} htmlFor="s-target" error={e.targetAmount?.message}>
                   <Input id="s-target" inputMode="decimal" {...form.register("targetAmount")} />
                 </Field>
               )}
@@ -211,11 +213,11 @@ export function SchemeForm({ orgId }: { orgId: string }) {
             <>
               <Field label="Type" htmlFor="s-lftype">
                 <NativeSelect id="s-lftype" {...form.register("lateFeeType")}>
-                  <option value="fixed">Fixed amount (₹)</option>
+                  <option value="fixed">Fixed amount ({money.symbol})</option>
                   <option value="percent">% of installment</option>
                 </NativeSelect>
               </Field>
-              <Field label={lateFeeType === "fixed" ? "Fee (₹)" : "Percent (%)"} htmlFor="s-lfval" error={e.lateFeeValue?.message}>
+              <Field label={lateFeeType === "fixed" ? `Fee (${money.symbol})` : "Percent (%)"} htmlFor="s-lfval" error={e.lateFeeValue?.message}>
                 <Input id="s-lfval" inputMode="decimal" {...form.register("lateFeeValue")} />
               </Field>
               <Field label="Days after due date" htmlFor="s-lfgrace">

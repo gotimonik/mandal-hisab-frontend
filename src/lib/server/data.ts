@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { api } from "./api";
+import { moneyFmt } from "@/lib/currency";
 import type { Account, Me, Member, Org, Scheme } from "@/lib/types";
 
 /** Request-scoped, de-duplicated loaders shared by layouts and pages. */
@@ -16,3 +17,6 @@ export const getActiveMembers = cache(async (orgId: string) => {
 export function can(org: Org, permission: string) {
   return org.myPermissions.includes(permission);
 }
+
+/** The Mandal's money formatter for server components: (await getMoney(orgId)).fmt(paise) */
+export const getMoney = cache(async (orgId: string) => moneyFmt((await getOrg(orgId)).settings.currency));

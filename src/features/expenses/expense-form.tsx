@@ -13,8 +13,9 @@ import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { uploadAttachment } from "@/app/actions/api";
-import { METHOD_LABEL, formatINR, label, newIdempotencyKey, todayISO } from "@/lib/format";
+import { METHOD_LABEL, label, newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 const Schema = z
   .object({
@@ -36,6 +37,7 @@ const Schema = z
 type Att = { url: string; name: string; contentType: string; size: number };
 
 function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _id: string; name: string }[]; methods: string[]; categories: { key: string; name: string }[]; thresholdPaise: number }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("exp"));
@@ -71,7 +73,7 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
           ))}
         </NativeSelect>
       </Field>
-      <Field label="Amount (₹)" htmlFor="x-amt" error={e.amount?.message} hint={thresholdPaise > 0 ? `Above ${formatINR(thresholdPaise)} needs admin approval` : "Needs approval unless you are an admin"}>
+      <Field label={`Amount (${money.symbol})`} htmlFor="x-amt" error={e.amount?.message} hint={thresholdPaise > 0 ? `Above ${money.fmt(thresholdPaise)} needs admin approval` : "Needs approval unless you are an admin"}>
         <Input id="x-amt" inputMode="decimal" {...form.register("amount")} />
       </Field>
       <Field label="Paid to (vendor / payee)" htmlFor="x-payee" error={e.payeeName?.message}>
@@ -168,9 +170,10 @@ export function ExpenseDialog(props: { accounts: { _id: string; name: string }[]
 }
 
 export function ReimburseDialog({ expenseId, accounts, payee, amountPaise }: { expenseId: string; accounts: { _id: string; name: string }[]; payee: string; amountPaise: number }) {
+  const money = useMoney();
   return (
     <FormDialog trigger="Reimburse" triggerVariant="outline" triggerSize="xs" title="Reimburse out-of-pocket expense">
-      <ReimburseForm expenseId={expenseId} accounts={accounts} summary={`${payee} · ${formatINR(amountPaise)}`} />
+      <ReimburseForm expenseId={expenseId} accounts={accounts} summary={`${payee} · ${money.fmt(amountPaise)}`} />
     </FormDialog>
   );
 }

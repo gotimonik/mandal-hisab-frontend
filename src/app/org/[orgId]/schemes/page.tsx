@@ -29,7 +29,7 @@ export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/sc
         }
       />
       {schemes.length === 0 ? (
-        <EmptyState icon={<CalendarClock />} title="No schemes yet" description="Create a scheme such as ₹500 every month or ₹3,000 every quarter, then enroll members." />
+        <EmptyState icon={<CalendarClock />} title="No schemes yet" description="Create a scheme such as 500 every month or 3,000 every quarter, then enroll members." />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {schemes.map((s) => {

@@ -8,15 +8,17 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDate, formatINR, formatINRShort } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { IconChip } from "@/components/app/bits";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 import { getT } from "@/i18n/server";
+import { moneyFmt } from "@/lib/currency";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function MemberDashboard({ orgId, data, org }: { orgId: string; data: any; org: Org }) {
   const { t: tr } = await getT();
+  const money = moneyFmt(org.settings.currency);
   if (!data.linked) {
     return (
       <>
@@ -39,9 +41,9 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
           <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
           <Link href={`/org/${orgId}/my`} className="relative block">
             <p className="text-sm font-medium text-white/85">{tr("mdash.mySavings")}</p>
-            <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(data.savings.balancePaise)}</p>
+            <p className="text-4xl font-extrabold tracking-tight tabular-nums">{money.short(data.savings.balancePaise)}</p>
             <p className="mt-1 text-xs text-white/80">
-              {tr("mdash.breakdown", { hapta: formatINR(data.savings.haptaPaise), interest: formatINR(data.savings.interestPaise), withdrawn: formatINR(data.savings.withdrawalsPaise) })}
+              {tr("mdash.breakdown", { hapta: money.fmt(data.savings.haptaPaise), interest: money.fmt(data.savings.interestPaise), withdrawn: money.fmt(data.savings.withdrawalsPaise) })}
             </p>
           </Link>
           <div className="relative mt-4 flex flex-wrap items-center gap-2">
@@ -51,7 +53,7 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
                 {tr("mdash.requestUpad")}
               </Link>
             )}
-            {data.monthlyHaptaPaise ? <span className="ml-auto text-right text-xs text-white/80">{tr("mdash.monthlyHapta")}<br /><span className="text-sm font-bold text-white">{formatINRShort(data.monthlyHaptaPaise)}</span>{data.haptaShares > 1 && <span className="block text-[11px]">{tr("mdash.haptasN", { n: data.haptaShares })}</span>}</span> : null}
+            {data.monthlyHaptaPaise ? <span className="ml-auto text-right text-xs text-white/80">{tr("mdash.monthlyHapta")}<br /><span className="text-sm font-bold text-white">{money.short(data.monthlyHaptaPaise)}</span>{data.haptaShares > 1 && <span className="block text-[11px]">{tr("mdash.haptasN", { n: data.haptaShares })}</span>}</span> : null}
           </div>
         </section>
       )}
@@ -66,19 +68,19 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
             <HandCoins />
           </IconChip>
           <span className="min-w-0 flex-1 text-sm">
-            <span className="block font-semibold">{tr("mdash.myUpad", { amount: formatINRShort(data.fundLoans.outstandingPaise) })}</span>
+            <span className="block font-semibold">{tr("mdash.myUpad", { amount: money.short(data.fundLoans.outstandingPaise) })}</span>
             <span className="text-xs text-muted-foreground">{tr("mdash.interestDueNow")}</span>
           </span>
-          <span className="text-lg font-bold text-warning-ink tabular-nums">{formatINRShort(data.fundLoans.interestDuePaise)}</span>
+          <span className="text-lg font-bold text-warning-ink tabular-nums">{money.short(data.fundLoans.interestDuePaise)}</span>
         </Link>
       )}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label={tr("mdash.totalPaid")} value={formatINR(t.totalPaidPaise)} icon={<CheckCircle2 />} tone="good" />
-        <StatCard label={tr("mdash.outstandingNow")} value={formatINR(t.outstandingPaise)} icon={<Wallet />} tone={t.outstandingPaise > 0 ? "warn" : "default"} />
-        <StatCard label={tr("mdash.overdue")} value={formatINR(t.overduePaise)} icon={<AlertTriangle />} tone={t.overduePaise > 0 ? "bad" : "good"} />
+        <StatCard label={tr("mdash.totalPaid")} value={money.fmt(t.totalPaidPaise)} icon={<CheckCircle2 />} tone="good" />
+        <StatCard label={tr("mdash.outstandingNow")} value={money.fmt(t.outstandingPaise)} icon={<Wallet />} tone={t.outstandingPaise > 0 ? "warn" : "default"} />
+        <StatCard label={tr("mdash.overdue")} value={money.fmt(t.overduePaise)} icon={<AlertTriangle />} tone={t.overduePaise > 0 ? "bad" : "good"} />
         <StatCard
           label={tr("mdash.nextInstallment")}
-          value={data.nextInstallment ? formatINR(data.nextInstallment.amountPaise) : "—"}
+          value={data.nextInstallment ? money.fmt(data.nextInstallment.amountPaise) : "—"}
           icon={<CalendarClock />}
           hint={data.nextInstallment ? tr("mdash.nextDue", { period: data.nextInstallment.periodLabel, date: formatDate(data.nextInstallment.dueDate) }) : tr("mdash.nothingScheduled")}
         />
@@ -127,8 +129,8 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
                       <span>
                         <span className="block font-medium">{l.loanNumber}</span>
                         <span className="text-xs text-muted-foreground">
-                          {l.summary ? tr("mdash.loanLine", { amount: formatINR(l.summary.outstandingPrincipalPaise) }) : ""}
-                          {l.summary?.nextDue ? tr("mdash.loanNext", { amount: formatINR(l.summary.nextDue.amountPaise), date: formatDate(l.summary.nextDue.dueDate) }) : ""}
+                          {l.summary ? tr("mdash.loanLine", { amount: money.fmt(l.summary.outstandingPrincipalPaise) }) : ""}
+                          {l.summary?.nextDue ? tr("mdash.loanNext", { amount: money.fmt(l.summary.nextDue.amountPaise), date: formatDate(l.summary.nextDue.dueDate) }) : ""}
                         </span>
                       </span>
                       <StatusBadge status={l.status} />

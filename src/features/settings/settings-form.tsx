@@ -13,6 +13,8 @@ import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import type { ManagerPermissions, Org } from "@/lib/types";
 import { METHOD_LABEL, paiseToRupeeInput } from "@/lib/format";
+import { useMoney } from "@/components/app/currency";
+import { CURRENCIES, DEFAULT_CURRENCY, moneyFmt } from "@/lib/currency";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const PERMS: { key: keyof ManagerPermissions; label: string }[] = [
@@ -53,6 +55,7 @@ interface V {
   registrationDetails: string;
   logoUrl: string;
   financialYearStartMonth: number;
+  currency: string;
   timezone: string;
   receiptPrefix: string;
   requirePaymentVerification: boolean;
@@ -66,6 +69,7 @@ interface V {
 }
 
 export function SettingsForm({ org }: { org: Org }) {
+  const money = useMoney();
   const s = org.settings;
   const form = useForm<V>({
     defaultValues: {
@@ -92,6 +96,7 @@ export function SettingsForm({ org }: { org: Org }) {
       registrationDetails: org.registrationDetails ?? "",
       logoUrl: org.logoUrl ?? "",
       financialYearStartMonth: s.financialYearStartMonth,
+      currency: s.currency || DEFAULT_CURRENCY,
       timezone: s.timezone,
       receiptPrefix: s.receiptPrefix,
       requirePaymentVerification: s.requirePaymentVerification,
@@ -140,6 +145,7 @@ export function SettingsForm({ org }: { org: Org }) {
           logoUrl: v.logoUrl.trim(),
           settings: {
             financialYearStartMonth: Number(v.financialYearStartMonth),
+            currency: v.currency,
             timezone: v.timezone,
             receiptPrefix: v.receiptPrefix.toUpperCase(),
             requirePaymentVerification: v.requirePaymentVerification,
@@ -234,7 +240,7 @@ export function SettingsForm({ org }: { org: Org }) {
               <option value="hapta_contributions">Hapta paid up to the end of the previous month (no compounding)</option>
             </NativeSelect>
           </Field>
-          <Field label="Upad: default interest (% per month)" htmlFor="o-lrate" hint="e.g. 10 → ₹300 a month on ₹3,000. Can be changed for each upad.">
+          <Field label="Upad: default interest (% per month)" htmlFor="o-lrate" hint={`e.g. 10 → ${money.short(30000)} a month on ${money.short(300000)}. Can be changed for each upad.`}>
             <Input id="o-lrate" inputMode="decimal" {...form.register("loanRate")} />
           </Field>
           <Field label="Upad interest due by day" htmlFor="o-ldue" hint="Day of the month (1–28)">
@@ -286,13 +292,22 @@ export function SettingsForm({ org }: { org: Org }) {
               ))}
             </NativeSelect>
           </Field>
+          <Field label="Currency" htmlFor="o-cur" hint="Amounts are not converted, so it can only be changed before any money is recorded.">
+            <NativeSelect id="o-cur" {...form.register("currency")}>
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.code} — {c.name} ({moneyFmt(c.code).symbol})
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
           <Field label="Timezone" htmlFor="o-tz">
             <Input id="o-tz" {...form.register("timezone")} />
           </Field>
           <Field label="Receipt prefix" htmlFor="o-prefix" hint="e.g. RCPT → RCPT/2026-27/000001" error={form.formState.errors["settings.receiptPrefix" as "receiptPrefix"]?.message}>
             <Input id="o-prefix" {...form.register("receiptPrefix")} />
           </Field>
-          <Field label="Expense approval threshold (₹)" htmlFor="o-thr" hint="Above this, only admins can approve. 0 = every expense needs approval.">
+          <Field label={`Expense approval threshold (${money.symbol})`} htmlFor="o-thr" hint="Above this, only admins can approve. 0 = every expense needs approval.">
             <Input id="o-thr" inputMode="decimal" {...form.register("threshold")} />
           </Field>
           <label className="flex items-start gap-2 text-sm sm:col-span-2">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronRight, Lock } from "lucide-react";
 import { api } from "@/lib/server/api";
-import { getOrg } from "@/lib/server/data";
+import { getOrg, getMoney } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
 import { Money } from "@/components/app/money";
 import { ActionButton } from "@/components/app/action-button";
@@ -9,7 +9,7 @@ import { PrintButton } from "@/components/app/print-button";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { monthLabelYM } from "@/lib/months";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,7 @@ function Step({ n, title, done, children, description }: { n: number; title: str
 
 export default async function ClosePage({ params }: PageProps<"/org/[orgId]/settings/close">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const [org, p] = await Promise.all([getOrg(orgId), api<Preview>(`/orgs/${orgId}/settlement`)]);
   const started = !!p.state;
   const closed = !!p.state?.closedAt;
@@ -106,7 +107,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             <ActionButton
               path={`/orgs/${orgId}/settlement/waive-hapta`}
               successMessage="Unpaid hapta waived"
-              confirm={{ title: `Waive ${formatINR(unpaidHapta.amountPaise ?? 0)} of unpaid hapta?`, description: "All hapta not yet paid up to today is waived. Members' savings stay as they are.", reason: "required", reasonLabel: "Why (e.g. members agreed)", confirmLabel: "Waive", destructive: true }}
+              confirm={{ title: `Waive ${money.fmt(unpaidHapta.amountPaise ?? 0)} of unpaid hapta?`, description: "All hapta not yet paid up to today is waived. Members' savings stay as they are.", reason: "required", reasonLabel: "Why (e.g. members agreed)", confirmLabel: "Waive", destructive: true }}
             >
               Waive all unpaid hapta…
             </ActionButton>
@@ -126,7 +127,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
         </p>
         {p.state?.distributions.map((d, i) => (
           <p key={i} className="mb-1 text-xs text-muted-foreground">
-            Shared {formatINR(d.totalPaise)} on {formatDate(d.at)} ({formatINR(d.perShare)} per share)
+            Shared {money.fmt(d.totalPaise)} on {formatDate(d.at)} ({money.fmt(d.perShare)} per share)
           </p>
         ))}
         {live && !closed && (!started || p.totals.mandalOwnPaise !== 0) && (
@@ -135,8 +136,8 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             variant="default"
             successMessage={started ? "Shared out" : "Closing started — money shared out"}
             confirm={{
-              title: started ? `Share out the remaining ${formatINR(p.totals.mandalOwnPaise)}?` : "Start closing the Mandal?",
-              description: `${formatINR(p.totals.mandalOwnPaise)} is added to members' balances by hapta shares. ${started ? "" : "No new hapta will be created after today. "}This can't be undone automatically.`,
+              title: started ? `Share out the remaining ${money.fmt(p.totals.mandalOwnPaise)}?` : "Start closing the Mandal?",
+              description: `${money.fmt(p.totals.mandalOwnPaise)} is added to members' balances by hapta shares. ${started ? "" : "No new hapta will be created after today. "}This can't be undone automatically.`,
               confirmLabel: started ? "Share out" : "Start closing",
             }}
           >
@@ -189,7 +190,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
                         size="xs"
                         variant="default"
                         successMessage={`${r.name} paid out`}
-                        confirm={{ title: `Pay ${formatINR(r.netPaise)} to ${r.name}?`, description: `Savings ${formatINR(r.savingsPaise)}${r.upadOwedPaise ? ` − upad ${formatINR(r.upadOwedPaise)} (settled from the payout)` : ""}. Paid from the cash account; a payout voucher is recorded.`, confirmLabel: "Pay out" }}
+                        confirm={{ title: `Pay ${money.fmt(r.netPaise)} to ${r.name}?`, description: `Savings ${money.fmt(r.savingsPaise)}${r.upadOwedPaise ? ` − upad ${money.fmt(r.upadOwedPaise)} (settled from the payout)` : ""}. Paid from the cash account; a payout voucher is recorded.`, confirmLabel: "Pay out" }}
                       >
                         Pay out
                       </ActionButton>
@@ -214,14 +215,14 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
         {!started && <p className="mt-2 text-xs text-muted-foreground">Payouts open after step 2.</p>}
       </Step>
 
-      <Step n={4} title="Close the Mandal" done={closed} description="When everyone is paid and every account is at ₹0, close it. It becomes read-only; nothing is deleted.">
+      <Step n={4} title="Close the Mandal" done={closed} description="When everyone is paid and every account is at zero, close it. It becomes read-only; nothing is deleted.">
         {closed ? (
           <p className="text-sm">Closed on {formatDate(p.state!.closedAt)}.</p>
         ) : (
           <>
             {!p.canClose && started && (
               <p className="mb-2 text-xs text-muted-foreground">
-                {p.accounts.filter((a) => a.balancePaise !== 0).map((a) => `${a.name}: ${formatINR(a.balancePaise)}`).join(" · ") || "Pay everyone out first."}
+                {p.accounts.filter((a) => a.balancePaise !== 0).map((a) => `${a.name}: ${money.fmt(a.balancePaise)}`).join(" · ") || "Pay everyone out first."}
               </p>
             )}
             {live && (

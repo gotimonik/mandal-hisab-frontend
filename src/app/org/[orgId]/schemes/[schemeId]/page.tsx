@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api } from "@/lib/server/api";
-import { getOrg, getActiveMembers, can } from "@/lib/server/data";
+import { getOrg, getActiveMembers, can, getMoney } from "@/lib/server/data";
 import type { Scheme } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
@@ -11,12 +11,13 @@ import { TableWrap } from "@/components/app/table-wrap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FREQUENCY_LABEL, formatDate, formatINR, label } from "@/lib/format";
+import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
 import { EnrollDialog, OverrideDialog, RevisionDialog } from "@/features/schemes/scheme-dialogs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function SchemePage({ params }: PageProps<"/org/[orgId]/schemes/[schemeId]">) {
   const { orgId, schemeId } = await params;
+  const money = await getMoney(orgId);
   const [org, data] = await Promise.all([getOrg(orgId), api<{ scheme: Scheme; enrollments: any[]; plannedSchedule: any[] }>(`/orgs/${orgId}/schemes/${schemeId}`)]);
   const s = data.scheme;
   const manage = can(org, "schemes.manage");
@@ -62,10 +63,10 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
         }
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Info k="Amount" v={formatINR(s.amountPaise)} sub={s.amountMode === "member_specific" ? "default; varies by member" : "per installment"} />
+        <Info k="Amount" v={money.fmt(s.amountPaise)} sub={s.amountMode === "member_specific" ? "default; varies by member" : "per installment"} />
         <Info k="Frequency" v={label(FREQUENCY_LABEL, s.frequency)} sub={s.customInterval ? `every ${s.customInterval.count} ${s.customInterval.unit}(s)` : s.dueDay ? `due on day ${s.dueDay}` : undefined} />
-        <Info k="Period" v={`${formatDate(s.startDate)} →`} sub={s.endDate ? formatDate(s.endDate) : s.numberOfInstallments ? `${s.numberOfInstallments} installments` : s.targetAmountPaise ? `target ${formatINR(s.targetAmountPaise)}` : "open-ended"} />
-        <Info k="Grace / late fee" v={`${s.graceDays} days`} sub={s.lateFee.enabled ? (s.lateFee.type === "fixed" ? `${formatINR(s.lateFee.value)} after ${s.lateFee.graceDays} days` : `${s.lateFee.value / 100}% after ${s.lateFee.graceDays} days`) : "no late fee"} />
+        <Info k="Period" v={`${formatDate(s.startDate)} →`} sub={s.endDate ? formatDate(s.endDate) : s.numberOfInstallments ? `${s.numberOfInstallments} installments` : s.targetAmountPaise ? `target ${money.fmt(s.targetAmountPaise)}` : "open-ended"} />
+        <Info k="Grace / late fee" v={`${s.graceDays} days`} sub={s.lateFee.enabled ? (s.lateFee.type === "fixed" ? `${money.fmt(s.lateFee.value)} after ${s.lateFee.graceDays} days` : `${s.lateFee.value / 100}% after ${s.lateFee.graceDays} days`) : "no late fee"} />
       </div>
 
       <Tabs defaultValue="members" className="mt-6">
@@ -191,7 +192,7 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                   <ul className="divide-y">
                     {s.overrides.map((o) => (
                       <li key={o.sequence} className="py-2">
-                        #{o.sequence}: {o.skip ? "skipped" : [o.dueDate && `due ${formatDate(o.dueDate)}`, o.amountPaise && formatINR(o.amountPaise)].filter(Boolean).join(", ")}
+                        #{o.sequence}: {o.skip ? "skipped" : [o.dueDate && `due ${formatDate(o.dueDate)}`, o.amountPaise && money.fmt(o.amountPaise)].filter(Boolean).join(", ")}
                         <span className="text-muted-foreground"> — {o.reason}</span>
                       </li>
                     ))}

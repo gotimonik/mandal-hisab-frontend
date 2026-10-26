@@ -9,7 +9,8 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { useMoney } from "@/components/app/currency";
 
 function VerifyForm({ paymentId, accounts, accountId, summary, path }: { paymentId: string; accounts: { _id: string; name: string }[]; accountId?: string | null; summary: string; path: string }) {
   const { orgId } = useParams<{ orgId: string }>();
@@ -39,9 +40,10 @@ function VerifyForm({ paymentId, accounts, accountId, summary, path }: { payment
 }
 
 export function VerifyDialog(props: { paymentId: string; accounts: { _id: string; name: string }[]; accountId?: string | null; payer: string; amountPaise: number; date: string; path: string }) {
+  const money = useMoney();
   return (
     <FormDialog trigger={<><Check /> Verify</>} triggerSize="xs" title="Verify payment">
-      <VerifyForm {...props} summary={`${props.payer} · ${formatINR(props.amountPaise)} · ${formatDate(props.date)}`} />
+      <VerifyForm {...props} summary={`${props.payer} · ${money.fmt(props.amountPaise)} · ${formatDate(props.date)}`} />
     </FormDialog>
   );
 }

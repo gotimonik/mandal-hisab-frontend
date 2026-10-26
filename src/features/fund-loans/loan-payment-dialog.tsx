@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/app/field";
 import { apiMutate } from "@/app/actions/api";
-import { formatDate, formatINR, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupeesOrZero } from "@/lib/schemas";
 import { useT } from "@/i18n/client";
+import { useMoney } from "@/components/app/currency";
 
 /**
  * Record money received on a fund loan: the interest (oldest unpaid month first) and/or part of
@@ -39,6 +40,7 @@ export function LoanPaymentDialog({
   /** payments the member reported with "I have paid" that are waiting for verification */
   reported?: { interestPaise: number; principalPaise: number; method: string; date: string }[];
 }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const t = useT();
@@ -96,7 +98,7 @@ export function LoanPaymentDialog({
               {memberName} · {number}
             </DialogTitle>
             <DialogDescription>
-              {t("upad.payDesc", { interest: formatINR(interestDuePaise), outstanding: formatINR(outstandingPaise) })}
+              {t("upad.payDesc", { interest: money.fmt(interestDuePaise), outstanding: money.fmt(outstandingPaise) })}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -114,7 +116,7 @@ export function LoanPaymentDialog({
                 {reported.map((r, k) => (
                   <span key={k}>
                     {k > 0 && "; "}
-                    {[r.interestPaise ? t("upad.recInterest", { amount: formatINR(r.interestPaise) }) : "", r.principalPaise ? t("upad.recUpad", { amount: formatINR(r.principalPaise) }) : ""].filter(Boolean).join(" + ")} ({r.method}, {formatDate(r.date)})
+                    {[r.interestPaise ? t("upad.recInterest", { amount: money.fmt(r.interestPaise) }) : "", r.principalPaise ? t("upad.recUpad", { amount: money.fmt(r.principalPaise) }) : ""].filter(Boolean).join(" + ")} ({r.method}, {formatDate(r.date)})
                   </span>
                 ))}
                 . {t("upad.reportedHint")}

@@ -11,9 +11,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Field, FormError } from "@/components/app/field";
 import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
-import { formatINRShort, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useT } from "@/i18n/client";
+import { useMoney } from "@/components/app/currency";
 
 /**
  * Quick cash entry for one member's month. Defaults to the full outstanding amount; a smaller
@@ -21,6 +22,7 @@ import { useT } from "@/i18n/client";
  * date the server asks for confirmation (possible double entry).
  */
 export function CollectDialog({ installmentId, memberName, period, outstandingPaise, size = "xs", showAmount = false }: { installmentId: string; memberName: string; period: string; outstandingPaise: number; size?: "xs" | "sm"; showAmount?: boolean }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const t = useT();
@@ -62,7 +64,7 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
   return (
     <>
       <Button size={size} onClick={() => setOpen(true)} aria-label={t("collect.collectFrom", { name: memberName })} className={cn(showAmount && "h-10 rounded-xl px-3.5 text-sm md:h-9")}>
-        <HandCoins /> {showAmount ? formatINRShort(outstandingPaise) : t("collect.collect")}
+        <HandCoins /> {showAmount ? money.short(outstandingPaise) : t("collect.collect")}
       </Button>
       <Dialog
         open={open}
@@ -103,7 +105,7 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
                     onClick={() => setAmount(paiseToRupeeInput(p as number))}
                     className={cn("rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-foreground/10", amount === paiseToRupeeInput(p as number) ? "bg-primary text-primary-foreground ring-primary" : "bg-card hover:bg-muted")}
                   >
-                    {l} · {formatINRShort(p as number)}
+                    {l} · {money.short(p as number)}
                   </button>
                 ))}
             </div>

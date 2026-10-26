@@ -64,7 +64,8 @@ export interface InterestSettings {
 
 export interface OrgSettings {
   financialYearStartMonth: number;
-  currency: "INR";
+  /** ISO code, e.g. INR (default), USD, GBP */
+  currency: string;
   timezone: string;
   receiptPrefix: string;
   requirePaymentVerification: boolean;

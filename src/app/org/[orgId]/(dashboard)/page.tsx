@@ -20,7 +20,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { api } from "@/lib/server/api";
-import { getMe, getOrg, can } from "@/lib/server/data";
+import { getMe, getOrg, can, getMoney } from "@/lib/server/data";
 import { buildQuickActions } from "@/lib/nav";
 import { StatCard } from "@/components/app/stat-card";
 import { Money } from "@/components/app/money";
@@ -30,7 +30,7 @@ import { ActionRow, CountPill, IconChip, ProgressBar, SectionTitle } from "@/com
 import { QuickGrid } from "@/components/app/app-shell";
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDate, formatINR, formatINRCompact, formatINRShort, label } from "@/lib/format";
+import { formatDate, label } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 import { MonthlyChart } from "@/features/dashboard/monthly-chart";
@@ -38,6 +38,7 @@ import { monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
 import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
+import type { MoneyFmt } from "@/lib/currency";
 
 export const metadata = { title: "Dashboard" };
 
@@ -46,6 +47,7 @@ const monthLabel = (lang: Lang, iso: string) => new Intl.DateTimeFormat(intlLoca
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DashboardPage({ params }: PageProps<"/org/[orgId]">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const [org, d, me] = await Promise.all([getOrg(orgId), api<any>(`/orgs/${orgId}/dashboard`), getMe()]);
   if (d.role === "member") return <MemberDashboard orgId={orgId} data={d} org={org} />;
   const t = d.totals;
@@ -108,8 +110,8 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-white/80">{tr("dash.haptaCollected", { month })}</p>
-              <p className="mt-1 text-4xl font-extrabold tracking-tight tabular-nums">{formatINRCompact(collected)}</p>
-              <p className="mt-0.5 text-sm text-white/80">{tr("dash.ofExpected", { amount: formatINRShort(expected) })}</p>
+              <p className="mt-1 text-4xl font-extrabold tracking-tight tabular-nums">{money.compact(collected)}</p>
+              <p className="mt-0.5 text-sm text-white/80">{tr("dash.ofExpected", { amount: money.short(expected) })}</p>
             </div>
             <span className="rounded-2xl bg-white/15 px-3 py-1.5 text-lg font-bold tabular-nums backdrop-blur">{pct}%</span>
           </div>
@@ -117,7 +119,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-white/90">
               {monthDue > 0 ? (
-                <span className="font-bold">{tr("dash.stillToCollect", { amount: formatINRShort(monthDue) })}</span>
+                <span className="font-bold">{tr("dash.stillToCollect", { amount: money.short(monthDue) })}</span>
               ) : expected > 0 ? (
                 <span className="flex items-center gap-1.5 font-semibold">
                   <CheckCircle2 className="size-4" /> {tr("dash.everyonePaid")}
@@ -171,14 +173,14 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       <section className="mt-5" aria-label="Mandal fund">
         <SectionTitle>{tr("dash.glance")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label={tr("dash.mandalFund")} value={formatINRCompact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={tr("dash.mandalFundHint", { cash: formatINR(t.mandalCashPaise ?? 0), upad: formatINR(t.fundLoansOutstandingPaise ?? 0) })} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
-          <StatCard label={tr("dash.memberBalances")} value={formatINRCompact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} tr={tr} />} />
-          <StatCard label={tr("dash.upadOut")} value={formatINRCompact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={tr("dash.interestDueX", { amount: formatINR(t.fundLoanInterestDuePaise ?? 0) })} href={`${base}/fund-loans`} />
+          <StatCard label={tr("dash.mandalFund")} value={money.compact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={tr("dash.mandalFundHint", { cash: money.fmt(t.mandalCashPaise ?? 0), upad: money.fmt(t.fundLoansOutstandingPaise ?? 0) })} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
+          <StatCard label={tr("dash.memberBalances")} value={money.compact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} tr={tr} money={money} />} />
+          <StatCard label={tr("dash.upadOut")} value={money.compact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={tr("dash.interestDueX", { amount: money.fmt(t.fundLoanInterestDuePaise ?? 0) })} href={`${base}/fund-loans`} />
           <StatCard label={tr("dash.membersCard")} value={t.activeMembers} icon={<Users />} accent="sky" hint={t.totalMembers !== undefined && t.totalMembers !== t.activeMembers ? tr("dash.inTotal", { n: t.totalMembers }) : tr("dash.activeLower")} href={`${base}/members`} />
-          <StatCard label={tr("dash.yearHapta")} value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={tr("dash.ofDue", { a: formatINR(d.collectionPerformance.collectedPaise), b: formatINR(d.collectionPerformance.duePaise) })} />
-          <StatCard label={tr("dash.interestCredited")} value={formatINRCompact(t.interestThisMonthPaise ?? 0)} icon={<Percent />} accent="pink" hint={t.interestThisFyPaise !== undefined ? tr("dash.thisMonthFy", { amount: formatINR(t.interestThisFyPaise) }) : tr("dash.thisMonth")} />
-          <StatCard label={tr("dash.cashReceived")} value={formatINRCompact(t.monthHaptaCashPaise ?? 0)} icon={<ArrowDownToLine />} accent="emerald" hint={tr("dash.haptaAnyMonth")} />
-          <StatCard label={tr("dash.pendingHapta")} value={formatINRCompact(t.outstandingHaptaPaise ?? 0)} icon={<CalendarClock />} tone={(t.outstandingHaptaPaise ?? 0) > 0 ? "warn" : "good"} hint={tr("dash.allMonths")} href={`${base}/monthly?show=due`} />
+          <StatCard label={tr("dash.yearHapta")} value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={tr("dash.ofDue", { a: money.fmt(d.collectionPerformance.collectedPaise), b: money.fmt(d.collectionPerformance.duePaise) })} />
+          <StatCard label={tr("dash.interestCredited")} value={money.compact(t.interestThisMonthPaise ?? 0)} icon={<Percent />} accent="pink" hint={t.interestThisFyPaise !== undefined ? tr("dash.thisMonthFy", { amount: money.fmt(t.interestThisFyPaise) }) : tr("dash.thisMonth")} />
+          <StatCard label={tr("dash.cashReceived")} value={money.compact(t.monthHaptaCashPaise ?? 0)} icon={<ArrowDownToLine />} accent="emerald" hint={tr("dash.haptaAnyMonth")} />
+          <StatCard label={tr("dash.pendingHapta")} value={money.compact(t.outstandingHaptaPaise ?? 0)} icon={<CalendarClock />} tone={(t.outstandingHaptaPaise ?? 0) > 0 ? "warn" : "good"} hint={tr("dash.allMonths")} href={`${base}/monthly?show=due`} />
         </div>
         <MemberShare
           cashPaise={t.mandalCashPaise ?? 0}
@@ -188,13 +190,14 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           members={t.activeMembers ?? 0}
           shares={t.activeShares ?? t.activeMembers ?? 0}
           tr={tr}
+          money={money}
         />
         {isAdmin && (t.activeLoans > 0 || incomeBooks) && (
           <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {t.fyIncomePaise !== undefined && <StatCard label={tr("dash.incomeFy", { fy: d.financialYear })} value={formatINRCompact(t.fyIncomePaise)} icon={<Banknote />} accent="emerald" />}
-            {t.fyExpensesPaise !== undefined && <StatCard label={tr("dash.expensesFy", { fy: d.financialYear })} value={formatINRCompact(t.fyExpensesPaise)} icon={<Receipt />} accent="pink" />}
-            <StatCard label={tr("dash.activeLoans")} value={t.activeLoans} icon={<Landmark />} accent="violet" hint={tr("dash.principalOut", { amount: formatINR(t.loanOutstandingPrincipalPaise) })} />
-            <StatCard label={tr("dash.overdueCard")} value={formatINRCompact(t.overdueAmountPaise)} icon={<AlertTriangle />} hint={tr("dash.installmentsN", { n: t.overdueInstallments })} tone={t.overdueInstallments > 0 ? "bad" : "good"} />
+            {t.fyIncomePaise !== undefined && <StatCard label={tr("dash.incomeFy", { fy: d.financialYear })} value={money.compact(t.fyIncomePaise)} icon={<Banknote />} accent="emerald" />}
+            {t.fyExpensesPaise !== undefined && <StatCard label={tr("dash.expensesFy", { fy: d.financialYear })} value={money.compact(t.fyExpensesPaise)} icon={<Receipt />} accent="pink" />}
+            <StatCard label={tr("dash.activeLoans")} value={t.activeLoans} icon={<Landmark />} accent="violet" hint={tr("dash.principalOut", { amount: money.fmt(t.loanOutstandingPrincipalPaise) })} />
+            <StatCard label={tr("dash.overdueCard")} value={money.compact(t.overdueAmountPaise)} icon={<AlertTriangle />} hint={tr("dash.installmentsN", { n: t.overdueInstallments })} tone={t.overdueInstallments > 0 ? "bad" : "good"} />
           </div>
         )}
       </section>
@@ -344,7 +347,7 @@ function txKind(type: string): { tone: Tone; icon: React.ReactNode } {
 }
 
 /** "Opening ₹1,000 + hapta ₹9,000 + interest ₹10 − withdrawn ₹500" — how the total member balances is made up. */
-function BalanceParts({ parts, tr }: { tr: T; parts?: { openingPaise: number; haptaPaise: number; interestPaise: number; withdrawalsPaise: number; otherPaise: number } }) {
+function BalanceParts({ parts, tr, money }: { tr: T; money: MoneyFmt; parts?: { openingPaise: number; haptaPaise: number; interestPaise: number; withdrawalsPaise: number; otherPaise: number } }) {
   if (!parts) return <>{tr("dash.owedToMembers")}</>;
   const plus = [
     [tr("dash.opening"), parts.openingPaise],
@@ -356,20 +359,20 @@ function BalanceParts({ parts, tr }: { tr: T; parts?: { openingPaise: number; ha
       {plus.map(([l, v], i) => (
         <span key={l}>
           {i > 0 && " + "}
-          {i === 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l} <span className="font-semibold text-foreground">{formatINRShort(v)}</span>
+          {i === 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l} <span className="font-semibold text-foreground">{money.short(v)}</span>
         </span>
       ))}
       {plus.length === 0 && tr("dash.owedToMembers")}
       {parts.withdrawalsPaise !== 0 && (
         <>
           {" "}
-          − {tr("dash.withdrawn")} <span className="font-semibold text-rose-600 dark:text-rose-300">{formatINRShort(parts.withdrawalsPaise)}</span>
+          − {tr("dash.withdrawn")} <span className="font-semibold text-rose-600 dark:text-rose-300">{money.short(parts.withdrawalsPaise)}</span>
         </>
       )}
       {parts.otherPaise !== 0 && (
         <>
           {" "}
-          {parts.otherPaise > 0 ? "+" : "−"} {tr("dash.adjustments")} <span className="font-semibold text-foreground">{formatINRShort(Math.abs(parts.otherPaise))}</span>
+          {parts.otherPaise > 0 ? "+" : "−"} {tr("dash.adjustments")} <span className="font-semibold text-foreground">{money.short(Math.abs(parts.otherPaise))}</span>
         </>
       )}
     </span>
@@ -380,7 +383,7 @@ function BalanceParts({ parts, tr }: { tr: T; parts?: { openingPaise: number; ha
  * Everything the Mandal has or is owed — cash, upad still out, hapta not yet paid and upad interest
  * due — shared equally by the active members.
  */
-function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members, shares, tr }: { tr: T; cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number; shares: number }) {
+function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members, shares, tr, money }: { tr: T; money: MoneyFmt; cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number; shares: number }) {
   const total = cashPaise + upadPaise + pendingHaptaPaise + upadInterestPaise;
   // members paying several haptas count once per hapta
   const byShares = shares !== members;
@@ -396,11 +399,11 @@ function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPais
     <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label="Each member's share">
       <div className="bg-hero-green flex flex-col justify-center gap-1 p-5 md:w-72 md:shrink-0">
         <p className="text-sm font-medium text-white/85">{byShares ? tr("dash.shareHapta") : tr("dash.shareMember")}</p>
-        <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(each)}</p>
+        <p className="text-4xl font-extrabold tracking-tight tabular-nums">{money.short(each)}</p>
         <p className="text-sm text-white/85">
-          {byShares ? tr("dash.shareDivShares", { total: formatINRShort(total), shares, n: members }) : tr("dash.shareDiv", { total: formatINRShort(total), n: members })}
+          {byShares ? tr("dash.shareDivShares", { total: money.short(total), shares, n: members }) : tr("dash.shareDiv", { total: money.short(total), n: members })}
         </p>
-        {byShares && <p className="mt-1 text-xs text-white/75">{tr("dash.share3", { amount: formatINRShort(each * 3) })}</p>}
+        {byShares && <p className="mt-1 text-xs text-white/75">{tr("dash.share3", { amount: money.short(each * 3) })}</p>}
       </div>
       <div className="flex-1 p-4 sm:px-5">
         <ul className="divide-y text-sm">

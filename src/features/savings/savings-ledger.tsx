@@ -4,10 +4,11 @@ import { TableWrap } from "@/components/app/table-wrap";
 import { EmptyState } from "@/components/app/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import type { MemberLedger } from "@/lib/types";
 import { getT } from "@/i18n/server";
 import type { Key } from "@/i18n/core";
+import { moneyFmt } from "@/lib/currency";
 
 const KIND_LABEL: Record<string, string> = {
   opening: "Opening balance",
@@ -19,15 +20,16 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 /** Balance cards: opening + hapta + interest + adjustments − withdrawals = balance. */
-export async function SavingsSummary({ l }: { l: MemberLedger }) {
+export async function SavingsSummary({ l, currency }: { l: MemberLedger; currency?: string }) {
+  const money = moneyFmt(currency);
   const t = l.totals;
   const { t: tr } = await getT();
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard label={tr("savings.balance")} value={<Money paise={l.currentBalancePaise} colored={l.currentBalancePaise < 0} />} tone="good" hint={t.openingCreditsPaise ? tr("savings.inclOpeningX", { amount: formatINR(t.openingCreditsPaise) }) : undefined} />
+      <StatCard label={tr("savings.balance")} value={<Money paise={l.currentBalancePaise} colored={l.currentBalancePaise < 0} />} tone="good" hint={t.openingCreditsPaise ? tr("savings.inclOpeningX", { amount: money.fmt(t.openingCreditsPaise) }) : undefined} />
       <StatCard label={tr("savings.haptaPaid")} value={<Money paise={t.haptaPaise} />} />
       <StatCard label={tr("savings.interestEarned")} value={<Money paise={t.interestPaise} />} />
-      <StatCard label={tr("savings.withdrawn")} value={<Money paise={t.withdrawalsPaise} />} hint={t.adjustmentsPaise ? tr("savings.adjustmentsX", { amount: formatINR(t.adjustmentsPaise) }) : undefined} />
+      <StatCard label={tr("savings.withdrawn")} value={<Money paise={t.withdrawalsPaise} />} hint={t.adjustmentsPaise ? tr("savings.adjustmentsX", { amount: money.fmt(t.adjustmentsPaise) }) : undefined} />
     </div>
   );
 }

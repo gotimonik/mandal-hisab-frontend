@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, HandCoins } from "lucide-react";
 import { InviteMemberButton } from "@/features/members/invite-member";
 import { api, qs } from "@/lib/server/api";
-import { getAccounts, getOrg, can } from "@/lib/server/data";
+import { getAccounts, getOrg, can, getMoney } from "@/lib/server/data";
 import type { FundLoanList, Member, MemberLedger } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
@@ -11,7 +11,7 @@ import { FilterBar, FilterField } from "@/components/app/filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { FREQUENCY_LABEL, formatDate, formatINR, label } from "@/lib/format";
+import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
 import { MemberDialog } from "@/features/members/member-form";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
 import { SavingsLedgerTable, SavingsSummary } from "@/features/savings/savings-ledger";
@@ -21,6 +21,7 @@ import { WithdrawalDialog } from "@/features/withdrawals/withdrawal-form";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function MemberPage({ params, searchParams }: PageProps<"/org/[orgId]/members/[memberId]">) {
   const { orgId, memberId } = await params;
+  const money = await getMoney(orgId);
   const sp = await searchParams;
   const from = typeof sp.from === "string" ? sp.from : "";
   const to = typeof sp.to === "string" ? sp.to : "";
@@ -50,7 +51,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             {(m.haptaShares ?? 1) > 1 && org.settings.monthlyHapta && (
               <>
                 {" "}
-                · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({formatINR(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
+                · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({money.fmt(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
               </>
             )}{" "}
             · <StatusBadge status={m.status} />
@@ -166,7 +167,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
           </div>
         )}
       </div>
-      <SavingsSummary l={ledger} />
+      <SavingsSummary l={ledger} currency={money.code} />
       {memberLoans.length > 0 && (
         <div className="mt-3 rounded-xl text-sm ring-1 ring-foreground/10">
           <p className="border-b px-3 py-2 font-medium">Upad</p>

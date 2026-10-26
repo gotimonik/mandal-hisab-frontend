@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/app/actions/api";
-import { formatINR, todayISO } from "@/lib/format";
+import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
+import { useMoney } from "@/components/app/currency";
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
 function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amountPaise: number; defaultRate: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -43,7 +45,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
     >
       <FormError message={error} />
       <p className="text-sm">
-        {t("upad.giveX", { amount: formatINR(amountPaise) })}
+        {t("upad.giveX", { amount: money.fmt(amountPaise) })}
       </p>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t("upad.ratePerMonth")} htmlFor="ar-rate">
@@ -53,7 +55,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
           <Input id="ar-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
       </div>
-      {monthly > 0 && <p className="text-xs text-muted-foreground">{t("upad.perMonthFromNext", { amount: formatINR(monthly) })}</p>}
+      {monthly > 0 && <p className="text-xs text-muted-foreground">{t("upad.perMonthFromNext", { amount: money.fmt(monthly) })}</p>}
       <Button type="submit" disabled={pending}>
         {pending && <Loader2 className="animate-spin" />} {t("upad.approveGive")}
       </Button>

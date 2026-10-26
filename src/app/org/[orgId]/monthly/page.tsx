@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowDownToLine, BarChart3, CalendarDays } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
-import { can, getOrg } from "@/lib/server/data";
+import { can, getOrg, getMoney } from "@/lib/server/data";
 import type { FundLoanMonth, MonthView } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { ActionButton } from "@/components/app/action-button";
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatINR, formatINRShort, paiseToRupeeInput } from "@/lib/format";
+import { paiseToRupeeInput } from "@/lib/format";
 import { requestMonth } from "@/lib/server/today";
 import { MonthList, MonthSwitcher } from "@/features/monthly/month-list";
 import { IconChip, ProgressBar } from "@/components/app/bits";
@@ -28,6 +28,7 @@ const addMonths = (m: string, n: number) => {
 
 export default async function MonthlyPage({ params, searchParams }: PageProps<"/org/[orgId]/monthly">) {
   const { orgId } = await params;
+  const money = await getMoney(orgId);
   const sp = await searchParams;
   const thisMonth = await requestMonth();
   const m = typeof sp.month === "string" && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : thisMonth;
@@ -47,7 +48,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
         {isAdmin ? (
           <Card className="p-5">
             <h2 className="mb-1 font-medium">{t("monthly.setupTitle")}</h2>
-            <p className="mb-4 text-sm text-muted-foreground">{t("monthly.setupDesc")}</p>
+            <p className="mb-4 text-sm text-muted-foreground">{t("monthly.setupDesc", { cur: money.symbol })}</p>
             <HaptaSetupForm inline />
           </Card>
         ) : (
@@ -64,7 +65,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
     <>
       <PageHeader
         title={t("monthly.title")}
-        description={t("monthly.perMember", { amount: formatINR(hapta.amountPaise), day: hapta.dueDay })}
+        description={t("monthly.perMember", { amount: money.fmt(hapta.amountPaise), day: hapta.dueDay })}
         actions={
           <>
             {can(org, "reports.view") && (
@@ -88,7 +89,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                 <Money paise={s.collectedPaise} short />
               </p>
               <p className="text-xs text-white/80">
-                {t("monthly.expectedMembers", { amount: formatINRShort(s.expectedPaise), n: s.members })}
+                {t("monthly.expectedMembers", { amount: money.short(s.expectedPaise), n: s.members })}
               </p>
             </div>
             <span className="rounded-2xl bg-white/15 px-3 py-1.5 text-lg font-bold tabular-nums">{pct}%</span>
@@ -128,7 +129,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
             <div>
               <h2 className="text-base font-bold">{t("monthly.upadInterest", { month: monthName(m) })}</h2>
               <p className="text-sm text-muted-foreground">
-                {t("monthly.upadInterestDesc", { a: formatINR(loans.summary.interestThisMonthPaise), b: formatINR(loans.summary.collectedThisMonthPaise), c: formatINR(loans.summary.totalDuePaise) })}
+                {t("monthly.upadInterestDesc", { a: money.fmt(loans.summary.interestThisMonthPaise), b: money.fmt(loans.summary.collectedThisMonthPaise), c: money.fmt(loans.summary.totalDuePaise) })}
               </p>
             </div>
             <Link href={`/org/${orgId}/fund-loans`} className="text-sm font-medium text-primary hover:underline">
@@ -149,12 +150,12 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                 <div className="col-span-2 row-start-2 text-sm md:col-span-1 md:row-start-auto">
                   <span className="text-xs text-muted-foreground md:hidden">{t("monthly.thisMonthLbl")}</span>
                   {r.thisMonth ? <Money paise={r.thisMonth.interestPaise} /> : "—"}
-                  {r.thisMonth && r.thisMonth.paidPaise > 0 && r.thisMonth.paidPaise < r.thisMonth.interestPaise && <span className="text-xs text-muted-foreground">{t("monthly.paidPart", { amount: formatINR(r.thisMonth.paidPaise) })}</span>}
+                  {r.thisMonth && r.thisMonth.paidPaise > 0 && r.thisMonth.paidPaise < r.thisMonth.interestPaise && <span className="text-xs text-muted-foreground">{t("monthly.paidPart", { amount: money.fmt(r.thisMonth.paidPaise) })}</span>}
                 </div>
                 <div className="col-span-2 row-start-3 text-sm md:col-span-1 md:row-start-auto">
                   {r.carriedForwardPaise > 0 ? (
                     <span className="text-warning-ink">
-                      {t("monthly.unpaidEarlier", { amount: formatINR(r.carriedForwardPaise), n: r.carriedForwardMonths.length })}
+                      {t("monthly.unpaidEarlier", { amount: money.fmt(r.carriedForwardPaise), n: r.carriedForwardMonths.length })}
                     </span>
                   ) : (
                     <span className="hidden text-muted-foreground md:inline">{t("monthly.noEarlier")}</span>

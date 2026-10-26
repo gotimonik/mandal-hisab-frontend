@@ -14,8 +14,9 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiRead } from "@/app/actions/api";
-import { METHOD_LABEL, formatDate, formatINR, label, newIdempotencyKey, todayISO } from "@/lib/format";
+import { METHOD_LABEL, formatDate, label, newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 interface Opt {
   _id: string;
@@ -93,6 +94,7 @@ export function RecordPaymentDialog({
 }
 
 function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDone }: { members: (Opt & { membershipNumber: string })[]; accounts: Opt[]; schemes: Opt[]; methods: string[]; defaultMemberId?: string; onDone: () => void }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const [key, setKey] = useState(() => newIdempotencyKey("pay"));
   const [search, setSearch] = useState("");
@@ -154,7 +156,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
           <option value="other_income">Other income</option>
         </NativeSelect>
       </Field>
-      <Field label="Amount (₹)" htmlFor="rp-amount" error={e.amount?.message}>
+      <Field label={`Amount (${money.symbol})`} htmlFor="rp-amount" error={e.amount?.message}>
         <Input id="rp-amount" inputMode="decimal" autoFocus {...form.register("amount")} />
       </Field>
       <Field label={kind === "hapta" ? "Member" : "Member (optional)"} htmlFor="rp-member" error={e.memberId?.message} className="sm:col-span-2">
@@ -236,6 +238,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
 }
 
 function AllocList({ allocs }: { allocs: Alloc[] }) {
+  const money = useMoney();
   return (
     <ul className="flex flex-col gap-0.5">
       {allocs.map((a) => (
@@ -244,8 +247,8 @@ function AllocList({ allocs }: { allocs: Alloc[] }) {
             {a.schemeName} · {a.periodLabel} <span className="text-muted-foreground">(due {formatDate(a.dueDate)})</span>
           </span>
           <span className="tabular-nums">
-            {formatINR(a.amountPaise)}
-            {a.penaltyPaise ? ` + ${formatINR(a.penaltyPaise)} late fee` : ""}
+            {money.fmt(a.amountPaise)}
+            {a.penaltyPaise ? ` + ${money.fmt(a.penaltyPaise)} late fee` : ""}
           </span>
         </li>
       ))}

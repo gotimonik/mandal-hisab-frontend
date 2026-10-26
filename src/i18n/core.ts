@@ -32,10 +32,11 @@ function lookup(d: Dict, key: string): string | undefined {
   return typeof cur === "string" ? cur : undefined;
 }
 
-export function makeT(lang: Lang): T {
+export function makeT(lang: Lang, defaults: Vars = { cur: "₹" }): T {
   return (key, vars) => {
     const raw = lookup(DICTS[lang], key) ?? lookup(DICTS.en, key) ?? key;
-    return vars ? raw.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`)) : raw;
+    const all = { ...defaults, ...vars };
+    return raw.replace(/\{(\w+)\}/g, (_, k) => (all[k] !== undefined ? String(all[k]) : `{${k}}`));
   };
 }
 

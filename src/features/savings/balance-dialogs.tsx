@@ -14,10 +14,12 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 const OpeningSchema = z.object({ amount: rupees, date: z.string().min(10), note: z.string().max(300).optional() });
 
 function OpeningForm({ memberId }: { memberId: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.infer<typeof OpeningSchema>>({ resolver: zodResolver(OpeningSchema), defaultValues: { amount: "", date: todayISO(), note: "" } });
@@ -27,7 +29,7 @@ function OpeningForm({ memberId }: { memberId: string }) {
     <form noValidate className="grid gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/members/${memberId}/opening`, body: { ...v, note: v.note || undefined } }, { success: "Opening balance saved", onSuccess: close }))}>
       <FormError message={error} />
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Opening balance (₹)" htmlFor="ob-amt" error={e.amount?.message}>
+        <Field label={`Opening balance (${money.symbol})`} htmlFor="ob-amt" error={e.amount?.message}>
           <Input id="ob-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
         <Field label="As on" htmlFor="ob-date">
@@ -56,6 +58,7 @@ export function OpeningBalanceDialog({ memberId }: { memberId: string }) {
 const AdjustSchema = z.object({ direction: z.enum(["credit", "debit"]), amount: rupees, date: z.string().min(10), reason: z.string().trim().min(3, "Give a reason").max(500) });
 
 function AdjustForm({ memberId }: { memberId: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("adj"));
@@ -72,7 +75,7 @@ function AdjustForm({ memberId }: { memberId: string }) {
             <option value="debit">Reduce balance</option>
           </NativeSelect>
         </Field>
-        <Field label="Amount (₹)" htmlFor="ad-amt" error={e.amount?.message}>
+        <Field label={`Amount (${money.symbol})`} htmlFor="ad-amt" error={e.amount?.message}>
           <Input id="ad-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
       </div>

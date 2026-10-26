@@ -14,6 +14,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { METHOD_LABEL, label, newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 const Schema = z.object({
   donorName: z.string().trim().min(2, "Enter the donor's name").max(120),
@@ -35,6 +36,7 @@ const Schema = z.object({
 });
 
 function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]; methods: string[] }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("don"));
@@ -61,7 +63,7 @@ function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]
       <Field label="Donor name" htmlFor="d-name" error={e.donorName?.message} className="sm:col-span-2">
         <Input id="d-name" {...form.register("donorName")} />
       </Field>
-      <Field label="Amount (₹)" htmlFor="d-amt" error={e.amount?.message}>
+      <Field label={`Amount (${money.symbol})`} htmlFor="d-amt" error={e.amount?.message}>
         <Input id="d-amt" inputMode="decimal" {...form.register("amount")} />
       </Field>
       <Field label="Date" htmlFor="d-date">

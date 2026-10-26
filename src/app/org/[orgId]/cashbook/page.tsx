@@ -40,7 +40,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
     <>
       <PageHeader
         title="Cash book"
-        description="Every rupee in and out, from recorded transactions only."
+        description="Every amount in and out, from recorded transactions only."
         actions={
           <>
             <a href={`/api/export${qs({ path: `/orgs/${orgId}/cashbook`, ...f })}`} className={buttonVariants({ variant: "outline", size: "sm" })}>

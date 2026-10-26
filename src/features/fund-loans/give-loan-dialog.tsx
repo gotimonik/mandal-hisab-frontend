@@ -11,10 +11,11 @@ import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/app/actions/api";
-import { formatINR, newIdempotencyKey, todayISO } from "@/lib/format";
+import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useLang, useT } from "@/i18n/client";
 import { monthName } from "@/i18n/core";
+import { useMoney } from "@/components/app/currency";
 
 interface Props {
   members: { _id: string; name: string; membershipNumber: string }[];
@@ -26,6 +27,7 @@ interface Props {
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
 function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -114,7 +116,7 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
       </Field>
       {monthly > 0 && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-          {t("upad.willBeDue", { amount: formatINR(monthly), month: nextMonthName })}
+          {t("upad.willBeDue", { amount: money.fmt(monthly), month: nextMonthName })}
         </p>
       )}
       <Button type="submit" disabled={pending}>

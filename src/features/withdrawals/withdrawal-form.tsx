@@ -14,6 +14,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/app/actions/api";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 export interface WithdrawalMemberOption {
   _id: string;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 function Form({ members, accounts, allowException, defaultMemberId }: Props) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -103,7 +105,7 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (₹)" htmlFor="w-amt" error={over ? "More than the available balance" : undefined}>
+        <Field label={`Amount (${money.symbol})`} htmlFor="w-amt" error={over ? "More than the available balance" : undefined}>
           <Input id="w-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
         <Field label="Date paid" htmlFor="w-date">

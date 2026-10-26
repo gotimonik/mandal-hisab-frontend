@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const FEATURES = [
   { icon: HandCoins, title: "Hapta & installments", text: "Weekly, monthly or quarterly schemes with per-month due dates, partial payments and receipts." },
   { icon: Landmark, title: "Loans & interest", text: "Simple, compound, flat and reducing-balance loans with transparent schedules and early closure." },
-  { icon: BookOpenCheck, title: "Double-entry ledger", text: "Every rupee posted to a balanced ledger. Corrections are reversals — history is never overwritten." },
+  { icon: BookOpenCheck, title: "Double-entry ledger", text: "Every amount posted to a balanced ledger. Corrections are reversals — history is never overwritten." },
   { icon: ShieldCheck, title: "Roles & isolation", text: "Admins, managers and members each see only what they should. Every Mandal's data is separate." },
 ];
 

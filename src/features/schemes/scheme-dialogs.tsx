@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarCog, IndianRupee, Loader2, UserPlus } from "lucide-react";
+import { CalendarCog, Coins, Loader2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,10 +15,12 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { formatDate, isoDate } from "@/lib/format";
 import { optionalRupees, rupees } from "@/lib/schemas";
+import { useMoney } from "@/components/app/currency";
 
 /* -------------------------------------------------- enroll */
 
 function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId: string; members: { _id: string; name: string; membershipNumber: string }[]; memberSpecific: boolean; startDate: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [q, setQ] = useState("");
@@ -67,7 +69,7 @@ function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId
                 <Input
                   className="w-28"
                   inputMode="decimal"
-                  placeholder="₹ amount"
+                  placeholder={`${money.symbol} amount`}
                   aria-label={`Amount for ${m.name}`}
                   value={selected[m._id].amount}
                   onChange={(e) => setSelected((s) => ({ ...s, [m._id]: { ...s[m._id], amount: e.target.value } }))}
@@ -118,6 +120,7 @@ export function EnrollDialog(props: { schemeId: string; members: { _id: string; 
 const OverrideSchema = z.object({ mode: z.enum(["date", "amount", "skip"]), dueDate: z.string().optional(), amount: optionalRupees, reason: z.string().trim().min(3, "Please give a reason").max(500) });
 
 function OverrideForm({ schemeId, sequence, dueDate, label }: { schemeId: string; sequence: number; dueDate: string; label: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.input<typeof OverrideSchema>, unknown, z.output<typeof OverrideSchema>>({ resolver: zodResolver(OverrideSchema), defaultValues: { mode: "date", dueDate: isoDate(dueDate), amount: "", reason: "" } });
@@ -151,7 +154,7 @@ function OverrideForm({ schemeId, sequence, dueDate, label }: { schemeId: string
         </Field>
       )}
       {mode === "amount" && (
-        <Field label="Amount (₹)" htmlFor="ov-amt" error={form.formState.errors.amount?.message}>
+        <Field label={`Amount (${money.symbol})`} htmlFor="ov-amt" error={form.formState.errors.amount?.message}>
           <Input id="ov-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
       )}
@@ -178,6 +181,7 @@ export function OverrideDialog(props: { schemeId: string; sequence: number; dueD
 const RevisionSchema = z.object({ effectiveFrom: z.string().min(10, "Pick a date"), amount: rupees, reason: z.string().max(300).optional() });
 
 function RevisionForm({ schemeId }: { schemeId: string }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.infer<typeof RevisionSchema>>({ resolver: zodResolver(RevisionSchema), defaultValues: { effectiveFrom: "", amount: "", reason: "" } });
@@ -190,7 +194,7 @@ function RevisionForm({ schemeId }: { schemeId: string }) {
         <Field label="Effective from" htmlFor="rv-date" error={form.formState.errors.effectiveFrom?.message}>
           <Input id="rv-date" type="date" {...form.register("effectiveFrom")} />
         </Field>
-        <Field label="New amount (₹)" htmlFor="rv-amt" error={form.formState.errors.amount?.message}>
+        <Field label={`New amount (${money.symbol})`} htmlFor="rv-amt" error={form.formState.errors.amount?.message}>
           <Input id="rv-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
       </div>
@@ -206,7 +210,7 @@ function RevisionForm({ schemeId }: { schemeId: string }) {
 
 export function RevisionDialog({ schemeId }: { schemeId: string }) {
   return (
-    <FormDialog trigger={<><IndianRupee /> Change future amount</>} triggerVariant="outline" title="Change future installment amount">
+    <FormDialog trigger={<><Coins /> Change future amount</>} triggerVariant="outline" title="Change future installment amount">
       <RevisionForm schemeId={schemeId} />
     </FormDialog>
   );

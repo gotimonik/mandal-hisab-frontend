@@ -11,9 +11,10 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
-import { formatDate, formatINR, isoDate } from "@/lib/format";
+import { formatDate, isoDate } from "@/lib/format";
 import { optionalRupees } from "@/lib/schemas";
 import type { Installment } from "@/lib/types";
+import { useMoney } from "@/components/app/currency";
 
 const Schema = z
   .object({
@@ -28,6 +29,7 @@ const Schema = z
   });
 
 function ActionForm({ inst }: { inst: Installment }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const active = inst.state === "active";
@@ -54,7 +56,7 @@ function ActionForm({ inst }: { inst: Installment }) {
       )}
     >
       <p className="text-sm text-muted-foreground">
-        {inst.member?.name} · {inst.schemeName} · {inst.periodLabel} · due {formatDate(inst.dueDate)} · {formatINR(inst.amountPaise)} (paid {formatINR(inst.paidPaise)})
+        {inst.member?.name} · {inst.schemeName} · {inst.periodLabel} · due {formatDate(inst.dueDate)} · {money.fmt(inst.amountPaise)} (paid {money.fmt(inst.paidPaise)})
       </p>
       <FormError message={error} />
       <Field label="Action" htmlFor="ia-action">
@@ -73,7 +75,7 @@ function ActionForm({ inst }: { inst: Installment }) {
         </Field>
       )}
       {action === "set_amount" && (
-        <Field label="New amount (₹)" htmlFor="ia-amt" error={e.amount?.message} hint="Cannot be less than what is already paid.">
+        <Field label={`New amount (${money.symbol})`} htmlFor="ia-amt" error={e.amount?.message} hint="Cannot be less than what is already paid.">
           <Input id="ia-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
       )}

@@ -4,18 +4,18 @@ import { z } from "zod";
 export const rupees = z
   .string()
   .trim()
-  .transform((v) => v.replace(/[,₹\s]/g, ""))
+  .transform((v) => v.replace(/[,₹$£€\s]/g, ""))
   .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Enter a valid amount (max 2 decimals)")
   .refine((v) => Number(v) > 0, "Amount must be greater than zero");
 
 export const rupeesOrZero = z
   .string()
   .trim()
-  .transform((v) => v.replace(/[,₹\s]/g, "") || "0")
+  .transform((v) => v.replace(/[,₹$£€\s]/g, "") || "0")
   .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Enter a valid amount (max 2 decimals)");
 
 export const optionalRupees = z
   .string()
   .trim()
-  .transform((v) => v.replace(/[,₹\s]/g, ""))
+  .transform((v) => v.replace(/[,₹$£€\s]/g, ""))
   .refine((v) => v === "" || /^\d+(\.\d{1,2})?$/.test(v), "Enter a valid amount (max 2 decimals)");

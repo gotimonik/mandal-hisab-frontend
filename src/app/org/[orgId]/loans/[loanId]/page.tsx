@@ -1,14 +1,15 @@
 import { api } from "@/lib/server/api";
-import { getAccounts, getOrg, can } from "@/lib/server/data";
+import { getAccounts, getOrg, can, getMoney } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
 import { ActionButton } from "@/components/app/action-button";
-import { formatINR } from "@/lib/format";
+
 import { LoanDetail, type LoanDetailData } from "@/features/loans/loan-detail";
 import { ApproveLoanDialog, DisburseLoanDialog, RateChangeDialog, RepayLoanDialog } from "@/features/loans/loan-dialogs";
 
 export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans/[loanId]">) {
   const { orgId, loanId } = await params;
+  const money = await getMoney(orgId);
   const [org, data, accounts] = await Promise.all([getOrg(orgId), api<LoanDetailData>(`/orgs/${orgId}/loans/${loanId}`), getAccounts(orgId)]);
   const l = data.loan;
   const active = accounts.filter((a) => a.isActive).map((a) => ({ _id: a._id, name: a.name }));
@@ -39,7 +40,7 @@ export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans
           </>
         }
       />
-      {l.status === "applied" && <p className="mb-3 text-sm text-muted-foreground">Requested {formatINR(l.requestedPaise)} — awaiting approval.</p>}
+      {l.status === "applied" && <p className="mb-3 text-sm text-muted-foreground">Requested {money.fmt(l.requestedPaise)} — awaiting approval.</p>}
       <LoanDetail
         data={data}
         orgId={orgId}

@@ -10,6 +10,8 @@ import { BottomNavContent, MobileHeaderContent, ShellFrame, SidebarContent, Topb
 import { Skeleton } from "@/components/ui/skeleton";
 import { MailOpen } from "lucide-react";
 import { ActionButton } from "@/components/app/action-button";
+import { CurrencyProvider } from "@/components/app/currency";
+import { PageSkeleton } from "@/components/app/page-skeleton";
 
 /**
  * The frame and {children} render without waiting for the session. Everything that
@@ -52,12 +54,22 @@ export default function OrgLayout({ children, params }: LayoutProps<"/org/[orgId
       <Suspense fallback={null}>
         <InvitationsBanner />
       </Suspense>
-      <LangBoundary>{children}</LangBoundary>
+      <LangBoundary>
+        <Suspense fallback={<PageSkeleton />}>
+          <WithCurrency params={params}>{children}</WithCurrency>
+        </Suspense>
+      </LangBoundary>
     </ShellFrame>
   );
 }
 
 type P = { params: Promise<{ orgId: string }> };
+
+/** Every amount on the page is shown in the Mandal's currency. */
+async function WithCurrency({ params, children }: P & { children: React.ReactNode }) {
+  const org = await getOrg((await params).orgId);
+  return <CurrencyProvider currency={org.settings.currency}>{children}</CurrencyProvider>;
+}
 
 /** Request-scoped: all shell pieces share one set of API calls. */
 const loadShell = cache(async (orgId: string): Promise<ShellData> => {

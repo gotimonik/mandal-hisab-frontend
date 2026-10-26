@@ -14,6 +14,7 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { DURATIONS, endMonthFor, monthLabelYM } from "@/lib/months";
+import { CURRENCIES, DEFAULT_CURRENCY, moneyFmt } from "@/lib/currency";
 
 const Schema = z.object({
   name: z.string().trim().min(3, "Enter the Mandal name").max(120),
@@ -26,6 +27,7 @@ const Schema = z.object({
   contactPhone: z.string().trim().max(20).optional(),
   registrationNumber: z.string().trim().max(100).optional(),
   financialYearStartMonth: z.coerce.number().int().min(1).max(12),
+  currency: z.string().length(3),
   duration: z.string(),
   customEndMonth: z.string().optional(),
 }).refine((v) => v.duration !== "custom" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v.customEndMonth ?? ""), { message: "Choose the last month", path: ["customEndMonth"] })
@@ -34,7 +36,8 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 export function CreateOrgForm() {
   const router = useRouter();
-  const form = useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>({ resolver: zodResolver(Schema), defaultValues: { name: "", description: "", monthlyHaptaAmount: "", haptaStartMonth: todayISO().slice(0, 7), haptaDueDay: 10, duration: "", customEndMonth: "", city: "", state: "", contactPhone: "", registrationNumber: "", financialYearStartMonth: 4 } });
+  const form = useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>({ resolver: zodResolver(Schema), defaultValues: { name: "", description: "", monthlyHaptaAmount: "", haptaStartMonth: todayISO().slice(0, 7), haptaDueDay: 10, duration: "", customEndMonth: "", city: "", state: "", contactPhone: "", registrationNumber: "", financialYearStartMonth: 4, currency: DEFAULT_CURRENCY } });
+  const money = moneyFmt(form.watch("currency"));
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
@@ -52,7 +55,16 @@ export function CreateOrgForm() {
       <Field label="Short description (optional)" htmlFor="org-desc" className="sm:col-span-2">
         <Textarea id="org-desc" rows={2} maxLength={500} placeholder="e.g. Patel family savings Mandal" {...form.register("description")} />
       </Field>
-      <Field label="Monthly hapta per member (₹)" htmlFor="org-hapta" error={e.monthlyHaptaAmount?.message} hint="e.g. 500 — you can set or change it later">
+      <Field label="Currency" htmlFor="org-currency" hint="All amounts in this Mandal use it. It can't be changed once money is recorded." className="sm:col-span-2">
+        <NativeSelect id="org-currency" {...form.register("currency")}>
+          {CURRENCIES.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.code} — {c.name} ({moneyFmt(c.code).symbol})
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Field label={`Monthly hapta per member (${money.symbol})`} htmlFor="org-hapta" error={e.monthlyHaptaAmount?.message} hint="e.g. 500 — you can set or change it later">
         <Input id="org-hapta" inputMode="decimal" placeholder="500" {...form.register("monthlyHaptaAmount")} />
       </Field>
       <div className="grid grid-cols-2 gap-3">

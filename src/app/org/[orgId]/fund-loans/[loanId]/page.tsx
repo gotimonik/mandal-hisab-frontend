@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api } from "@/lib/server/api";
-import { can, getOrg } from "@/lib/server/data";
+import { can, getOrg, getMoney } from "@/lib/server/data";
 import type { FundLoan } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
@@ -10,7 +10,7 @@ import { TableWrap } from "@/components/app/table-wrap";
 import { ActionButton } from "@/components/app/action-button";
 import { EmptyState } from "@/components/app/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
 
 export const metadata = { title: "Upad" };
@@ -43,6 +43,7 @@ const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "shor
 
 export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/fund-loans/[loanId]">) {
   const { orgId, loanId } = await params;
+  const money = await getMoney(orgId);
   const [org, data] = await Promise.all([getOrg(orgId), api<{ loan: FundLoan; dues: Due[]; payments: Payment[] }>(`/orgs/${orgId}/fund-loans/${loanId}`)]);
   const { loan: l, dues, payments } = data;
   const live = org.status === "active";
@@ -72,7 +73,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
         }
       />
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Upad outstanding" value={<Money paise={l.outstandingPaise} />} hint={`of ${formatINR(l.principalPaise)} given`} />
+        <StatCard label="Upad outstanding" value={<Money paise={l.outstandingPaise} />} hint={`of ${money.fmt(l.principalPaise)} given`} />
         <StatCard label="Interest due now" value={<Money paise={l.interestDuePaise} />} tone={l.interestDuePaise > 0 ? "warn" : "good"} hint={l.unpaidMonths.length ? l.unpaidMonths.map(monthName).join(", ") : "Nothing unpaid"} />
         <StatCard label="Next month's interest" value={<Money paise={l.nextInterestPaise} />} hint={`${l.monthlyRate}% of the outstanding amount`} />
         <StatCard label="Interest paid so far" value={<Money paise={l.interestPaidPaise} />} tone="good" />
