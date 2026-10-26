@@ -19,11 +19,12 @@ export interface ActionButtonProps {
   size?: "default" | "sm" | "xs" | "lg";
   successMessage?: string;
   redirectTo?: string;
+  className?: string;
   /** Show a confirmation dialog (required for sensitive operations). */
   confirm?: { title: string; description?: string; confirmLabel?: string; reason?: "required" | "optional"; reasonLabel?: string; destructive?: boolean };
 }
 
-export function ActionButton({ path, method = "POST", body, children, variant = "outline", size = "sm", successMessage = "Done", redirectTo, confirm }: ActionButtonProps) {
+export function ActionButton({ path, method = "POST", body, children, variant = "outline", size = "sm", successMessage = "Done", redirectTo, confirm, className }: ActionButtonProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
@@ -50,7 +51,7 @@ export function ActionButton({ path, method = "POST", body, children, variant = 
 
   if (!confirm) {
     return (
-      <Button variant={variant} size={size} disabled={pending} onClick={run}>
+      <Button variant={variant} size={size} disabled={pending} onClick={run} className={className}>
         {pending && <Loader2 className="animate-spin" />}
         {children}
       </Button>

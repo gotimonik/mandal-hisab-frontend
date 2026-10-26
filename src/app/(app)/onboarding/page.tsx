@@ -1,17 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, ShieldCheck } from "lucide-react";
+import { ChevronRight, Clock, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { api } from "@/lib/server/api";
 import { lastOrg } from "@/lib/server/session";
 import type { Me } from "@/lib/types";
-import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { CreateOrgForm } from "@/features/onboarding/create-org-form";
-import { JoinOrgForm } from "@/features/onboarding/join-org-form";
+import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
 import { ActionButton } from "@/components/app/action-button";
+import { OnboardingActions } from "@/features/onboarding/onboarding-actions";
+import { getT } from "@/i18n/server";
+import type { Key } from "@/i18n/core";
 
 interface MyInvitation {
   id: string;
@@ -21,11 +19,11 @@ interface MyInvitation {
   invitedByName: string | null;
 }
 
-export const metadata = { title: "Your organizations" };
+export const metadata = { title: "Your Mandals" };
 
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
   const sp = await searchParams;
-  const [me, invitations] = await Promise.all([api<Me>("/auth/me"), api<MyInvitation[]>("/invitations/mine")]);
+  const [me, invitations, { t }] = await Promise.all([api<Me>("/auth/me"), api<MyInvitation[]>("/invitations/mine"), getT()]);
   const active = me.organizations.filter((o) => o.membershipStatus === "active" && o.status !== "suspended");
   const pending = me.organizations.filter((o) => o.membershipStatus === "pending");
   // Only jump straight into a Mandal right after signing in (?auto=1). Any other visit —
@@ -35,88 +33,110 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
     const target = active.find((o) => o.id === last) ?? (active.length === 1 ? active[0] : null);
     if (target) redirect(`/org/${target.id}`);
   }
+  const role = (r: string) => t(`shell.roles.${r}` as Key);
+
   return (
-    <>
-      <PageHeader
-        title={`Namaste, ${me.user.name.split(" ")[0]}`}
-        description="Open one of your Mandals, request to join another, or register a new one."
-        actions={
-          me.user.isPlatformAdmin ? (
-            <Link href="/platform" className={cn(buttonVariants({ variant: "outline" }))}>
-              <ShieldCheck /> Platform admin
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      {/* greeting */}
+      <section className="bg-hero relative overflow-hidden rounded-3xl p-5 text-white shadow-lg shadow-primary/20 sm:p-6">
+        <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
+        <div className="pointer-events-none absolute right-16 -bottom-16 size-32 rounded-full bg-white/10" />
+        <div className="relative flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-[1.7rem]">{t("dash.namaste", { name: me.user.name.split(" ")[0] })}</h1>
+            <p className="mt-1 text-sm text-white/85">{t("onb.greetingDesc")}</p>
+          </div>
+          {me.user.isPlatformAdmin && (
+            <Link href="/platform" className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-white/25">
+              <ShieldCheck className="size-3.5" /> {t("onb.platformAdmin")}
             </Link>
-          ) : null
-        }
-      />
+          )}
+        </div>
+      </section>
+
+      {/* invitations */}
       {invitations.length > 0 && (
-        <section className="mb-6 flex flex-col gap-2" aria-label="Invitations">
-          <h2 className="font-medium">Invitations for you</h2>
-          {invitations.map((i) => (
-            <Card key={i.id} size="sm" className="flex-row flex-wrap items-center justify-between gap-3 px-4">
-              <div className="min-w-0 text-sm">
-                <p className="font-medium">{i.organization?.name ?? "A Mandal"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {i.invitedByName ? `${i.invitedByName} invited you` : "You're invited"} as <span className="capitalize">{i.role}</span>
-                </p>
+        <section aria-label={t("onb.invitations")}>
+          <SectionTitle>{t("onb.invitations")}</SectionTitle>
+          <div className="flex flex-col gap-2">
+            {invitations.map((i) => (
+              <div key={i.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-2 ring-amber-400/40">
+                <IconChip tone="amber">
+                  <Mail />
+                </IconChip>
+                <div className="min-w-0 flex-1 text-sm">
+                  <p className="truncate font-semibold">{i.organization?.name ?? t("onb.aMandal")}</p>
+                  <p className="text-xs text-muted-foreground">{i.invitedByName ? t("onb.invitedBy", { who: i.invitedByName, role: role(i.role) }) : t("onb.invitedAs", { role: role(i.role) })}</p>
+                </div>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <ActionButton path={`/invitations/${i.id}/decline`} variant="ghost" successMessage={t("onb.declined")} className="flex-1 sm:flex-none">
+                    {t("onb.decline")}
+                  </ActionButton>
+                  <ActionButton path={`/invitations/${i.id}/accept`} variant="default" successMessage={t("onb.welcome")} redirectTo={i.organization ? `/org/${i.organization._id}` : undefined} className="flex-1 sm:flex-none">
+                    {t("onb.accept")}
+                  </ActionButton>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <ActionButton path={`/invitations/${i.id}/decline`} variant="ghost" successMessage="Invitation declined">
-                  Decline
-                </ActionButton>
-                <ActionButton path={`/invitations/${i.id}/accept`} variant="default" successMessage="Welcome to the Mandal" redirectTo={i.organization ? `/org/${i.organization._id}` : undefined}>
-                  Accept
-                </ActionButton>
-              </div>
-            </Card>
-          ))}
+            ))}
+          </div>
         </section>
       )}
-      {me.organizations.length > 0 && (
-        <section className="mb-8 grid gap-3 sm:grid-cols-2">
-          {me.organizations.map((o) => (
-            <Card key={o.id} size="sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="size-4 text-primary" /> {o.name}
-                </CardTitle>
-                <CardDescription className="flex flex-wrap items-center gap-2">
-                  <span className="capitalize">{o.role}</span>
-                  {o.membershipStatus === "pending" ? <StatusBadge status="pending" /> : <StatusBadge status={o.status} />}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {o.membershipStatus === "active" && o.status !== "suspended" ? (
-                  <Link href={`/org/${o.id}`} className={cn(buttonVariants({ size: "sm" }))}>
-                    Open
-                  </Link>
-                ) : (
-                  <p className="text-xs text-muted-foreground">{o.membershipStatus === "pending" ? "Waiting for an admin to approve your request." : `This organization is ${o.status}.`}</p>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+
+      {/* my Mandals */}
+      {me.organizations.length > 0 ? (
+        <section aria-label={t("onb.yourMandals")}>
+          <SectionTitle>{t("onb.yourMandals")}</SectionTitle>
+          <ul className="flex flex-col gap-2">
+            {me.organizations.map((o) => {
+              const open = o.membershipStatus === "active" && o.status !== "suspended";
+              const body = (
+                <>
+                  <MemberAvatar name={o.name} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{o.name}</span>
+                    <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      {role(o.role)}
+                      {o.membershipStatus === "pending" ? <StatusBadge status="pending" /> : o.status !== "active" ? <StatusBadge status={o.status} /> : null}
+                    </span>
+                    {!open && (
+                      <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="size-3" />
+                        {o.membershipStatus === "pending" ? t("onb.waiting") : t("onb.orgStatus", { status: t(`status.${o.status}` as Key) })}
+                      </span>
+                    )}
+                  </span>
+                  {open && <ChevronRight className="size-5 shrink-0 text-muted-foreground" />}
+                </>
+              );
+              return (
+                <li key={o.id}>
+                  {open ? (
+                    <Link href={`/org/${o.id}`} className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06] transition-colors hover:bg-muted/50 active:scale-[0.99]">
+                      {body}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-3 rounded-2xl bg-card/70 p-3.5 ring-1 ring-foreground/[0.06]">{body}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </section>
+      ) : (
+        invitations.length === 0 && (
+          <section className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06]">
+            <IconChip tone="violet">
+              <Sparkles />
+            </IconChip>
+            <div>
+              <p className="font-semibold">{t("onb.noneYet")}</p>
+              <p className="text-sm text-muted-foreground">{t("onb.noneYetDesc")}</p>
+            </div>
+          </section>
+        )
       )}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Join a Mandal</CardTitle>
-            <CardDescription>Search by the Mandal&apos;s name, or enter the join code the admin shared.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <JoinOrgForm />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Register a new Mandal</CardTitle>
-            <CardDescription>You will be its first admin. New organizations may need platform approval before recording money.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CreateOrgForm />
-          </CardContent>
-        </Card>
-      </div>
-    </>
+
+      <OnboardingActions defaultTab={sp.new === "1" ? "create" : "join"} />
+    </div>
   );
 }

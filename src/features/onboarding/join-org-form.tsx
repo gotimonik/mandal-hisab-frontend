@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormError } from "@/components/app/field";
 import { apiMutate, apiRead } from "@/app/actions/api";
+import { MemberAvatar } from "@/components/app/bits";
+import { useT } from "@/i18n/client";
+import type { Key } from "@/i18n/core";
 
 interface Hit {
   id: string;
@@ -21,11 +24,12 @@ interface Hit {
   code?: string;
 }
 
-const STATUS_TEXT: Record<string, string> = { active: "You're a member", pending: "Request sent", deactivated: "Access removed", rejected: "" };
+const STATUS_KEY: Record<string, Key> = { active: "onb.stMember", pending: "onb.stPending", deactivated: "onb.stRemoved" };
 
 /** Find a Mandal by its name or its join code, then request to join (the admin approves). */
 export function JoinOrgForm() {
   const router = useRouter();
+  const t = useT();
   const [q, setQ] = useState("");
   const [message, setMessage] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
@@ -55,7 +59,7 @@ export function JoinOrgForm() {
       const r = await apiMutate({ path: "/organizations/join", body: { ...(h.code ? { code: h.code } : { organizationId: h.id }), message: message || undefined } });
       setJoining(null);
       if (!r.ok) return setError(r.error);
-      toast.success(`Request sent to ${h.name}. An admin will review it.`);
+      toast.success(t("onb.sent", { name: h.name }));
       setHits((list) => list?.map((x) => (x.id === h.id ? { ...x, myStatus: "pending" } : x)) ?? null);
       router.refresh();
     });
@@ -70,35 +74,36 @@ export function JoinOrgForm() {
           search();
         }}
       >
-        <Input aria-label="Mandal name or join code" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Mandal name or join code" maxLength={100} />
-        <Button type="submit" variant="outline" disabled={pending || q.trim().length < 2}>
-          {pending && !joining ? <Loader2 className="animate-spin" /> : <Search />} Find
+        <Input aria-label={t("onb.searchPh")} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("onb.searchPh")} maxLength={100} className="h-11 rounded-xl" />
+        <Button type="submit" disabled={pending || q.trim().length < 2} className="h-11 rounded-xl px-4">
+          {pending && !joining ? <Loader2 className="animate-spin" /> : <Search />} {t("onb.find")}
         </Button>
       </form>
-      {hits && hits.length === 0 && <p className="text-sm text-muted-foreground">No Mandal found. Check the spelling, or ask the admin for the join code.</p>}
+      {hits && hits.length === 0 && <p className="rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">{t("onb.noneFound")}</p>}
       {hits && hits.length > 0 && (
         <>
-          <ul className="divide-y rounded-lg border">
+          <ul className="flex flex-col gap-2">
             {hits.map((h) => (
-              <li key={h.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                <div className="min-w-0 text-sm">
-                  <p className="truncate font-medium">{h.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{[h.city, h.description].filter(Boolean).join(" · ") || (h.viaCode ? "Matched by join code" : "")}</p>
+              <li key={h.id} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]">
+                <MemberAvatar name={h.name} />
+                <div className="min-w-0 flex-1 text-sm">
+                  <p className="truncate font-semibold">{h.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{[h.city, h.description].filter(Boolean).join(" · ") || (h.viaCode ? t("onb.byCode") : "")}</p>
                 </div>
                 {h.myStatus && h.myStatus !== "rejected" ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">{STATUS_TEXT[h.myStatus] ?? h.myStatus}</span>
+                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{STATUS_KEY[h.myStatus] ? t(STATUS_KEY[h.myStatus]) : h.myStatus}</span>
                 ) : h.acceptsJoinRequests ? (
-                  <Button size="sm" onClick={() => join(h)} disabled={pending}>
-                    {joining === h.id && <Loader2 className="animate-spin" />} Request to join
+                  <Button size="sm" onClick={() => join(h)} disabled={pending} className="shrink-0 rounded-xl">
+                    {joining === h.id && <Loader2 className="animate-spin" />} {t("onb.requestJoin")}
                   </Button>
                 ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">Invitation only</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{t("onb.inviteOnly")}</span>
                 )}
               </li>
             ))}
           </ul>
-          <Field label="Message to the admin (optional)" htmlFor="join-msg">
-            <Textarea id="join-msg" rows={2} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={300} placeholder="e.g. I'm Ramesh bhai's son" />
+          <Field label={t("onb.msg")} htmlFor="join-msg">
+            <Textarea id="join-msg" rows={2} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={300} placeholder={t("onb.msgPh")} />
           </Field>
         </>
       )}
