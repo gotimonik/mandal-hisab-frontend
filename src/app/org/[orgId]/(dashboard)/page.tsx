@@ -153,7 +153,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         <SectionTitle>Mandal at a glance</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard label="Mandal fund" value={formatINRCompact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={`Cash ${formatINR(t.mandalCashPaise ?? 0)} + upad ${formatINR(t.fundLoansOutstandingPaise ?? 0)}`} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
-          <StatCard label="Total member balances" value={formatINRCompact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint="Savings owed to members" />
+          <StatCard label="Total member balances" value={formatINRCompact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} />} />
           <StatCard label="Upad given out" value={formatINRCompact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={<>Interest due <Money paise={t.fundLoanInterestDuePaise ?? 0} className="font-semibold text-foreground" /></>} href={`${base}/fund-loans`} />
           <StatCard label="Members" value={t.activeMembers} icon={<Users />} accent="sky" hint={t.totalMembers !== undefined && t.totalMembers !== t.activeMembers ? `${t.totalMembers} in total` : "active"} href={`${base}/members`} />
           <StatCard label="This year's hapta" value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={<><Money paise={d.collectionPerformance.collectedPaise} /> of <Money paise={d.collectionPerformance.duePaise} /> due</>} />
@@ -161,6 +161,13 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <StatCard label="Cash received this month" value={formatINRCompact(t.monthHaptaCashPaise ?? 0)} icon={<ArrowDownToLine />} accent="emerald" hint="Hapta cash, any month" />
           <StatCard label="Pending hapta" value={formatINRCompact(t.outstandingHaptaPaise ?? 0)} icon={<CalendarClock />} tone={(t.outstandingHaptaPaise ?? 0) > 0 ? "warn" : "good"} hint="All months" href={`${base}/monthly?show=due`} />
         </div>
+        <MemberShare
+          cashPaise={t.mandalCashPaise ?? 0}
+          upadPaise={t.fundLoansOutstandingPaise ?? 0}
+          pendingHaptaPaise={t.outstandingHaptaPaise ?? 0}
+          upadInterestPaise={t.fundLoanInterestDuePaise ?? 0}
+          members={t.activeMembers ?? 0}
+        />
         {isAdmin && (t.activeLoans > 0 || incomeBooks) && (
           <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {t.fyIncomePaise !== undefined && <StatCard label={`Income FY ${d.financialYear}`} value={formatINRCompact(t.fyIncomePaise)} icon={<Banknote />} accent="emerald" />}
@@ -314,3 +321,82 @@ function txKind(type: string): { tone: Tone; icon: React.ReactNode } {
   if (/transfer|adjust/.test(type)) return { tone: "slate", icon: <Wallet /> };
   return { tone: "emerald", icon: <ArrowDownToLine /> };
 }
+
+/** "Opening ₹1,000 + hapta ₹9,000 + interest ₹10 − withdrawn ₹500" — how the total member balances is made up. */
+function BalanceParts({ parts }: { parts?: { openingPaise: number; haptaPaise: number; interestPaise: number; withdrawalsPaise: number; otherPaise: number } }) {
+  if (!parts) return <>Savings owed to members</>;
+  const plus = [
+    ["Opening", parts.openingPaise],
+    ["hapta", parts.haptaPaise],
+    ["interest", parts.interestPaise],
+  ].filter(([, v]) => (v as number) !== 0) as [string, number][];
+  return (
+    <span className="leading-relaxed">
+      {plus.map(([l, v], i) => (
+        <span key={l}>
+          {i > 0 && " + "}
+          {i === 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l} <span className="font-semibold text-foreground">{formatINRShort(v)}</span>
+        </span>
+      ))}
+      {plus.length === 0 && "Savings owed to members"}
+      {parts.withdrawalsPaise !== 0 && (
+        <>
+          {" "}
+          − withdrawn <span className="font-semibold text-rose-600 dark:text-rose-300">{formatINRShort(parts.withdrawalsPaise)}</span>
+        </>
+      )}
+      {parts.otherPaise !== 0 && (
+        <>
+          {" "}
+          {parts.otherPaise > 0 ? "+" : "−"} adjustments <span className="font-semibold text-foreground">{formatINRShort(Math.abs(parts.otherPaise))}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Everything the Mandal has or is owed — cash, upad still out, hapta not yet paid and upad interest
+ * due — shared equally by the active members.
+ */
+function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members }: { cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number }) {
+  const total = cashPaise + upadPaise + pendingHaptaPaise + upadInterestPaise;
+  const each = members > 0 ? Math.floor(total / members) : 0;
+  const rows: [string, number, Tone][] = [
+    ["Cash in hand & bank", cashPaise, "emerald"],
+    ["Upad given out", upadPaise, "orange"],
+    ["Hapta still to collect", pendingHaptaPaise, "indigo"],
+    ["Upad interest due", upadInterestPaise, "amber"],
+  ];
+  return (
+    <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label="Each member's share">
+      <div className="bg-hero-green flex flex-col justify-center gap-1 p-5 md:w-72 md:shrink-0">
+        <p className="text-sm font-medium text-white/85">Each member&apos;s share</p>
+        <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(each)}</p>
+        <p className="text-sm text-white/85">
+          {formatINRShort(total)} ÷ {members} member{members === 1 ? "" : "s"}
+        </p>
+      </div>
+      <div className="flex-1 p-4 sm:px-5">
+        <ul className="divide-y text-sm">
+          {rows.map(([l, v, tone]) => (
+            <li key={l} className="flex items-center justify-between gap-3 py-2">
+              <span className="flex items-center gap-2.5">
+                <span className={cn("size-2.5 rounded-full", TONE_DOT[tone])} />
+                {l}
+              </span>
+              <Money paise={v} short className={cn("font-semibold", v === 0 && "text-muted-foreground")} />
+            </li>
+          ))}
+          <li className="flex items-center justify-between gap-3 py-2 font-bold">
+            <span>Total (if everything is collected)</span>
+            <Money paise={total} short />
+          </li>
+        </ul>
+        <p className="mt-1 text-xs text-muted-foreground">What each active member would get if the cash, upad and all pending dues were shared equally.</p>
+      </div>
+    </Card>
+  );
+}
+
+const TONE_DOT: Partial<Record<Tone, string>> = { emerald: "bg-emerald-500", orange: "bg-orange-500", indigo: "bg-indigo-500", amber: "bg-amber-500" };
