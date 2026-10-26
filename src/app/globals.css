@@ -54,8 +54,6 @@
 }
 
 :root {
-  /* Anek Gujarati (Gujarati subset only) supplies ₹ and, later, Gujarati text; Plus Jakarta Sans everything else */
-  --font-sans: var(--font-gujarati), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   /* MandalHisab — fresh, colourful: indigo primary, marigold accent, emerald / rose / sky helpers */
   --background: oklch(0.982 0.006 280);
   --foreground: oklch(0.22 0.03 278);

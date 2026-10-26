@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Anek_Gujarati, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const sans = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
-// Supplies the ₹ glyph today and Gujarati text later (loaded only when those characters appear).
-const gujarati = Anek_Gujarati({ variable: "--font-gujarati", subsets: ["gujarati"], preload: false, adjustFontFallback: false });
+const sans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -27,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${gujarati.variable} ${mono.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
