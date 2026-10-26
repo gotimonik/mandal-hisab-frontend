@@ -153,9 +153,9 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
   );
 }
 
-export function WithdrawalDialog(props: Props & { triggerLabel?: string; triggerSize?: "default" | "sm" }) {
+export function WithdrawalDialog(props: Props & { triggerLabel?: string; triggerSize?: "default" | "sm"; defaultOpen?: boolean }) {
   return (
-    <FormDialog trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? "Record withdrawal"}</>} triggerSize={props.triggerSize} title="Record a withdrawal" description="Cash paid out to a member from their savings balance. A voucher number is generated.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? "Record withdrawal"}</>} triggerSize={props.triggerSize} title="Record a withdrawal" description="Cash paid out to a member from their savings balance. A voucher number is generated.">
       <Form {...props} />
     </FormDialog>
   );

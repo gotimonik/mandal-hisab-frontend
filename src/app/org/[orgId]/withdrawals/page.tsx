@@ -48,6 +48,7 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
               members={members.map((m) => ({ _id: m._id, name: m.name, membershipNumber: m.membershipNumber, balancePaise: m.balancePaise ?? 0 }))}
               accounts={cashAccounts.map((a) => ({ _id: a._id, name: a.name, balancePaise: a.balancePaise }))}
               allowException={org.myRole === "admin" && org.settings.withdrawals.allowExceptions}
+              defaultOpen={sp.new === "1"}
             />
           ) : null
         }
@@ -99,7 +100,7 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
                   <TableCell>
                     <span className="font-medium">{w.member?.name ?? "—"}</span>
                     {w.note && <div className="text-xs text-muted-foreground">{w.note}</div>}
-                    {w.exceptionReason && <div className="text-xs text-warning">Exception: {w.exceptionReason}</div>}
+                    {w.exceptionReason && <div className="text-xs text-warning-ink">Exception: {w.exceptionReason}</div>}
                   </TableCell>
                   <TableCell className="text-right">
                     <Money paise={w.amountPaise} />

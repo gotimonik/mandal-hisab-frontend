@@ -4,13 +4,13 @@ import { api, qs } from "@/lib/server/api";
 import { can, getAccounts, getActiveMembers, getOrg } from "@/lib/server/data";
 import type { FundLoanList, UpadPaymentClaim, UpadRequest } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
-import { StatCard } from "@/components/app/stat-card";
 import { StatusBadge } from "@/components/app/status-badge";
 import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { METHOD_LABEL, formatDate, label } from "@/lib/format";
+import { MemberAvatar } from "@/components/app/bits";
 import { GiveLoanDialog } from "@/features/fund-loans/give-loan-dialog";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
 import { ApproveRequestDialog } from "@/features/fund-loans/approve-request-dialog";
@@ -53,21 +53,45 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
               members={members.map((m) => ({ _id: m._id, name: m.name, membershipNumber: m.membershipNumber }))}
               accounts={accounts.filter((a) => a.isActive).sort((a, b) => (a.type === "cash" ? -1 : 0) - (b.type === "cash" ? -1 : 0)).map((a) => ({ _id: a._id, name: a.name, balancePaise: a.balancePaise }))}
               defaultRate={data.defaultMonthlyRate}
+              defaultOpen={sp.new === "1"}
             />
           ) : null
         }
       />
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Upad given out" value={<Money paise={t.outstandingPaise} />} hint={`${t.activeLoans} active upad`} />
-        <StatCard label="Interest due" value={<Money paise={t.interestDuePaise} />} tone={t.interestDuePaise > 0 ? "warn" : "good"} hint="Unpaid, incl. earlier months" />
-        <StatCard label="Interest received" value={<Money paise={t.interestPaidPaise} />} tone="good" hint="Shared among members" />
-        <StatCard label="Default rate" value={`${data.defaultMonthlyRate}% / month`} hint="Change in Settings" />
-      </div>
+      <section aria-label="Upad totals" className="bg-hero-warm relative mb-5 overflow-hidden rounded-3xl p-5 shadow-lg shadow-orange-500/20">
+        <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
+        <div className="relative flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-white/85">Upad given out</p>
+            <p className="text-3xl font-extrabold tracking-tight tabular-nums">
+              <Money paise={t.outstandingPaise} short />
+            </p>
+            <p className="text-sm text-white/85">
+              {t.activeLoans} active upad · {data.defaultMonthlyRate}% / month
+            </p>
+          </div>
+          <HandCoins className="size-9 opacity-80" />
+        </div>
+        <div className="relative mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-white/15 px-3 py-2">
+            <p className="text-[11px] text-white/85">Interest due</p>
+            <p className="text-lg font-bold tabular-nums">
+              <Money paise={t.interestDuePaise} short />
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/15 px-3 py-2">
+            <p className="text-[11px] text-white/85">Interest received · shared</p>
+            <p className="text-lg font-bold tabular-nums">
+              <Money paise={t.interestPaidPaise} short />
+            </p>
+          </div>
+        </div>
+      </section>
       {claims.length > 0 && (
         <section className="mb-5" aria-label="Upad payments to verify">
-          <h2 className="mb-1 font-semibold">Payments to verify ({claims.length})</h2>
+          <h2 className="mb-1 text-base font-bold">Payments to verify ({claims.length})</h2>
           <p className="mb-2 text-sm text-muted-foreground">Members told us they paid. Check the money has arrived, then verify — a receipt is issued and the interest is shared among members.</p>
-          <Card className="divide-y p-0 ring-warning/40">
+          <Card className="divide-y gap-0 p-0 ring-2 ring-orange-400/40">
             {claims.map((x) => (
               <div key={x._id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <div className="min-w-0">
@@ -101,11 +125,11 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
       )}
       {requests.items.length > 0 && (
         <section className="mb-5" aria-label="Upad requests">
-          <h2 className="mb-1 font-semibold">Requests waiting ({requests.items.length})</h2>
+          <h2 className="mb-1 text-base font-bold">Requests waiting ({requests.items.length})</h2>
           <p className="mb-2 text-sm text-muted-foreground">
             Available in the Mandal now: <Money paise={requests.availablePaise} className="font-medium text-foreground" />
           </p>
-          <Card className="divide-y p-0 ring-warning/40">
+          <Card className="divide-y gap-0 p-0 ring-2 ring-orange-400/40">
             {requests.items.map((r) => (
               <div key={r._id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <div className="min-w-0">
@@ -131,9 +155,9 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
           </Card>
         </section>
       )}
-      <div className="mb-3 flex gap-1 text-sm">
+      <div className="mb-3 flex gap-2 text-sm">
         {TABS.map(([k, l]) => (
-          <Link key={k} href={`/org/${orgId}/fund-loans${qs({ status: k })}`} className={`rounded-full px-3 py-1 ${status === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+          <Link key={k} href={`/org/${orgId}/fund-loans${qs({ status: k })}`} aria-current={status === k ? "page" : undefined} className={`rounded-full px-3.5 py-2 font-semibold ${status === k ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "bg-card text-muted-foreground ring-1 ring-foreground/10 hover:text-foreground"}`}>
             {l}
           </Link>
         ))}
@@ -141,6 +165,39 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
       {data.items.length === 0 ? (
         <EmptyState icon={<HandCoins />} title={status === "active" ? "No upad given out right now" : "No upad"} description="When a member takes upad from the Mandal's cash, record it with Give upad." />
       ) : (
+        <>
+        <ul className="flex flex-col gap-2 md:hidden" aria-label="Upad list">
+          {data.items.map((l) => (
+            <li key={l._id} className="rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
+              <Link href={`/org/${orgId}/fund-loans/${l._id}`} className="flex items-center gap-3">
+                <MemberAvatar name={l.member?.name ?? "?"} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{l.member?.name ?? "—"}</span>
+                  <span className="block truncate font-mono text-[11px] text-muted-foreground">{l.number}</span>
+                </span>
+                {l.status !== "active" && <StatusBadge status={l.status} />}
+              </Link>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-xl bg-muted/60 px-3 py-2">
+                  <p className="text-[11px] text-muted-foreground">Outstanding</p>
+                  <p className="font-bold tabular-nums"><Money paise={l.outstandingPaise} short /></p>
+                  <p className="text-[11px] text-muted-foreground">{l.monthlyRate}% · since {formatDate(l.date)}</p>
+                </div>
+                <div className={`rounded-xl px-3 py-2 ${l.interestDuePaise > 0 ? "bg-amber-500/12" : "bg-muted/60"}`}>
+                  <p className="text-[11px] text-muted-foreground">Interest due</p>
+                  <p className={`font-bold tabular-nums ${l.interestDuePaise > 0 ? "text-warning-ink" : ""}`}><Money paise={l.interestDuePaise} short /></p>
+                  <p className="text-[11px] text-muted-foreground">{l.unpaidMonths.length > 0 ? `${l.unpaidMonths.length} month${l.unpaidMonths.length === 1 ? "" : "s"} unpaid` : "Nothing due"}</p>
+                </div>
+              </div>
+              {canCollect && l.status === "active" && (
+                <div className="mt-3 [&_button]:w-full">
+                  <LoanPaymentDialog loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label="Receive payment" />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block">
         <TableWrap>
           <Table>
             <TableHeader>
@@ -173,13 +230,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">{l.monthlyRate}%</TableCell>
                   <TableCell className="text-right">
-                    <Money paise={l.interestDuePaise} className={l.interestDuePaise > 0 ? "font-medium text-warning" : "text-muted-foreground"} />
+                    <Money paise={l.interestDuePaise} className={l.interestDuePaise > 0 ? "font-medium text-warning-ink" : "text-muted-foreground"} />
                     {l.unpaidMonths.length > 1 && <div className="text-xs text-muted-foreground">{l.unpaidMonths.length} months</div>}
-                    {canCollect && l.status === "active" && (
-                      <div className="mt-1 sm:hidden">
-                        <LoanPaymentDialog loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label="Receive" />
-                      </div>
-                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <StatusBadge status={l.status} />
@@ -192,6 +244,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
             </TableBody>
           </Table>
         </TableWrap>
+        </div>
+        </>
       )}
     </>
   );

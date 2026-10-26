@@ -9,8 +9,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, use, useState, type ReactNode } from "react";
 import {
+  ArrowDownToLine,
   ArrowUpFromLine,
   Bell,
+  BarChart3,
   BookOpenCheck,
   BookText,
   CalendarDays,
@@ -27,8 +29,13 @@ import {
   LogOut,
   Menu,
   Percent,
+  PiggyBank,
+  Banknote,
   Plus,
   Receipt,
+  Send,
+  UserPlus,
+  X,
   Settings,
   ShieldCheck,
   UserRound,
@@ -39,7 +46,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { NavIcon, NavItem } from "@/lib/nav";
+import type { NavIcon, NavItem, QuickAction, QuickIcon } from "@/lib/nav";
+import { TONE_CHIP } from "@/lib/tones";
 import { logoutAction } from "@/app/actions/auth";
 import { selectOrg } from "@/app/actions/api";
 
@@ -67,6 +75,19 @@ const ICONS: Record<NavIcon, typeof Bell> = {
   fundloans: HandCoins,
 };
 
+const QUICK_ICONS: Record<QuickIcon, typeof Bell> = {
+  collect: HandCoins,
+  receive: ArrowDownToLine,
+  give: Banknote,
+  withdraw: ArrowUpFromLine,
+  member: UserPlus,
+  cash: Wallet,
+  summary: BarChart3,
+  pay: Send,
+  request: HandCoins,
+  statement: PiggyBank,
+};
+
 export interface ShellOrg {
   id: string;
   name: string;
@@ -78,6 +99,7 @@ export interface ShellData {
   org: ShellOrg;
   orgs: ShellOrg[];
   nav: NavItem[];
+  quick: QuickAction[];
   user: { name: string; email: string; isPlatformAdmin: boolean };
   unread: number;
 }
@@ -91,26 +113,25 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
   return (
     <MenuCtx value={{ open, setOpen }}>
       <div className="flex min-h-dvh w-full">
-        <aside className="no-print sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-3 border-r bg-sidebar p-3 lg:flex">{sidebar}</aside>
+        <aside className="no-print sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-3 border-r bg-sidebar p-3 lg:flex">{sidebar}</aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background/90 px-4 backdrop-blur lg:hidden">
+          <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-1 border-b border-border/60 bg-background/85 pr-2 pl-1 backdrop-blur-md lg:hidden">
             <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setOpen(true)}>
               <Menu />
             </Button>
             {mobileHeader}
           </header>
-          <div className="no-print hidden h-12 items-center justify-end gap-2 border-b px-6 lg:flex">{topbar}</div>
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 pb-24 sm:px-6 lg:pb-10">{children}</main>
+          <div className="no-print hidden h-12 items-center justify-end gap-2 border-b border-border/60 bg-background/70 px-6 backdrop-blur lg:flex">{topbar}</div>
+          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 pb-28 sm:px-6 lg:pt-6 lg:pb-10">{children}</main>
         </div>
-        <nav className="no-print fixed inset-x-0 bottom-0 z-30 grid min-h-14 grid-cols-5 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Quick">
-          {bottomNav}
-          <button type="button" onClick={() => setOpen(true)} className="flex flex-col items-center gap-0.5 py-2 text-[11px] text-muted-foreground">
-            <Menu className="size-5" />
-            More
-          </button>
+        <nav
+          className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_oklch(0.3_0.08_278/0.18)] backdrop-blur-md lg:hidden"
+          aria-label="Quick"
+        >
+          <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-end px-1">{bottomNav}</div>
         </nav>
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-72 bg-sidebar p-3">
+          <SheetContent side="left" className="w-[19rem] bg-sidebar p-3">
             <SheetHeader className="p-0">
               <SheetTitle className="sr-only">Menu</SheetTitle>
             </SheetHeader>
@@ -139,17 +160,17 @@ function NavLinks({ items, base }: { items: NavItem[]; base: string }) {
         const active = isActive(pathname, it.href, base);
         return (
           <div key={it.href} className="contents">
-          {firstMore && <div className="mt-3 px-2.5 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">More</div>}
+          {firstMore && <div className="mt-4 px-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">More tools</div>}
           <Link
             href={it.href}
             onClick={() => setOpen(false)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-              active && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground lg:py-2",
+              active && "bg-sidebar-accent font-semibold text-sidebar-accent-foreground",
             )}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon className={cn("size-[18px] shrink-0", active ? "text-primary" : "opacity-70")} />
             {it.label}
           </Link>
           </div>
@@ -163,9 +184,9 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
   const router = useRouter();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto w-full justify-between gap-2 px-2 py-1.5 text-left" />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto w-full justify-between gap-2 rounded-xl px-2 py-2 text-left md:h-auto" />}>
         <span className="flex min-w-0 items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">{current.name.slice(0, 1).toUpperCase()}</span>
+          <OrgAvatar name={current.name} />
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">{current.name}</span>
             <span className="block text-xs capitalize text-muted-foreground">{current.role}</span>
@@ -204,6 +225,10 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
   );
 }
 
+function OrgAvatar({ name, className }: { name: string; className?: string }) {
+  return <span className={cn("bg-hero flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm", className)}>{name.slice(0, 1).toUpperCase()}</span>;
+}
+
 function UserMenu({ user }: { user: { name: string; email: string } }) {
   return (
     <div className="flex items-center gap-2 border-t pt-3">
@@ -235,13 +260,13 @@ export function SidebarContent({ data }: { data: ShellData }) {
 
 function Bell_({ href, unread, small }: { href: string; unread: number; small?: boolean }) {
   return (
-    <Link href={href} aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} className="relative rounded-lg p-2 hover:bg-muted">
+    <Link href={href} aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} className="relative rounded-full p-2.5 hover:bg-muted">
       <Bell className={small ? "size-4" : "size-5"} />
       {unread > 0 &&
         (small ? (
           <span className="absolute -top-0.5 -right-0.5 rounded-full bg-destructive px-1 text-[10px] leading-4 text-white">{unread > 9 ? "9+" : unread}</span>
         ) : (
-          <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive" />
+          <span className="absolute top-1.5 right-1.5 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] leading-4 font-semibold text-white ring-2 ring-background">{unread > 9 ? "9+" : unread}</span>
         ))}
     </Link>
   );
@@ -250,7 +275,13 @@ function Bell_({ href, unread, small }: { href: string; unread: number; small?: 
 export function MobileHeaderContent({ data }: { data: ShellData }) {
   return (
     <>
-      <span className="min-w-0 flex-1 truncate font-medium">{data.org.name}</span>
+      <Link href={`/org/${data.org.id}`} className="flex min-w-0 flex-1 items-center gap-2">
+        <OrgAvatar name={data.org.name} className="size-8 rounded-lg text-xs" />
+        <span className="min-w-0">
+          <span className="block truncate text-[15px] leading-tight font-semibold">{data.org.name}</span>
+          <span className="block text-[11px] leading-tight text-muted-foreground capitalize">{data.org.role}</span>
+        </span>
+      </Link>
       <Bell_ href={`/org/${data.org.id}/notifications`} unread={data.unread} />
     </>
   );
@@ -267,22 +298,88 @@ export function TopbarContent({ data }: { data: ShellData }) {
 
 export function BottomNavContent({ data }: { data: ShellData }) {
   const pathname = usePathname();
+  const { setOpen } = use(MenuCtx);
+  const [quickOpen, setQuickOpen] = useState(false);
   const base = `/org/${data.org.id}`;
+  const primary = data.nav.filter((n) => n.primary).slice(0, 4);
+  const hasQuick = data.quick.length > 0;
+  const tab = (it: NavItem) => {
+    const Icon = ICONS[it.icon];
+    const active = isActive(pathname, it.href, base);
+    return (
+      <Link key={it.href} href={it.href} className={cn("group flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground", active && "text-primary")} aria-current={active ? "page" : undefined}>
+        <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-secondary" : "group-active:bg-muted")}>
+          <Icon className="size-5" />
+        </span>
+        <span className="max-w-full truncate px-0.5">{SHORT[it.label] ?? it.label.split(" ")[0]}</span>
+      </Link>
+    );
+  };
+  const menuTab = (
+    <button key="menu" type="button" onClick={() => setOpen(true)} className="flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground">
+      <span className="flex h-7 w-12 items-center justify-center rounded-full">
+        <Menu className="size-5" />
+      </span>
+      Menu
+    </button>
+  );
+  if (!hasQuick) return <>{[...primary.map(tab), menuTab].slice(0, 5)}</>;
+  // two tabs | + | two tabs (Menu fills a gap when there are fewer tabs)
+  const slots: ReactNode[] = primary.map(tab);
+  while (slots.length < 4) slots.push(slots.length === 3 ? menuTab : <span key={`gap${slots.length}`} />);
   return (
     <>
-      {data.nav
-        .filter((n) => n.primary)
-        .slice(0, 4)
-        .map((it) => {
-          const Icon = ICONS[it.icon];
-          const active = isActive(pathname, it.href, base);
-          return (
-            <Link key={it.href} href={it.href} className={cn("flex flex-col items-center gap-0.5 py-2 text-[11px] text-muted-foreground", active && "text-primary")} aria-current={active ? "page" : undefined}>
-              <Icon className="size-5" />
-              <span className="truncate">{it.label.split(" ")[0]}</span>
-            </Link>
-          );
-        })}
+      {slots.slice(0, 2)}
+      <div className="flex h-full items-start justify-center">
+        <button
+          type="button"
+          onClick={() => setQuickOpen(true)}
+          aria-label="Quick actions"
+          aria-haspopup="dialog"
+          className="bg-hero -mt-5 flex size-14 items-center justify-center rounded-2xl shadow-lg shadow-primary/40 ring-4 ring-background transition-transform active:scale-95"
+        >
+          <Plus className="size-7" strokeWidth={2.5} />
+        </button>
+      </div>
+      {slots.slice(2, 4)}
+      <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+        <SheetContent side="bottom" showCloseButton={false} className="rounded-t-3xl border-0 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <span aria-hidden className="mx-auto h-1.5 w-10 rounded-full bg-foreground/15" />
+          <SheetHeader className="flex-row items-center justify-between p-0">
+            <SheetTitle className="text-lg font-semibold">What do you want to do?</SheetTitle>
+            <Button variant="ghost" size="icon-sm" className="rounded-full bg-muted/70" aria-label="Close" onClick={() => setQuickOpen(false)}>
+              <X />
+            </Button>
+          </SheetHeader>
+          <QuickGrid actions={data.quick.filter((a) => a.key !== "summary")} onPick={() => setQuickOpen(false)} />
+        </SheetContent>
+      </Sheet>
     </>
+  );
+}
+
+const SHORT: Record<string, string> = { Dashboard: "Home", "Monthly hapta": "Hapta", "My savings": "Savings", "My account": "Account", Notifications: "Alerts" };
+
+/** Colourful shortcut tiles — the phone "+" sheet and the dashboard share them. */
+export function QuickGrid({ actions, onPick, className, row = false }: { actions: QuickAction[]; onPick?: () => void; className?: string; row?: boolean }) {
+  return (
+    <div className={cn(row ? "scrollbar-none -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7" : "grid grid-cols-3 gap-2.5", className)}>
+      {actions.map((a) => {
+        const Icon = QUICK_ICONS[a.icon];
+        return (
+          <Link
+            key={a.key}
+            href={a.href}
+            onClick={onPick}
+            className={cn("flex flex-col items-center gap-2 rounded-2xl bg-card px-1.5 py-3.5 text-center shadow-card ring-1 ring-foreground/[0.06] transition-transform active:scale-[0.97]", row && "w-[6.5rem] shrink-0 snap-start sm:w-auto")}
+          >
+            <span className={cn("flex size-12 items-center justify-center rounded-2xl", TONE_CHIP[a.tone])}>
+              <Icon className="size-6" />
+            </span>
+            <span className="text-[13px] leading-tight font-semibold">{a.label}</span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }

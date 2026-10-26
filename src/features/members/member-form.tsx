@@ -110,10 +110,11 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
   );
 }
 
-export function MemberDialog({ orgId, member }: { orgId: string; member?: Member }) {
+export function MemberDialog({ orgId, member, defaultOpen }: { orgId: string; member?: Member; defaultOpen?: boolean }) {
   return (
     <FormDialog
       wide
+      defaultOpen={defaultOpen}
       trigger={member ? <><Pencil /> Edit</> : <><Plus /> Add member</>}
       triggerVariant={member ? "outline" : "default"}
       title={member ? "Edit member" : "Add member"}

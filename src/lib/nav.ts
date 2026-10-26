@@ -21,6 +21,8 @@ export type NavIcon =
   | "cashbook"
   | "fundloans";
 
+import type { Tone } from "./tones";
+
 export interface NavItem {
   href: string;
   label: string;
@@ -57,6 +59,41 @@ export function buildNav(orgId: string, perms: string[], role: string): NavItem[
     { href: `${base}/accounts`, label: "Accounts", icon: "accounts", more: true, when: can("accounts.view") },
     { href: `${base}/transactions`, label: "Transactions", icon: "transactions", more: true, when: can("transactions.view") },
     { href: `${base}/audit`, label: "Audit log", icon: "audit", more: true, when: can("audit.view") && staff },
+  ];
+  return items.filter((i) => i.when).map(({ when: _w, ...rest }) => rest);
+}
+
+export type QuickIcon = "collect" | "receive" | "give" | "withdraw" | "member" | "cash" | "summary" | "pay" | "request" | "statement";
+
+export interface QuickAction {
+  key: string;
+  label: string;
+  hint: string;
+  href: string;
+  icon: QuickIcon;
+  tone: Tone;
+}
+
+/**
+ * The "+" button in the phone bottom bar and the dashboard shortcut tiles. Each one deep-links
+ * to the screen that does it, opening its form straight away where there is one (?new=1).
+ */
+export function buildQuickActions(orgId: string, perms: string[], role: string, opts: { live: boolean; memberRequests?: boolean } = { live: true }): QuickAction[] {
+  const can = (p: string) => perms.includes(p);
+  const base = `/org/${orgId}`;
+  const live = opts.live;
+  const items: (QuickAction & { when: boolean })[] = [
+    { key: "collect", label: "Collect hapta", hint: "Cash from members", href: `${base}/monthly?show=due`, icon: "collect", tone: "indigo", when: live && can("payments.record") },
+    { key: "receive", label: "Receive upad", hint: "Interest or return", href: `${base}/fund-loans`, icon: "receive", tone: "orange", when: live && can("payments.record") && can("members.view") },
+    { key: "give", label: "Give upad", hint: "From the fund", href: `${base}/fund-loans?new=1`, icon: "give", tone: "amber", when: live && can("withdrawals.record") },
+    { key: "withdraw", label: "Withdrawal", hint: "Pay out savings", href: `${base}/withdrawals?new=1`, icon: "withdraw", tone: "rose", when: live && can("withdrawals.record") },
+    { key: "member", label: "Add member", hint: "New member", href: `${base}/members?new=1`, icon: "member", tone: "sky", when: can("members.manage") },
+    { key: "cash", label: "Cash in / out", hint: "Other cash", href: `${base}/cashbook?new=1`, icon: "cash", tone: "emerald", when: live && can("accounts.manage") },
+    { key: "summary", label: "Month summary", hint: "Who paid what", href: `${base}/monthly/report`, icon: "summary", tone: "violet", when: can("reports.view") && role !== "member" },
+    // members
+    { key: "pay", label: "I have paid", hint: "Tell the treasurer", href: `${base}/my?pay=1`, icon: "pay", tone: "indigo", when: live && role === "member" && can("self.view") },
+    { key: "request", label: "Request upad", hint: "From the Mandal", href: `${base}/my?tab=upad&new=1`, icon: "request", tone: "orange", when: live && role === "member" && !!opts.memberRequests && can("self.view") },
+    { key: "statement", label: "My savings", hint: "Balance & receipts", href: `${base}/my`, icon: "statement", tone: "emerald", when: role === "member" && can("self.view") },
   ];
   return items.filter((i) => i.when).map(({ when: _w, ...rest }) => rest);
 }

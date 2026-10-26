@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, CheckCircle2, AlertTriangle, Wallet } from "lucide-react";
+import { CalendarClock, CheckCircle2, AlertTriangle, HandCoins, Wallet } from "lucide-react";
 import type { Org } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
@@ -8,7 +8,9 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDate, formatINR } from "@/lib/format";
+import { formatDate, formatINR, formatINRShort } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { IconChip } from "@/components/app/bits";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -24,37 +26,48 @@ export function MemberDashboard({ orgId, data, org }: { orgId: string; data: any
   const t = data.totals;
   return (
     <>
-      <PageHeader
-        title={`Namaste, ${data.member.name.split(" ")[0]}`}
-        description={`${org.name} · Member no. ${data.member.membershipNumber}`}
-        actions={
-          <>
+      <div className="mb-4">
+        <p className="text-sm font-medium text-muted-foreground">
+          {org.name} · Member no. {data.member.membershipNumber}
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">Namaste, {data.member.name.split(" ")[0]}</h1>
+      </div>
+      {data.savings && (
+        <section aria-label="My savings" className="bg-hero relative mb-3 overflow-hidden rounded-3xl p-5 shadow-lg shadow-primary/20">
+          <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
+          <Link href={`/org/${orgId}/my`} className="relative block">
+            <p className="text-sm font-medium text-white/85">My savings balance</p>
+            <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(data.savings.balancePaise)}</p>
+            <p className="mt-1 text-xs text-white/80">
+              Hapta {formatINR(data.savings.haptaPaise)} + interest {formatINR(data.savings.interestPaise)} − withdrawn {formatINR(data.savings.withdrawalsPaise)}
+            </p>
+          </Link>
+          <div className="relative mt-4 flex flex-wrap items-center gap-2">
+            <PaymentRequestDialog methods={org.settings.paymentMethods} triggerClassName="h-11 bg-white text-indigo-700 shadow-md shadow-black/10 hover:bg-white/90 md:h-11" />
             {org.settings.fundLoans?.allowMemberRequests && org.status === "active" && (
-              <Link href={`/org/${orgId}/my?tab=upad`} className={buttonVariants({ variant: "outline" })}>
+              <Link href={`/org/${orgId}/my?tab=upad&new=1`} className={cn(buttonVariants(), "h-11 bg-white/15 text-white shadow-none hover:bg-white/25 md:h-11")}>
                 Request upad
               </Link>
             )}
-            <PaymentRequestDialog methods={org.settings.paymentMethods} />
-          </>
-        }
-      />
-      {data.savings && (
-        <Link href={`/org/${orgId}/my`} className="mb-3 block">
-          <Card className="flex-row items-center justify-between gap-3 bg-primary/5 px-4 py-4 ring-primary/20 transition-colors hover:bg-primary/10">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">My savings balance</p>
-              <p className="text-2xl font-semibold tabular-nums">{formatINR(data.savings.balancePaise)}</p>
-              <p className="text-xs text-muted-foreground">
-                Hapta {formatINR(data.savings.haptaPaise)} + interest {formatINR(data.savings.interestPaise)} − withdrawn {formatINR(data.savings.withdrawalsPaise)}
-              </p>
-            </div>
-            {data.monthlyHaptaPaise ? <p className="text-right text-xs text-muted-foreground">Monthly hapta<br /><span className="text-sm font-medium text-foreground">{formatINR(data.monthlyHaptaPaise)}</span></p> : null}
-          </Card>
-        </Link>
+            {data.monthlyHaptaPaise ? <span className="ml-auto text-right text-xs text-white/80">Monthly hapta<br /><span className="text-sm font-bold text-white">{formatINRShort(data.monthlyHaptaPaise)}</span></span> : null}
+          </div>
+        </section>
+      )}
+      {!data.savings && (
+        <div className="mb-3 flex flex-wrap gap-2">
+          <PaymentRequestDialog methods={org.settings.paymentMethods} />
+        </div>
       )}
       {data.fundLoans?.activeLoans > 0 && (
-        <Link href={`/org/${orgId}/my`} className="mb-3 block rounded-xl bg-warning/10 px-4 py-3 text-sm ring-1 ring-warning/30 hover:bg-warning/15">
-          Upad: <span className="font-semibold">{formatINR(data.fundLoans.outstandingPaise)}</span> outstanding · interest due now <span className="font-semibold">{formatINR(data.fundLoans.interestDuePaise)}</span>
+        <Link href={`/org/${orgId}/my?tab=upad`} className="mb-3 flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-2 ring-orange-400/30">
+          <IconChip tone="orange">
+            <HandCoins />
+          </IconChip>
+          <span className="min-w-0 flex-1 text-sm">
+            <span className="block font-semibold">My upad · {formatINRShort(data.fundLoans.outstandingPaise)} outstanding</span>
+            <span className="text-xs text-muted-foreground">Interest due now</span>
+          </span>
+          <span className="text-lg font-bold text-warning-ink tabular-nums">{formatINRShort(data.fundLoans.interestDuePaise)}</span>
         </Link>
       )}
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">

@@ -67,9 +67,9 @@ function Form({ availablePaise }: { availablePaise: number }) {
   );
 }
 
-export function RequestUpadDialog({ availablePaise, size = "default", variant = "default" }: { availablePaise: number; size?: "default" | "sm"; variant?: "default" | "outline" }) {
+export function RequestUpadDialog({ availablePaise, size = "default", variant = "default", defaultOpen }: { availablePaise: number; size?: "default" | "sm"; variant?: "default" | "outline"; defaultOpen?: boolean }) {
   return (
-    <FormDialog trigger={<><HandCoins /> Request upad</>} triggerSize={size} triggerVariant={variant} title="Request upad" description="Ask the Mandal for upad from its available cash.">
+    <FormDialog defaultOpen={defaultOpen} trigger={<><HandCoins /> Request upad</>} triggerSize={size} triggerVariant={variant} title="Request upad" description="Ask the Mandal for upad from its available cash.">
       <Form availablePaise={availablePaise} />
     </FormDialog>
   );

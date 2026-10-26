@@ -230,9 +230,12 @@ function Form({ methods }: { methods: string[] }) {
   );
 }
 
-export function PaymentRequestDialog({ methods }: { methods: string[] }) {
+export function PaymentRequestDialog({ methods, defaultOpen, triggerClassName }: { methods: string[]; defaultOpen?: boolean; triggerClassName?: string }) {
   return (
     <FormDialog
+      defaultOpen={defaultOpen}
+      openParam="pay"
+      triggerClassName={triggerClassName}
       trigger={
         <>
           <Send /> I have paid

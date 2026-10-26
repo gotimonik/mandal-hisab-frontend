@@ -47,7 +47,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
               Download CSV
             </a>
             {can(org, "accounts.manage") && org.status === "active" && (
-              <CashEntryDialog accounts={active.map((a) => ({ _id: a._id, name: a.name }))} categories={org.settings.expenseCategories.filter((c) => c.isActive).map((c) => ({ key: c.key, name: c.name }))} />
+              <CashEntryDialog defaultOpen={sp.new === "1"} accounts={active.map((a) => ({ _id: a._id, name: a.name }))} categories={org.settings.expenseCategories.filter((c) => c.isActive).map((c) => ({ key: c.key, name: c.name }))} />
             )}
           </>
         }

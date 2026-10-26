@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { HandCoins } from "lucide-react";
+import { IconChip } from "@/components/app/bits";
 import { api, qs } from "@/lib/server/api";
 import { getOrg } from "@/lib/server/data";
 import type { FundLoanList, MyUpadRequests, UpadPaymentClaim, Installment, Loan, MemberLedger, Paged, Payment, Receipt, Withdrawal } from "@/lib/types";
@@ -20,7 +22,8 @@ export const metadata = { title: "My savings" };
 
 export default async function MyPage({ params, searchParams }: PageProps<"/org/[orgId]/my">) {
   const { orgId } = await params;
-  const tab = (await searchParams).tab === "upad" ? "fundloans" : "savings";
+  const sp = await searchParams;
+  const tab = sp.tab === "upad" ? "fundloans" : "savings";
   const [org, me] = await Promise.all([getOrg(orgId), api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`)]);
   if (!me.linked) {
     return (
@@ -47,16 +50,25 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
   const myLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
   return (
     <>
-      <PageHeader title={me.member!.name} description={`Member no. ${me.member!.membershipNumber}`} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} />} />
+      <PageHeader title={me.member!.name} description={`Member no. ${me.member!.membershipNumber}`} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} defaultOpen={sp.pay === "1"} />} />
       <div className="mb-4">
         <SavingsSummary l={ledger} />
       </div>
       {fundLoans.totals.activeLoans > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-warning/10 px-4 py-3 text-sm ring-1 ring-warning/30">
-          <span>
-            Upad: <Money paise={fundLoans.totals.outstandingPaise} className="font-semibold" /> outstanding · interest due now <Money paise={fundLoans.totals.interestDuePaise} className="font-semibold" />
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-card p-3.5 text-sm shadow-card ring-2 ring-orange-400/30">
+          <IconChip tone="orange">
+            <HandCoins />
+          </IconChip>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">
+              My upad · <Money paise={fundLoans.totals.outstandingPaise} short /> outstanding
+            </span>
+            <span className="text-xs text-muted-foreground">Pay the interest to the Mandal admin each month.</span>
           </span>
-          <span className="text-xs text-muted-foreground">Pay the interest to the Mandal admin each month.</span>
+          <span className="text-right">
+            <Money paise={fundLoans.totals.interestDuePaise} short className="block text-lg font-bold text-warning-ink" />
+            <span className="text-[11px] text-muted-foreground">interest due</span>
+          </span>
         </div>
       )}
       <Tabs defaultValue={tab}>
@@ -79,7 +91,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               <span>
                 Available in the Mandal: <Money paise={upadReqs.availablePaise} className="font-semibold" />
               </span>
-              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} size="sm" /> : openRequest ? <span className="text-xs text-muted-foreground">Your request is waiting for approval</span> : null}
+              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">Your request is waiting for approval</span> : null}
             </div>
             {upadReqs.items.length > 0 && (
               <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">

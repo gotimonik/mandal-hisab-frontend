@@ -93,9 +93,9 @@ function Form({ accounts, categories }: Props) {
   );
 }
 
-export function CashEntryDialog(props: Props) {
+export function CashEntryDialog(props: Props & { defaultOpen?: boolean }) {
   return (
-    <FormDialog trigger={<><Plus /> Cash in / out</>} triggerVariant="outline" title="Record a cash entry" description="Other money received or spent in cash. Hapta and withdrawals are recorded from their own screens.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><Plus /> Cash in / out</>} triggerVariant="outline" title="Record a cash entry" description="Other money received or spent in cash. Hapta and withdrawals are recorded from their own screens.">
       <Form {...props} />
     </FormDialog>
   );

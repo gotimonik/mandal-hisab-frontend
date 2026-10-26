@@ -3,14 +3,15 @@
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { HandCoins, Loader2 } from "lucide-react";
+import { CheckCircle2, HandCoins, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/app/field";
 import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
-import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { formatINRShort, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 
 /**
@@ -18,7 +19,7 @@ import { rupees } from "@/lib/schemas";
  * amount is recorded as a part payment. If the same amount was already recorded on the same
  * date the server asks for confirmation (possible double entry).
  */
-export function CollectDialog({ installmentId, memberName, period, outstandingPaise, size = "xs" }: { installmentId: string; memberName: string; period: string; outstandingPaise: number; size?: "xs" | "sm" }) {
+export function CollectDialog({ installmentId, memberName, period, outstandingPaise, size = "xs", showAmount = false }: { installmentId: string; memberName: string; period: string; outstandingPaise: number; size?: "xs" | "sm"; showAmount?: boolean }) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -58,8 +59,8 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
 
   return (
     <>
-      <Button size={size} onClick={() => setOpen(true)} aria-label={`Collect from ${memberName}`}>
-        <HandCoins /> Collect
+      <Button size={size} onClick={() => setOpen(true)} aria-label={`Collect from ${memberName}`} className={cn(showAmount && "h-10 rounded-xl px-3.5 text-sm md:h-9")}>
+        <HandCoins /> {showAmount ? formatINRShort(outstandingPaise) : "Collect"}
       </Button>
       <Dialog
         open={open}
@@ -84,14 +85,29 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
             }}
           >
             <FormError message={error} />
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Amount (₹)" htmlFor="col-amt" hint="Less than due = part payment">
-                <Input id="col-amt" inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
-              </Field>
-              <Field label="Date received" htmlFor="col-date">
-                <Input id="col-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
-              </Field>
+            <Field label="Amount (₹)" htmlFor="col-amt" hint="Less than due is saved as a part payment">
+              <Input id="col-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-14 rounded-2xl text-center text-2xl font-bold tabular-nums md:h-12 md:text-xl" />
+            </Field>
+            <div className="flex flex-wrap gap-2" aria-label="Amount shortcuts">
+              {[
+                ["Full", outstandingPaise],
+                ["Half", Math.round(outstandingPaise / 200) * 100],
+              ]
+                .filter(([, p]) => (p as number) > 0)
+                .map(([l, p]) => (
+                  <button
+                    key={l as string}
+                    type="button"
+                    onClick={() => setAmount(paiseToRupeeInput(p as number))}
+                    className={cn("rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-foreground/10", amount === paiseToRupeeInput(p as number) ? "bg-primary text-primary-foreground ring-primary" : "bg-card hover:bg-muted")}
+                  >
+                    {l} · {formatINRShort(p as number)}
+                  </button>
+                ))}
             </div>
+            <Field label="Date received" htmlFor="col-date">
+              <Input id="col-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
             <Field label="Note (optional)" htmlFor="col-note">
               <Input id="col-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>
@@ -108,8 +124,8 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
                 </div>
               </div>
             ) : (
-              <Button type="submit" disabled={pending}>
-                {pending && <Loader2 className="animate-spin" />} Record cash received
+              <Button type="submit" size="lg" disabled={pending} className="w-full">
+                {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Record cash received
               </Button>
             )}
           </form>

@@ -129,7 +129,7 @@ export default async function MonthlyReportPage({ params, searchParams }: PagePr
                   <span className="text-right">
                     <Money paise={x.thisMonth?.interestPaise ?? 0} />
                     {x.totalDuePaise > 0 && (
-                      <span className="block text-xs text-warning">
+                      <span className="block text-xs text-warning-ink">
                         <Money paise={x.totalDuePaise} /> unpaid
                       </span>
                     )}

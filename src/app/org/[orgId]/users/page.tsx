@@ -102,7 +102,7 @@ export default async function UsersPage({ params }: PageProps<"/org/[orgId]/user
                   <div className="text-xs text-muted-foreground">{m.user.email}</div>
                 </TableCell>
                 <TableCell className="capitalize">{m.role}</TableCell>
-                <TableCell>{m.member ? `${m.member.name} (${m.member.membershipNumber})` : m.status === "active" ? <span className="text-warning">No member record — use ⚙ to add</span> : <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell>{m.member ? `${m.member.name} (${m.member.membershipNumber})` : m.status === "active" ? <span className="text-warning-ink">No member record — use ⚙ to add</span> : <span className="text-muted-foreground">—</span>}</TableCell>
                 <TableCell>
                   <StatusBadge status={m.status} />
                 </TableCell>

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { cache } from "react";
 import { getMe, getOrg } from "@/lib/server/data";
 import { api } from "@/lib/server/api";
-import { buildNav } from "@/lib/nav";
+import { buildNav, buildQuickActions } from "@/lib/nav";
 import { BottomNavContent, MobileHeaderContent, ShellFrame, SidebarContent, TopbarContent, type ShellData } from "@/components/app/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -58,6 +58,7 @@ const loadShell = cache(async (orgId: string): Promise<ShellData> => {
     org: { id: org.id, name: org.name, role: org.myRole, status: org.status },
     orgs: me.organizations.filter((o) => o.membershipStatus === "active").map((o) => ({ id: o.id, name: o.name, role: o.role, status: o.status })),
     nav: buildNav(org.id, org.myPermissions, org.myRole),
+    quick: buildQuickActions(org.id, org.myPermissions, org.myRole, { live: org.status === "active", memberRequests: !!org.settings.fundLoans?.allowMemberRequests }),
     user: { name: me.user.name, email: me.user.email, isPlatformAdmin: me.user.isPlatformAdmin },
     unread: notes.unread,
   };
@@ -80,7 +81,7 @@ async function StatusBanner({ params }: P) {
   const org = await getOrg((await params).orgId);
   if (org.status === "pending")
     return (
-      <div className="mb-4 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+      <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
         This organization is awaiting platform approval. You can complete settings now; recording money is enabled after approval.
       </div>
     );
@@ -102,9 +103,9 @@ function SidebarSkeleton() {
 function BottomNavSkeleton() {
   return (
     <>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <span key={i} className="flex items-center justify-center py-2">
-          <Skeleton className="size-5" />
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} className="flex h-full items-center justify-center">
+          <Skeleton className={i === 2 ? "size-12 rounded-2xl" : "size-6 rounded-full"} />
         </span>
       ))}
     </>

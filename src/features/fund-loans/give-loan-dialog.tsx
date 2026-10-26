@@ -120,9 +120,9 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
   );
 }
 
-export function GiveLoanDialog(props: Props) {
+export function GiveLoanDialog(props: Props & { defaultOpen?: boolean }) {
   return (
-    <FormDialog trigger={<><HandCoins /> Give upad</>} title="Give upad from the Mandal fund" description="Cash goes out of the fund to the member; it is paid back with monthly interest.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><HandCoins /> Give upad</>} title="Give upad from the Mandal fund" description="Cash goes out of the fund to the member; it is paid back with monthly interest.">
       <Form {...props} />
     </FormDialog>
   );

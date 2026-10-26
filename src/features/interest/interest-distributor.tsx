@@ -174,7 +174,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
               <>Enter the interest for each member. Leave blank for none.</>
             )}{" "}
             Credited on {formatDate(preview.creditDate)}.
-            {preview.alreadyCreditedCount > 0 && <span className="text-warning"> {preview.alreadyCreditedCount} member(s) were already credited for this month and are skipped.</span>}
+            {preview.alreadyCreditedCount > 0 && <span className="text-warning-ink"> {preview.alreadyCreditedCount} member(s) were already credited for this month and are skipped.</span>}
           </p>
           <div className="divide-y rounded-lg border">
             <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground">

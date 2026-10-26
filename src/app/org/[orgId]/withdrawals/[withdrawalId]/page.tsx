@@ -63,7 +63,7 @@ export default async function WithdrawalVoucherPage({ params }: PageProps<"/org/
             <Money paise={w.balanceAfterPaise} colored />
           </dd>
         </dl>
-        {w.exceptionReason && <p className="mt-3 text-sm text-warning">Approved above balance: {w.exceptionReason}</p>}
+        {w.exceptionReason && <p className="mt-3 text-sm text-warning-ink">Approved above balance: {w.exceptionReason}</p>}
         {w.status === "reversed" && w.reversalReason && <p className="mt-3 text-sm text-destructive">Reversed: {w.reversalReason}</p>}
         <div className="mt-10 grid grid-cols-2 gap-8 text-center text-xs text-muted-foreground">
           <div className="border-t pt-2">Paid by{recordedByName ? ` — ${recordedByName}` : ""}</div>
