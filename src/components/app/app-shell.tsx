@@ -48,6 +48,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NavIcon, NavItem, QuickAction, QuickIcon } from "@/lib/nav";
 import { TONE_CHIP } from "@/lib/tones";
+import { useT } from "@/i18n/client";
+import { LanguageSwitcher } from "@/i18n/switcher";
+import type { Lang } from "@/i18n/core";
 import { logoutAction } from "@/app/actions/auth";
 import { selectOrg } from "@/app/actions/api";
 
@@ -100,6 +103,7 @@ export interface ShellData {
   orgs: ShellOrg[];
   nav: NavItem[];
   quick: QuickAction[];
+  lang: Lang;
   user: { name: string; email: string; isPlatformAdmin: boolean };
   unread: number;
 }
@@ -151,6 +155,7 @@ function isActive(pathname: string, href: string, base: string) {
 
 function NavLinks({ items, base }: { items: NavItem[]; base: string }) {
   const pathname = usePathname();
+  const t = useT();
   const { setOpen } = use(MenuCtx);
   return (
     <nav className="flex flex-col gap-0.5" aria-label="Main">
@@ -160,7 +165,7 @@ function NavLinks({ items, base }: { items: NavItem[]; base: string }) {
         const active = isActive(pathname, it.href, base);
         return (
           <div key={it.href} className="contents">
-          {firstMore && <div className="mt-4 px-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">More tools</div>}
+          {firstMore && <div className="mt-4 px-3 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{t("nav.moreTools")}</div>}
           <Link
             href={it.href}
             onClick={() => setOpen(false)}
@@ -182,6 +187,7 @@ function NavLinks({ items, base }: { items: NavItem[]; base: string }) {
 
 function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; orgs: ShellOrg[]; isPlatformAdmin: boolean }) {
   const router = useRouter();
+  const t = useT();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto w-full justify-between gap-2 rounded-xl px-2 py-2 text-left md:h-auto" />}>
@@ -189,14 +195,14 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
           <OrgAvatar name={current.name} />
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">{current.name}</span>
-            <span className="block text-xs capitalize text-muted-foreground">{current.role}</span>
+            <span className="block text-xs text-muted-foreground">{roleLabel(t, current.role)}</span>
           </span>
         </span>
         <ChevronsUpDown className="size-4 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+          <DropdownMenuLabel>{t("shell.organizations")}</DropdownMenuLabel>
           {orgs.map((o) => (
             <DropdownMenuItem
               key={o.id}
@@ -213,11 +219,11 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/onboarding" />}>
-          <Plus /> Create or join a Mandal
+          <Plus /> {t("shell.createOrJoin")}
         </DropdownMenuItem>
         {isPlatformAdmin && (
           <DropdownMenuItem onClick={() => router.push("/platform")}>
-            <ShieldCheck /> Platform admin
+            <ShieldCheck /> {t("shell.platformAdmin")}
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>
@@ -230,20 +236,26 @@ function OrgAvatar({ name, className }: { name: string; className?: string }) {
 }
 
 function UserMenu({ user }: { user: { name: string; email: string } }) {
+  const t = useT();
   return (
-    <div className="flex items-center gap-2 border-t pt-3">
+    <div className="flex flex-col gap-2 border-t pt-3">
+      <LanguageSwitcher className="self-start" />
+    <div className="flex items-center gap-2">
       <Link href="/account" className="min-w-0 flex-1 rounded-lg px-1 py-1 hover:bg-sidebar-accent">
         <span className="block truncate text-sm font-medium">{user.name}</span>
         <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
       </Link>
       <form action={logoutAction}>
-        <Button type="submit" variant="ghost" size="icon-sm" aria-label="Sign out">
+        <Button type="submit" variant="ghost" size="icon-sm" aria-label={t("shell.signOut")}>
           <LogOut />
         </Button>
       </form>
     </div>
+    </div>
   );
 }
+
+const roleLabel = (t: ReturnType<typeof useT>, role: string) => (role === "admin" || role === "manager" || role === "member" ? t(`shell.roles.${role}`) : role);
 
 /** Desktop sidebar and mobile slide-out menu share the same content. */
 export function SidebarContent({ data }: { data: ShellData }) {
@@ -259,8 +271,9 @@ export function SidebarContent({ data }: { data: ShellData }) {
 }
 
 function Bell_({ href, unread, small }: { href: string; unread: number; small?: boolean }) {
+  const t = useT();
   return (
-    <Link href={href} aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`} className="relative rounded-full p-2.5 hover:bg-muted">
+    <Link href={href} aria-label={unread ? t("shell.notificationsUnread", { n: unread }) : t("shell.notifications")} className="relative rounded-full p-2.5 hover:bg-muted">
       <Bell className={small ? "size-4" : "size-5"} />
       {unread > 0 &&
         (small ? (
@@ -273,13 +286,14 @@ function Bell_({ href, unread, small }: { href: string; unread: number; small?: 
 }
 
 export function MobileHeaderContent({ data }: { data: ShellData }) {
+  const t = useT();
   return (
     <>
       <Link href={`/org/${data.org.id}`} className="flex min-w-0 flex-1 items-center gap-2">
         <OrgAvatar name={data.org.name} className="size-8 rounded-lg text-xs" />
         <span className="min-w-0">
           <span className="block truncate text-[15px] leading-tight font-semibold">{data.org.name}</span>
-          <span className="block text-[11px] leading-tight text-muted-foreground capitalize">{data.org.role}</span>
+          <span className="block text-[11px] leading-tight text-muted-foreground">{roleLabel(t, data.org.role)}</span>
         </span>
       </Link>
       <Bell_ href={`/org/${data.org.id}/notifications`} unread={data.unread} />
@@ -298,6 +312,7 @@ export function TopbarContent({ data }: { data: ShellData }) {
 
 export function BottomNavContent({ data }: { data: ShellData }) {
   const pathname = usePathname();
+  const t = useT();
   const { setOpen } = use(MenuCtx);
   const [quickOpen, setQuickOpen] = useState(false);
   const base = `/org/${data.org.id}`;
@@ -311,7 +326,7 @@ export function BottomNavContent({ data }: { data: ShellData }) {
         <span className={cn("flex h-7 w-12 items-center justify-center rounded-full transition-colors", active ? "bg-secondary" : "group-active:bg-muted")}>
           <Icon className="size-5" />
         </span>
-        <span className="max-w-full truncate px-0.5">{SHORT[it.label] ?? it.label.split(" ")[0]}</span>
+        <span className="max-w-full truncate px-0.5">{it.short ?? it.label.split(" ")[0]}</span>
       </Link>
     );
   };
@@ -320,7 +335,7 @@ export function BottomNavContent({ data }: { data: ShellData }) {
       <span className="flex h-7 w-12 items-center justify-center rounded-full">
         <Menu className="size-5" />
       </span>
-      Menu
+      {t("nav.short.menu")}
     </button>
   );
   if (!hasQuick) return <>{[...primary.map(tab), menuTab].slice(0, 5)}</>;
@@ -334,7 +349,7 @@ export function BottomNavContent({ data }: { data: ShellData }) {
         <button
           type="button"
           onClick={() => setQuickOpen(true)}
-          aria-label="Quick actions"
+          aria-label={t("shell.quickActions")}
           aria-haspopup="dialog"
           className="bg-hero -mt-5 flex size-14 items-center justify-center rounded-2xl shadow-lg shadow-primary/40 ring-4 ring-background transition-transform active:scale-95"
         >
@@ -346,8 +361,8 @@ export function BottomNavContent({ data }: { data: ShellData }) {
         <SheetContent side="bottom" showCloseButton={false} className="rounded-t-3xl border-0 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           <span aria-hidden className="mx-auto h-1.5 w-10 rounded-full bg-foreground/15" />
           <SheetHeader className="flex-row items-center justify-between p-0">
-            <SheetTitle className="text-lg font-semibold">What do you want to do?</SheetTitle>
-            <Button variant="ghost" size="icon-sm" className="rounded-full bg-muted/70" aria-label="Close" onClick={() => setQuickOpen(false)}>
+            <SheetTitle className="text-lg font-semibold">{t("shell.whatToDo")}</SheetTitle>
+            <Button variant="ghost" size="icon-sm" className="rounded-full bg-muted/70" aria-label={t("common.close")} onClick={() => setQuickOpen(false)}>
               <X />
             </Button>
           </SheetHeader>
@@ -358,7 +373,6 @@ export function BottomNavContent({ data }: { data: ShellData }) {
   );
 }
 
-const SHORT: Record<string, string> = { Dashboard: "Home", "Monthly hapta": "Hapta", "My savings": "Savings", "My account": "Account", Notifications: "Alerts" };
 
 /** Colourful shortcut tiles — the phone "+" sheet and the dashboard share them. */
 export function QuickGrid({ actions, onPick, className, row = false }: { actions: QuickAction[]; onPick?: () => void; className?: string; row?: boolean }) {

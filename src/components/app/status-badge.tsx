@@ -1,5 +1,9 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
+import { en } from "@/i18n/dict/en";
 
 const TONES: Record<string, string> = {
   paid: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
@@ -29,9 +33,11 @@ const TONES: Record<string, string> = {
 };
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
+  const t = useT();
+  const known = status in en.status;
   return (
     <Badge variant="secondary" className={cn("capitalize", TONES[status], className)}>
-      {status.replace(/_/g, " ")}
+      {known ? t(`status.${status as keyof typeof en.status}`) : status.replace(/_/g, " ")}
     </Badge>
   );
 }

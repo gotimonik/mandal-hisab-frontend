@@ -7,7 +7,7 @@ import { Money } from "@/components/app/money";
 describe("components", () => {
   it("renders status labels in readable form", () => {
     render(<StatusBadge status="partially_paid" />);
-    expect(screen.getByText("partially paid")).toBeInTheDocument();
+    expect(screen.getByText("part paid")).toBeInTheDocument();
   });
   it("shows field errors with role=alert", () => {
     render(

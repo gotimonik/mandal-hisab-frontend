@@ -34,12 +34,14 @@ import { formatDate, formatINR, formatINRCompact, formatINRShort, label } from "
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 import { MonthlyChart } from "@/features/dashboard/monthly-chart";
-import { monthLabelYM, monthsBetween } from "@/lib/months";
+import { monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
+import { getT } from "@/i18n/server";
+import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 
 export const metadata = { title: "Dashboard" };
 
-const monthLabel = (iso: string) => new Intl.DateTimeFormat("en-IN", { month: "long", timeZone: "UTC" }).format(new Date(`${iso.slice(0, 7)}-01T00:00:00Z`));
+const monthLabel = (lang: Lang, iso: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "long", timeZone: "UTC" }).format(new Date(`${iso.slice(0, 7)}-01T00:00:00Z`));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DashboardPage({ params }: PageProps<"/org/[orgId]">) {
@@ -47,42 +49,43 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
   const [org, d, me] = await Promise.all([getOrg(orgId), api<any>(`/orgs/${orgId}/dashboard`), getMe()]);
   if (d.role === "member") return <MemberDashboard orgId={orgId} data={d} org={org} />;
   const t = d.totals;
+  const { t: tr, lang } = await getT();
   const base = `/org/${orgId}`;
   const isAdmin = d.role === "admin";
   // In member-savings Mandals hapta is not income, so the income/expense views would mislead.
   const incomeBooks = org.settings.haptaTreatment === "income";
-  const quick = buildQuickActions(orgId, org.myPermissions, org.myRole, { live: org.status === "active" });
+  const quick = buildQuickActions(orgId, org.myPermissions, org.myRole, { live: org.status === "active" }, tr);
 
   const expected = t.monthExpectedPaise ?? 0;
   const collected = t.monthCollectedAgainstDuePaise ?? 0;
   const monthDue = t.monthPendingPaise ?? 0;
   const pct = expected > 0 ? Math.round((collected / expected) * 100) : 0;
   const olderDue = Math.max(0, (t.outstandingHaptaPaise ?? 0) - monthDue);
-  const month = monthLabel(d.asOf);
+  const month = monthLabel(lang, d.asOf);
   const monthsLeft = org.settings.endMonth ? monthsBetween(String(d.asOf).slice(0, 7), org.settings.endMonth) : 0;
 
   type Todo = { key: string; href: string; tone: Tone; icon: React.ReactNode; title: string; subtitle?: string; trailing: React.ReactNode };
   const todos: Todo[] = [];
   const pend = d.pending;
-  if ((pend.upadRequests ?? 0) > 0 && can(org, "withdrawals.record")) todos.push({ key: "ur", href: `${base}/fund-loans`, tone: "orange", icon: <HandCoins />, title: "Upad requests", subtitle: "Members asking for upad", trailing: <CountPill n={pend.upadRequests} tone="orange" /> });
-  if ((pend.upadPayments ?? 0) > 0 && can(org, "payments.verify")) todos.push({ key: "up", href: `${base}/fund-loans`, tone: "orange", icon: <ClipboardCheck />, title: "Upad payments to verify", subtitle: "Reported by members", trailing: <CountPill n={pend.upadPayments} tone="orange" /> });
-  if (pend.payments > 0) todos.push({ key: "p", href: `${base}/collections?status=pending`, tone: "indigo", icon: <ClipboardCheck />, title: "Payments to verify", subtitle: "Members said they paid", trailing: <CountPill n={pend.payments} tone="indigo" /> });
-  if (pend.memberships > 0 && can(org, "memberships.manage")) todos.push({ key: "m", href: `${base}/users`, tone: "sky", icon: <UserPlus />, title: "Join requests", subtitle: "People asking to join", trailing: <CountPill n={pend.memberships} tone="sky" /> });
-  if (pend.expenses > 0) todos.push({ key: "e", href: `${base}/expenses?status=pending`, tone: "pink", icon: <Receipt />, title: "Expenses to approve", trailing: <CountPill n={pend.expenses} tone="pink" /> });
-  if (pend.loans > 0) todos.push({ key: "l", href: `${base}/loans?status=applied`, tone: "violet", icon: <Landmark />, title: "Loan applications", trailing: <CountPill n={pend.loans} tone="violet" /> });
-  if ((t.fundLoanInterestDuePaise ?? 0) > 0) todos.push({ key: "ui", href: `${base}/fund-loans`, tone: "amber", icon: <Banknote />, title: "Upad interest to collect", subtitle: `${t.activeFundLoans ?? 0} active upad`, trailing: <Money paise={t.fundLoanInterestDuePaise} className="text-sm font-bold text-warning-ink" /> });
-  if (olderDue > 0) todos.push({ key: "od", href: `${base}/installments?status=overdue`, tone: "rose", icon: <AlertTriangle />, title: "Older hapta still due", subtitle: "From earlier months", trailing: <Money paise={olderDue} className="text-sm font-bold text-destructive" /> });
+  if ((pend.upadRequests ?? 0) > 0 && can(org, "withdrawals.record")) todos.push({ key: "ur", href: `${base}/fund-loans`, tone: "orange", icon: <HandCoins />, title: tr("dash.upadRequests"), subtitle: tr("dash.upadRequestsSub"), trailing: <CountPill n={pend.upadRequests} tone="orange" /> });
+  if ((pend.upadPayments ?? 0) > 0 && can(org, "payments.verify")) todos.push({ key: "up", href: `${base}/fund-loans`, tone: "orange", icon: <ClipboardCheck />, title: tr("dash.upadPayments"), subtitle: tr("dash.upadPaymentsSub"), trailing: <CountPill n={pend.upadPayments} tone="orange" /> });
+  if (pend.payments > 0) todos.push({ key: "p", href: `${base}/collections?status=pending`, tone: "indigo", icon: <ClipboardCheck />, title: tr("dash.paymentsToVerify"), subtitle: tr("dash.paymentsToVerifySub"), trailing: <CountPill n={pend.payments} tone="indigo" /> });
+  if (pend.memberships > 0 && can(org, "memberships.manage")) todos.push({ key: "m", href: `${base}/users`, tone: "sky", icon: <UserPlus />, title: tr("dash.joinRequests"), subtitle: tr("dash.joinRequestsSub"), trailing: <CountPill n={pend.memberships} tone="sky" /> });
+  if (pend.expenses > 0) todos.push({ key: "e", href: `${base}/expenses?status=pending`, tone: "pink", icon: <Receipt />, title: tr("dash.expensesToApprove"), trailing: <CountPill n={pend.expenses} tone="pink" /> });
+  if (pend.loans > 0) todos.push({ key: "l", href: `${base}/loans?status=applied`, tone: "violet", icon: <Landmark />, title: tr("dash.loanApplications"), trailing: <CountPill n={pend.loans} tone="violet" /> });
+  if ((t.fundLoanInterestDuePaise ?? 0) > 0) todos.push({ key: "ui", href: `${base}/fund-loans`, tone: "amber", icon: <Banknote />, title: tr("dash.upadInterest"), subtitle: tr("dash.activeUpad", { n: t.activeFundLoans ?? 0 }), trailing: <Money paise={t.fundLoanInterestDuePaise} className="text-sm font-bold text-warning-ink" /> });
+  if (olderDue > 0) todos.push({ key: "od", href: `${base}/installments?status=overdue`, tone: "rose", icon: <AlertTriangle />, title: tr("dash.olderHapta"), subtitle: tr("dash.earlierMonths"), trailing: <Money paise={olderDue} className="text-sm font-bold text-destructive" /> });
 
   return (
     <>
       <div className="mb-4">
         <p className="text-sm font-medium text-muted-foreground">
-          {org.name} · FY {d.financialYear}
+          {org.name} · {tr("dash.fy", { fy: d.financialYear })}
         </p>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">Namaste, {me.user.name.split(" ")[0]}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">{tr("dash.namaste", { name: me.user.name.split(" ")[0] })}</h1>
         {org.settings.endMonth && !org.settings.settlement && (
           <p className="mt-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
-            Runs until {monthLabelYM(org.settings.endMonth)} · {monthsLeft > 0 ? `${monthsLeft} month${monthsLeft === 1 ? "" : "s"} left` : "ended"}
+            {tr("dash.runsUntil", { month: monthName(lang, org.settings.endMonth) })} · {monthsLeft > 0 ? (monthsLeft === 1 ? tr("dash.oneMonthLeft") : tr("dash.monthsLeft", { n: monthsLeft })) : tr("dash.ended")}
           </p>
         )}
       </div>
@@ -90,8 +93,8 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         <Link href={`${base}/settings/close`} className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-500/12 p-3.5 text-sm ring-1 ring-amber-500/30">
           <Lock className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
           <span className="min-w-0 flex-1">
-            <b>{org.settings.settlement ? "Closing in progress" : monthsLeft > 0 ? "The Mandal ends this month" : "The Mandal's end month has passed"}</b>
-            <span className="block text-xs text-muted-foreground">{org.settings.settlement ? `${org.settings.settlement.payouts.length} member(s) paid out so far — continue settling.` : "Share out the money and pay every member when you're ready."}</span>
+            <b>{org.settings.settlement ? tr("dash.closingProgress") : monthsLeft > 0 ? tr("dash.endsThisMonth") : tr("dash.endPassed")}</b>
+            <span className="block text-xs text-muted-foreground">{org.settings.settlement ? tr("dash.paidOutSoFar", { n: org.settings.settlement.payouts.length }) : tr("dash.settleWhenReady")}</span>
           </span>
           <ArrowRight className="size-4" />
         </Link>
@@ -104,9 +107,9 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <div className="pointer-events-none absolute right-16 -bottom-16 size-32 rounded-full bg-white/10" />
           <div className="relative flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-white/80">{month} hapta collected</p>
+              <p className="text-sm font-medium text-white/80">{tr("dash.haptaCollected", { month })}</p>
               <p className="mt-1 text-4xl font-extrabold tracking-tight tabular-nums">{formatINRCompact(collected)}</p>
-              <p className="mt-0.5 text-sm text-white/80">of {formatINRShort(expected)} expected</p>
+              <p className="mt-0.5 text-sm text-white/80">{tr("dash.ofExpected", { amount: formatINRShort(expected) })}</p>
             </div>
             <span className="rounded-2xl bg-white/15 px-3 py-1.5 text-lg font-bold tabular-nums backdrop-blur">{pct}%</span>
           </div>
@@ -114,20 +117,18 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-white/90">
               {monthDue > 0 ? (
-                <>
-                  <span className="font-bold">{formatINRShort(monthDue)}</span> still to collect
-                </>
+                <span className="font-bold">{tr("dash.stillToCollect", { amount: formatINRShort(monthDue) })}</span>
               ) : expected > 0 ? (
                 <span className="flex items-center gap-1.5 font-semibold">
-                  <CheckCircle2 className="size-4" /> Everyone has paid
+                  <CheckCircle2 className="size-4" /> {tr("dash.everyonePaid")}
                 </span>
               ) : (
-                "No hapta due this month"
+                tr("dash.noHaptaThisMonth")
               )}
             </p>
             {can(org, "payments.record") && (
               <Link href={`${base}/monthly${monthDue > 0 ? "?show=due" : ""}`} className={cn(buttonVariants({ size: "lg" }), "h-11 bg-white text-indigo-700 shadow-md shadow-black/10 hover:bg-white/90 md:h-11")}>
-                <HandCoins /> Collect hapta
+                <HandCoins /> {tr("dash.collectHapta")}
               </Link>
             )}
           </div>
@@ -136,7 +137,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         {/* ---- needs attention */}
         <Card className="gap-2 py-3">
           <CardHeader className="px-4">
-            <CardTitle className="text-base font-bold">Needs your attention</CardTitle>
+            <CardTitle className="text-base font-bold">{tr("dash.needsAttention")}</CardTitle>
           </CardHeader>
           <CardContent className="px-2">
             {todos.length === 0 ? (
@@ -145,8 +146,8 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
                   <CheckCircle2 />
                 </IconChip>
                 <div>
-                  <p className="text-sm font-semibold">All caught up</p>
-                  <p className="text-xs text-muted-foreground">Nothing is waiting for you right now.</p>
+                  <p className="text-sm font-semibold">{tr("dash.allCaughtUp")}</p>
+                  <p className="text-xs text-muted-foreground">{tr("dash.nothingWaiting")}</p>
                 </div>
               </div>
             ) : (
@@ -162,22 +163,22 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
 
       {quick.length > 0 && (
         <section className="mt-5" aria-label="Shortcuts">
-          <SectionTitle>Quick actions</SectionTitle>
+          <SectionTitle>{tr("dash.quickActions")}</SectionTitle>
           <QuickGrid actions={quick} row />
         </section>
       )}
 
       <section className="mt-5" aria-label="Mandal fund">
-        <SectionTitle>Mandal at a glance</SectionTitle>
+        <SectionTitle>{tr("dash.glance")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Mandal fund" value={formatINRCompact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={`Cash ${formatINR(t.mandalCashPaise ?? 0)} + upad ${formatINR(t.fundLoansOutstandingPaise ?? 0)}`} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
-          <StatCard label="Total member balances" value={formatINRCompact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} />} />
-          <StatCard label="Upad given out" value={formatINRCompact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={<>Interest due <Money paise={t.fundLoanInterestDuePaise ?? 0} className="font-semibold text-foreground" /></>} href={`${base}/fund-loans`} />
-          <StatCard label="Members" value={t.activeMembers} icon={<Users />} accent="sky" hint={t.totalMembers !== undefined && t.totalMembers !== t.activeMembers ? `${t.totalMembers} in total` : "active"} href={`${base}/members`} />
-          <StatCard label="This year's hapta" value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={<><Money paise={d.collectionPerformance.collectedPaise} /> of <Money paise={d.collectionPerformance.duePaise} /> due</>} />
-          <StatCard label="Interest credited" value={formatINRCompact(t.interestThisMonthPaise ?? 0)} icon={<Percent />} accent="pink" hint={t.interestThisFyPaise !== undefined ? `This month · FY ${formatINR(t.interestThisFyPaise)}` : "This month"} />
-          <StatCard label="Cash received this month" value={formatINRCompact(t.monthHaptaCashPaise ?? 0)} icon={<ArrowDownToLine />} accent="emerald" hint="Hapta cash, any month" />
-          <StatCard label="Pending hapta" value={formatINRCompact(t.outstandingHaptaPaise ?? 0)} icon={<CalendarClock />} tone={(t.outstandingHaptaPaise ?? 0) > 0 ? "warn" : "good"} hint="All months" href={`${base}/monthly?show=due`} />
+          <StatCard label={tr("dash.mandalFund")} value={formatINRCompact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={tr("dash.mandalFundHint", { cash: formatINR(t.mandalCashPaise ?? 0), upad: formatINR(t.fundLoansOutstandingPaise ?? 0) })} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
+          <StatCard label={tr("dash.memberBalances")} value={formatINRCompact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} tr={tr} />} />
+          <StatCard label={tr("dash.upadOut")} value={formatINRCompact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={tr("dash.interestDueX", { amount: formatINR(t.fundLoanInterestDuePaise ?? 0) })} href={`${base}/fund-loans`} />
+          <StatCard label={tr("dash.membersCard")} value={t.activeMembers} icon={<Users />} accent="sky" hint={t.totalMembers !== undefined && t.totalMembers !== t.activeMembers ? tr("dash.inTotal", { n: t.totalMembers }) : tr("dash.activeLower")} href={`${base}/members`} />
+          <StatCard label={tr("dash.yearHapta")} value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={tr("dash.ofDue", { a: formatINR(d.collectionPerformance.collectedPaise), b: formatINR(d.collectionPerformance.duePaise) })} />
+          <StatCard label={tr("dash.interestCredited")} value={formatINRCompact(t.interestThisMonthPaise ?? 0)} icon={<Percent />} accent="pink" hint={t.interestThisFyPaise !== undefined ? tr("dash.thisMonthFy", { amount: formatINR(t.interestThisFyPaise) }) : tr("dash.thisMonth")} />
+          <StatCard label={tr("dash.cashReceived")} value={formatINRCompact(t.monthHaptaCashPaise ?? 0)} icon={<ArrowDownToLine />} accent="emerald" hint={tr("dash.haptaAnyMonth")} />
+          <StatCard label={tr("dash.pendingHapta")} value={formatINRCompact(t.outstandingHaptaPaise ?? 0)} icon={<CalendarClock />} tone={(t.outstandingHaptaPaise ?? 0) > 0 ? "warn" : "good"} hint={tr("dash.allMonths")} href={`${base}/monthly?show=due`} />
         </div>
         <MemberShare
           cashPaise={t.mandalCashPaise ?? 0}
@@ -186,13 +187,14 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           upadInterestPaise={t.fundLoanInterestDuePaise ?? 0}
           members={t.activeMembers ?? 0}
           shares={t.activeShares ?? t.activeMembers ?? 0}
+          tr={tr}
         />
         {isAdmin && (t.activeLoans > 0 || incomeBooks) && (
           <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {t.fyIncomePaise !== undefined && <StatCard label={`Income FY ${d.financialYear}`} value={formatINRCompact(t.fyIncomePaise)} icon={<Banknote />} accent="emerald" />}
-            {t.fyExpensesPaise !== undefined && <StatCard label={`Expenses FY ${d.financialYear}`} value={formatINRCompact(t.fyExpensesPaise)} icon={<Receipt />} accent="pink" />}
-            <StatCard label="Active loans" value={t.activeLoans} icon={<Landmark />} accent="violet" hint={`${formatINR(t.loanOutstandingPrincipalPaise)} principal outstanding`} />
-            <StatCard label="Overdue" value={formatINRCompact(t.overdueAmountPaise)} icon={<AlertTriangle />} hint={`${t.overdueInstallments} installments`} tone={t.overdueInstallments > 0 ? "bad" : "good"} />
+            {t.fyIncomePaise !== undefined && <StatCard label={tr("dash.incomeFy", { fy: d.financialYear })} value={formatINRCompact(t.fyIncomePaise)} icon={<Banknote />} accent="emerald" />}
+            {t.fyExpensesPaise !== undefined && <StatCard label={tr("dash.expensesFy", { fy: d.financialYear })} value={formatINRCompact(t.fyExpensesPaise)} icon={<Receipt />} accent="pink" />}
+            <StatCard label={tr("dash.activeLoans")} value={t.activeLoans} icon={<Landmark />} accent="violet" hint={tr("dash.principalOut", { amount: formatINR(t.loanOutstandingPrincipalPaise) })} />
+            <StatCard label={tr("dash.overdueCard")} value={formatINRCompact(t.overdueAmountPaise)} icon={<AlertTriangle />} hint={tr("dash.installmentsN", { n: t.overdueInstallments })} tone={t.overdueInstallments > 0 ? "bad" : "good"} />
           </div>
         )}
       </section>
@@ -200,7 +202,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       {d.monthlyChart && incomeBooks && (
         <Card className="mt-5">
           <CardHeader>
-            <CardTitle className="font-bold">Income vs expenses</CardTitle>
+            <CardTitle className="font-bold">{tr("dash.incomeVsExpenses")}</CardTitle>
           </CardHeader>
           <CardContent>
             <MonthlyChart data={d.monthlyChart} />
@@ -211,16 +213,16 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="font-bold">Upcoming dues</CardTitle>
+            <CardTitle className="font-bold">{tr("dash.upcoming")}</CardTitle>
             <CardAction>
               <Link href={`${base}/installments?status=upcoming`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-primary")}>
-                All <ArrowRight />
+                {tr("common.all")} <ArrowRight />
               </Link>
             </CardAction>
           </CardHeader>
           <CardContent>
             {d.upcomingDues.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing due in the next 30 days.</p>
+              <p className="text-sm text-muted-foreground">{tr("dash.nothingUpcoming")}</p>
             ) : (
               <ul className="divide-y text-sm">
                 {d.upcomingDues.map((u: any) => (
@@ -228,7 +230,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
                     <span className="min-w-0">
                       <span className="block truncate font-semibold">{u.memberName}</span>
                       <span className="text-xs text-muted-foreground">
-                        {u.periodLabel} · due {formatDate(u.dueDate)}
+                        {tr("dash.dueOn", { period: u.periodLabel, date: formatDate(u.dueDate) })}
                       </span>
                     </span>
                     <Money paise={u.amountPaise - u.paidPaise} className="font-semibold" />
@@ -240,18 +242,18 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="font-bold">Recent activity</CardTitle>
+            <CardTitle className="font-bold">{tr("dash.activity")}</CardTitle>
             {can(org, "transactions.view") && (
               <CardAction>
                 <Link href={`${base}/transactions`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-primary")}>
-                  Ledger <ArrowRight />
+                  {tr("dash.ledger")} <ArrowRight />
                 </Link>
               </CardAction>
             )}
           </CardHeader>
           <CardContent>
             {d.recentTransactions.length === 0 ? (
-              <EmptyState title="No transactions yet" description="Collections, upad and withdrawals will appear here." />
+              <EmptyState title={tr("dash.noTx")} description={tr("dash.noTxDesc")} />
             ) : (
               <ul className="divide-y text-sm">
                 {d.recentTransactions.map((tx: any) => {
@@ -280,10 +282,10 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       {d.recentWithdrawals?.length > 0 && (
         <Card className="mt-4">
           <CardHeader>
-            <CardTitle className="font-bold">Recent withdrawals</CardTitle>
+            <CardTitle className="font-bold">{tr("dash.recentWithdrawals")}</CardTitle>
             <CardAction>
               <Link href={`${base}/withdrawals`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-primary")}>
-                All <ArrowRight />
+                {tr("common.all")} <ArrowRight />
               </Link>
             </CardAction>
           </CardHeader>
@@ -313,7 +315,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       {d.accounts?.length > 0 && (
         <Card className="mt-4">
           <CardHeader>
-            <CardTitle className="font-bold">Account balances</CardTitle>
+            <CardTitle className="font-bold">{tr("dash.accountBalances")}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {d.accounts.map((a: any) => (
@@ -342,12 +344,12 @@ function txKind(type: string): { tone: Tone; icon: React.ReactNode } {
 }
 
 /** "Opening ₹1,000 + hapta ₹9,000 + interest ₹10 − withdrawn ₹500" — how the total member balances is made up. */
-function BalanceParts({ parts }: { parts?: { openingPaise: number; haptaPaise: number; interestPaise: number; withdrawalsPaise: number; otherPaise: number } }) {
-  if (!parts) return <>Savings owed to members</>;
+function BalanceParts({ parts, tr }: { tr: T; parts?: { openingPaise: number; haptaPaise: number; interestPaise: number; withdrawalsPaise: number; otherPaise: number } }) {
+  if (!parts) return <>{tr("dash.owedToMembers")}</>;
   const plus = [
-    ["Opening", parts.openingPaise],
-    ["hapta", parts.haptaPaise],
-    ["interest", parts.interestPaise],
+    [tr("dash.opening"), parts.openingPaise],
+    [tr("dash.hapta"), parts.haptaPaise],
+    [tr("dash.interestLower"), parts.interestPaise],
   ].filter(([, v]) => (v as number) !== 0) as [string, number][];
   return (
     <span className="leading-relaxed">
@@ -357,17 +359,17 @@ function BalanceParts({ parts }: { parts?: { openingPaise: number; haptaPaise: n
           {i === 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l} <span className="font-semibold text-foreground">{formatINRShort(v)}</span>
         </span>
       ))}
-      {plus.length === 0 && "Savings owed to members"}
+      {plus.length === 0 && tr("dash.owedToMembers")}
       {parts.withdrawalsPaise !== 0 && (
         <>
           {" "}
-          − withdrawn <span className="font-semibold text-rose-600 dark:text-rose-300">{formatINRShort(parts.withdrawalsPaise)}</span>
+          − {tr("dash.withdrawn")} <span className="font-semibold text-rose-600 dark:text-rose-300">{formatINRShort(parts.withdrawalsPaise)}</span>
         </>
       )}
       {parts.otherPaise !== 0 && (
         <>
           {" "}
-          {parts.otherPaise > 0 ? "+" : "−"} adjustments <span className="font-semibold text-foreground">{formatINRShort(Math.abs(parts.otherPaise))}</span>
+          {parts.otherPaise > 0 ? "+" : "−"} {tr("dash.adjustments")} <span className="font-semibold text-foreground">{formatINRShort(Math.abs(parts.otherPaise))}</span>
         </>
       )}
     </span>
@@ -378,27 +380,27 @@ function BalanceParts({ parts }: { parts?: { openingPaise: number; haptaPaise: n
  * Everything the Mandal has or is owed — cash, upad still out, hapta not yet paid and upad interest
  * due — shared equally by the active members.
  */
-function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members, shares }: { cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number; shares: number }) {
+function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members, shares, tr }: { tr: T; cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number; shares: number }) {
   const total = cashPaise + upadPaise + pendingHaptaPaise + upadInterestPaise;
   // members paying several haptas count once per hapta
   const byShares = shares !== members;
   const parts = byShares ? shares : members;
   const each = parts > 0 ? Math.floor(total / parts) : 0;
   const rows: [string, number, Tone][] = [
-    ["Cash in hand & bank", cashPaise, "emerald"],
-    ["Upad given out", upadPaise, "orange"],
-    ["Hapta still to collect", pendingHaptaPaise, "indigo"],
-    ["Upad interest due", upadInterestPaise, "amber"],
+    [tr("dash.shareCash"), cashPaise, "emerald"],
+    [tr("dash.shareUpad"), upadPaise, "orange"],
+    [tr("dash.shareHapta2"), pendingHaptaPaise, "indigo"],
+    [tr("dash.shareInterest"), upadInterestPaise, "amber"],
   ];
   return (
     <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label="Each member's share">
       <div className="bg-hero-green flex flex-col justify-center gap-1 p-5 md:w-72 md:shrink-0">
-        <p className="text-sm font-medium text-white/85">{byShares ? "Each hapta share" : "Each member's share"}</p>
+        <p className="text-sm font-medium text-white/85">{byShares ? tr("dash.shareHapta") : tr("dash.shareMember")}</p>
         <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(each)}</p>
         <p className="text-sm text-white/85">
-          {formatINRShort(total)} ÷ {byShares ? `${shares} shares (${members} member${members === 1 ? "" : "s"})` : `${members} member${members === 1 ? "" : "s"}`}
+          {byShares ? tr("dash.shareDivShares", { total: formatINRShort(total), shares, n: members }) : tr("dash.shareDiv", { total: formatINRShort(total), n: members })}
         </p>
-        {byShares && <p className="mt-1 text-xs text-white/75">A member paying 3 haptas gets {formatINRShort(each * 3)}.</p>}
+        {byShares && <p className="mt-1 text-xs text-white/75">{tr("dash.share3", { amount: formatINRShort(each * 3) })}</p>}
       </div>
       <div className="flex-1 p-4 sm:px-5">
         <ul className="divide-y text-sm">
@@ -412,12 +414,12 @@ function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPais
             </li>
           ))}
           <li className="flex items-center justify-between gap-3 py-2 font-bold">
-            <span>Total (if everything is collected)</span>
+            <span>{tr("dash.shareTotal")}</span>
             <Money paise={total} short />
           </li>
         </ul>
         <p className="mt-1 text-xs text-muted-foreground">
-          {byShares ? "What each hapta share would get if the cash, upad and all pending dues were shared — members paying more haptas get more shares." : "What each active member would get if the cash, upad and all pending dues were shared equally."}
+          {byShares ? tr("dash.shareNoteShares") : tr("dash.shareNoteMembers")}
         </p>
       </div>
     </Card>

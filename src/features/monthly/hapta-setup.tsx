@@ -13,6 +13,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { rupees } from "@/lib/schemas";
 import { todayISO } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Choose a month");
 
@@ -27,6 +28,7 @@ const SetupSchema = z.object({
 export function HaptaSetupForm({ inline = false }: { inline?: boolean }) {
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
+  const t = useT();
   const form = useForm<z.input<typeof SetupSchema>, unknown, z.output<typeof SetupSchema>>({
     resolver: zodResolver(SetupSchema),
     defaultValues: { amount: "", startMonth: todayISO().slice(0, 7), dueDay: 10, enrollAllActive: true },
@@ -37,26 +39,26 @@ export function HaptaSetupForm({ inline = false }: { inline?: boolean }) {
     <form
       noValidate
       className="grid gap-3 sm:grid-cols-3"
-      onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/monthly-hapta`, body: v }, { success: "Monthly hapta set up", onSuccess: inline ? undefined : close }))}
+      onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/monthly-hapta`, body: v }, { success: t("hs.setUpDone"), onSuccess: inline ? undefined : close }))}
     >
       <div className="sm:col-span-3">
         <FormError message={error} />
       </div>
-      <Field label="Hapta per member (₹/month)" htmlFor="hs-amt" error={e.amount?.message}>
+      <Field label={t("hs.perMember")} htmlFor="hs-amt" error={e.amount?.message}>
         <Input id="hs-amt" inputMode="decimal" placeholder="500" {...form.register("amount")} />
       </Field>
-      <Field label="Starting month" htmlFor="hs-start" error={e.startMonth?.message}>
+      <Field label={t("hs.startMonth")} htmlFor="hs-start" error={e.startMonth?.message}>
         <Input id="hs-start" type="month" {...form.register("startMonth")} />
       </Field>
-      <Field label="Due by day" htmlFor="hs-due" error={e.dueDay?.message} hint="Day of the month (1–28)">
+      <Field label={t("hs.dueDay")} htmlFor="hs-due" error={e.dueDay?.message} hint={t("hs.dueDayHint")}>
         <Input id="hs-due" type="number" min={1} max={28} {...form.register("dueDay")} />
       </Field>
       <label className="flex items-center gap-2 text-sm sm:col-span-3">
         <Checkbox checked={form.watch("enrollAllActive")} onCheckedChange={(c) => form.setValue("enrollAllActive", !!c)} />
-        Add all current active members (from their joining month or the starting month)
+        {t("hs.enrollAll")}
       </label>
       <Button type="submit" disabled={pending} className="sm:col-span-3 sm:justify-self-start">
-        {pending && <Loader2 className="animate-spin" />} Start monthly hapta
+        {pending && <Loader2 className="animate-spin" />} {t("hs.start")}
       </Button>
     </form>
   );
@@ -67,6 +69,7 @@ const ChangeSchema = z.object({ amount: rupees, effectiveMonth: month, reason: z
 function ChangeForm({ currentRupees, nextMonth }: { currentRupees: string; nextMonth: string }) {
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
+  const t = useT();
   const form = useForm<z.infer<typeof ChangeSchema>>({ resolver: zodResolver(ChangeSchema), defaultValues: { amount: currentRupees, effectiveMonth: nextMonth, reason: "" } });
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
@@ -77,41 +80,43 @@ function ChangeForm({ currentRupees, nextMonth }: { currentRupees: string; nextM
       onSubmit={form.handleSubmit((v) =>
         submit<{ effectiveMonth: string; installmentsUpdated: number }>(
           { path: `/orgs/${orgId}/monthly-hapta`, method: "PATCH", body: { ...v, reason: v.reason || undefined } },
-          { success: "Hapta amount updated for future months", onSuccess: close },
+          { success: t("hs.updated"), onSuccess: close },
         ),
       )}
     >
       <FormError message={error} />
       <div className="grid grid-cols-2 gap-3">
-        <Field label="New amount (₹/month)" htmlFor="hc-amt" error={e.amount?.message}>
+        <Field label={t("hs.newAmount")} htmlFor="hc-amt" error={e.amount?.message}>
           <Input id="hc-amt" inputMode="decimal" {...form.register("amount")} />
         </Field>
-        <Field label="Applies from" htmlFor="hc-month" error={e.effectiveMonth?.message}>
+        <Field label={t("hs.appliesFrom")} htmlFor="hc-month" error={e.effectiveMonth?.message}>
           <Input id="hc-month" type="month" min={todayISO().slice(0, 7)} {...form.register("effectiveMonth")} />
         </Field>
       </div>
-      <Field label="Reason (optional)" htmlFor="hc-reason">
-        <Input id="hc-reason" placeholder="Decided in the Diwali meeting" {...form.register("reason")} />
+      <Field label={t("hs.reason")} htmlFor="hc-reason">
+        <Input id="hc-reason" placeholder={t("hs.reasonPh")} {...form.register("reason")} />
       </Field>
-      <p className="text-xs text-muted-foreground">Earlier months, and any month that is already paid or part paid, keep their amount.</p>
+      <p className="text-xs text-muted-foreground">{t("hs.keepNote")}</p>
       <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Change amount
+        {pending && <Loader2 className="animate-spin" />} {t("hs.change")}
       </Button>
     </form>
   );
 }
 
 export function ChangeHaptaDialog({ currentRupees, nextMonth }: { currentRupees: string; nextMonth: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><Pencil /> Change amount</>} triggerVariant="outline" triggerSize="sm" title="Change the monthly hapta" description="The new amount applies only to future months.">
+    <FormDialog trigger={<><Pencil /> {t("hs.change")}</>} triggerVariant="outline" triggerSize="sm" title={t("hs.changeTitle")} description={t("hs.changeDesc")}>
       <ChangeForm currentRupees={currentRupees} nextMonth={nextMonth} />
     </FormDialog>
   );
 }
 
 export function SetupHaptaDialog() {
+  const t = useT();
   return (
-    <FormDialog trigger="Set up monthly hapta" title="Set up the monthly hapta" wide>
+    <FormDialog trigger={t("hs.setUp")} title={t("hs.setUpTitle")} wide>
       <HaptaSetupForm />
     </FormDialog>
   );

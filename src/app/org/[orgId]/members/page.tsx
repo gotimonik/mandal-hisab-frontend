@@ -13,6 +13,7 @@ import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Input } from "@/components/ui/input";
+import { formatINRShort } from "@/lib/format";
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { MemberDialog } from "@/features/members/member-form";
 import { ImportMembersDialog } from "@/features/members/import-dialog";
+import { getT } from "@/i18n/server";
 
 export const metadata = { title: "Members" };
 
@@ -42,11 +44,12 @@ export default async function MembersPage({
     ),
   ]);
   const manage = can(org, "members.manage");
+  const { t } = await getT();
   return (
     <>
       <PageHeader
-        title="Members"
-        description="Everyone in your Mandal. Members do not need an app login."
+        title={t("members.title")}
+        description={t("members.desc")}
         actions={
           manage ? (
             <>
@@ -60,18 +63,18 @@ export default async function MembersPage({
         {status && <input type="hidden" name="status" value={status} />}
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" defaultValue={q} placeholder="Name, number or phone" aria-label="Search" className="pl-9" />
+          <Input name="q" defaultValue={q} placeholder={t("members.searchPh")} aria-label={t("common.search")} className="pl-9" />
         </div>
         <Button type="submit" variant="secondary">
-          Search
+          {t("common.search")}
         </Button>
       </form>
-      <div className="no-print scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" aria-label="Status">
+      <div className="no-print scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" aria-label={t("common.status")}>
         {[
-          ["", "All"],
-          ["active", "Active"],
-          ["inactive", "Inactive"],
-          ["left", "Left"],
+          ["", t("common.all")],
+          ["active", t("members.active")],
+          ["inactive", t("members.inactive")],
+          ["left", t("members.left")],
         ].map(([k, l]) => (
           <Link
             key={k}
@@ -87,15 +90,15 @@ export default async function MembersPage({
         <EmptyState
           icon={<Users />}
           title={
-            q || status ? "No members match these filters" : "No members yet"
+            q || status ? t("members.noMatch") : t("members.none")
           }
           description={
-            manage ? "Add members one by one or import a CSV file." : undefined
+            manage ? t("members.noneDesc") : undefined
           }
         />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Members">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("members.title")}>
             {data.items.map((m) => {
               const due = m.outstandingPaise ?? 0;
               return (
@@ -118,7 +121,7 @@ export default async function MembersPage({
                         <StatusBadge status={m.status} />
                       )}
                       <span>
-                        Savings{" "}
+                        {t("members.savingsX")}{" "}
                         <Money
                           paise={m.balancePaise ?? 0}
                           short
@@ -130,17 +133,17 @@ export default async function MembersPage({
                   <div className="flex shrink-0 items-center gap-1.5">
                     {due > 0 ? (
                       <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
-                        <Money paise={due} short /> due
+                        {t("members.due", { amount: formatINRShort(due) })}
                       </span>
                     ) : (
                       <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                        Paid up
+                        {t("members.paidUp")}
                       </span>
                     )}
                     {m.phone && (
                       <a
                         href={`tel:${m.phone}`}
-                        aria-label={`Call ${m.name}`}
+                        aria-label={t("common.callX", { name: m.name })}
                         className="flex size-9 items-center justify-center rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300"
                       >
                         <Phone className="size-4" />
@@ -156,14 +159,14 @@ export default async function MembersPage({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>No.</TableHead>
-                    <TableHead>Name</TableHead>
+                    <TableHead>{t("members.colNo")}</TableHead>
+                    <TableHead>{t("members.colName")}</TableHead>
                     <TableHead className="hidden sm:table-cell">
-                      Mobile
+                      {t("members.colMobile")}
                     </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Outstanding</TableHead>
-                    <TableHead className="text-right">Savings</TableHead>
+                    <TableHead>{t("common.status")}</TableHead>
+                    <TableHead className="text-right">{t("members.colOutstanding")}</TableHead>
+                    <TableHead className="text-right">{t("members.colSavings")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -183,7 +186,7 @@ export default async function MembersPage({
                         {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} className="ml-2" />}
                         {m.userId && (
                           <span className="ml-2 text-xs text-muted-foreground">
-                            · app user
+                            · {t("members.appUser")}
                           </span>
                         )}
                       </TableCell>

@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/app/field";
-import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
 import { formatDate, formatINR, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupeesOrZero } from "@/lib/schemas";
+import { useT } from "@/i18n/client";
 
 /**
  * Record money received on a fund loan: the interest (oldest unpaid month first) and/or part of
@@ -23,7 +23,7 @@ export function LoanPaymentDialog({
   memberName,
   interestDuePaise,
   outstandingPaise,
-  label = "Receive payment",
+  label: labelProp,
   size = "sm",
   variant = "default",
   reported = [],
@@ -41,6 +41,8 @@ export function LoanPaymentDialog({
 }) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
+  const t = useT();
+  const label = labelProp ?? t("upad.receivePayment");
   const [open, setOpen] = useState(false);
   const [interest, setInterest] = useState(paiseToRupeeInput(interestDuePaise));
   const [principal, setPrincipal] = useState("");
@@ -62,14 +64,14 @@ export function LoanPaymentDialog({
   const save = () => {
     const i = rupeesOrZero.safeParse(interest);
     const p = rupeesOrZero.safeParse(principal);
-    if (!i.success) return setError(`Interest: ${i.error.issues[0].message}`);
-    if (!p.success) return setError(`Upad amount: ${p.error.issues[0].message}`);
-    if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError("Enter the interest and/or upad amount received");
+    if (!i.success) return setError(t("upad.vInterest", { msg: i.error.issues[0].message }));
+    if (!p.success) return setError(t("upad.vUpadAmt", { msg: p.error.issues[0].message }));
+    if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError(t("upad.vEnterAny"));
     start(async () => {
       setError(null);
       const res = await apiMutate<{ settledClaimId: string | null }>({ path: `/orgs/${orgId}/fund-loans/${loanId}/payments`, body: { interestAmount: i.data, principalAmount: p.data, date, note: note || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.fieldErrors?.interestAmount ?? res.error);
-      toast.success(`Payment from ${memberName} recorded`, res.data.settledClaimId ? { description: "It matched the payment they reported, so that one is closed too." } : undefined);
+      toast.success(t("upad.paymentRecorded", { name: memberName }), res.data.settledClaimId ? { description: t("upad.matchedClaim") } : undefined);
       setOpen(false);
       reset();
       router.refresh();
@@ -94,7 +96,7 @@ export function LoanPaymentDialog({
               {memberName} · {number}
             </DialogTitle>
             <DialogDescription>
-              Interest due <Money paise={interestDuePaise} className="font-medium text-foreground" /> · upad outstanding <Money paise={outstandingPaise} className="font-medium text-foreground" />
+              {t("upad.payDesc", { interest: formatINR(interestDuePaise), outstanding: formatINR(outstandingPaise) })}
             </DialogDescription>
           </DialogHeader>
           <form
@@ -108,33 +110,33 @@ export function LoanPaymentDialog({
             <FormError message={error} />
             {reported.length > 0 && (
               <div className="rounded-xl bg-amber-500/12 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200" role="note">
-                <b>{memberName} already reported paying</b>{" "}
+                <b>{t("upad.reportedAlready", { name: memberName })}</b>{" "}
                 {reported.map((r, k) => (
                   <span key={k}>
                     {k > 0 && "; "}
-                    {[r.interestPaise ? `${formatINR(r.interestPaise)} interest` : "", r.principalPaise ? `${formatINR(r.principalPaise)} upad` : ""].filter(Boolean).join(" + ")} ({r.method}, {formatDate(r.date)})
+                    {[r.interestPaise ? t("upad.recInterest", { amount: formatINR(r.interestPaise) }) : "", r.principalPaise ? t("upad.recUpad", { amount: formatINR(r.principalPaise) }) : ""].filter(Boolean).join(" + ")} ({r.method}, {formatDate(r.date)})
                   </span>
                 ))}
-                . If this is that money, use <b>Verify</b> under Payments to verify instead — or record the same amount here and it will be matched automatically.
+                . {t("upad.reportedHint")}
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Interest received (₹)" htmlFor="lp-int" hint="Oldest month first">
+              <Field label={t("upad.interestReceivedRs")} htmlFor="lp-int" hint={t("upad.oldestFirst")}>
                 <Input id="lp-int" inputMode="decimal" value={interest} onChange={(e) => setInterest(e.target.value)} />
               </Field>
-              <Field label="Upad amount returned (₹)" htmlFor="lp-pr" hint="Optional">
+              <Field label={t("upad.returnedRs")} htmlFor="lp-pr" hint={t("common.optional")}>
                 <Input id="lp-pr" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
               </Field>
             </div>
-            <Field label="Date received" htmlFor="lp-date">
+            <Field label={t("common.dateReceived")} htmlFor="lp-date">
               <Input id="lp-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="Note (optional)" htmlFor="lp-note">
+            <Field label={t("common.noteOptional")} htmlFor="lp-note">
               <Input id="lp-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>
-            <p className="text-xs text-muted-foreground">The interest is added to every member&apos;s balance in proportion to their savings. Returning part of the upad lowers interest from next month.</p>
+            <p className="text-xs text-muted-foreground">{t("upad.payNote")}</p>
             <Button type="submit" disabled={pending}>
-              {pending && <Loader2 className="animate-spin" />} Record as paid
+              {pending && <Loader2 className="animate-spin" />} {t("upad.recordPaid")}
             </Button>
           </form>
         </DialogContent>

@@ -13,6 +13,8 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/app/actions/api";
 import { formatINR, newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useLang, useT } from "@/i18n/client";
+import { monthName } from "@/i18n/core";
 
 interface Props {
   members: { _id: string; name: string; membershipNumber: string }[];
@@ -27,6 +29,8 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
+  const t = useT();
+  const lang = useLang();
   const [memberId, setMemberId] = useState(defaultMemberId ?? "");
   const [amount, setAmount] = useState("");
   const [rate, setRate] = useState(defaultRate);
@@ -44,19 +48,19 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
   const monthly = RATE.test(rate) ? Math.round((amountPaise * Number(rate)) / 100) : 0;
   const nextMonthName = (() => {
     const [y, m] = date.slice(0, 7).split("-").map(Number);
-    return y ? new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m, 1))) : "";
+    return y ? monthName(lang, new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7)) : "";
   })();
 
   const save = () => {
-    if (!memberId) return setError("Choose the member taking the upad");
+    if (!memberId) return setError(t("upad.vMember"));
     const p = rupees.safeParse(amount);
     if (!p.success) return setError(p.error.issues[0].message);
-    if (!RATE.test(rate) || Number(rate) <= 0) return setError("Enter the interest rate per month, e.g. 2 or 10");
+    if (!RATE.test(rate) || Number(rate) <= 0) return setError(t("upad.vRate"));
     start(async () => {
       setError(null);
       const res = await apiMutate<{ loan: { _id: string; number: string } }>({ path: `/orgs/${orgId}/fund-loans`, body: { memberId, amount: p.data, monthlyRate: rate, date, note: note || undefined, accountId: accountId || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.error);
-      toast.success(`Upad ${res.data.loan.number} recorded`);
+      toast.success(t("upad.recorded", { number: res.data.loan.number }));
       close();
       router.push(`/org/${orgId}/fund-loans/${res.data.loan._id}`);
       router.refresh();
@@ -73,9 +77,9 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
       }}
     >
       <FormError message={error} />
-      <Field label="Member taking upad" htmlFor="fl-member">
+      <Field label={t("upad.memberTaking")} htmlFor="fl-member">
         <NativeSelect id="fl-member" value={memberId} onChange={(e) => setMemberId(e.target.value)}>
-          <option value="">Choose a member…</option>
+          <option value="">{t("upad.chooseMember")}</option>
           {members.map((m) => (
             <option key={m._id} value={m._id}>
               {m.name} ({m.membershipNumber})
@@ -84,18 +88,18 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
         </NativeSelect>
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount (₹)" htmlFor="fl-amt" hint={account ? <>Fund cash: <Money paise={account.balancePaise} /></> : undefined}>
+        <Field label={t("common.amountRs")} htmlFor="fl-amt" hint={account ? <>{t("upad.fundCash")} <Money paise={account.balancePaise} /></> : undefined}>
           <Input id="fl-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
-        <Field label="Interest (% per month)" htmlFor="fl-rate">
+        <Field label={t("upad.ratePerMonth")} htmlFor="fl-rate">
           <Input id="fl-rate" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
         </Field>
       </div>
-      <Field label="Date given" htmlFor="fl-date">
+      <Field label={t("upad.dateGiven")} htmlFor="fl-date">
         <Input id="fl-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
       </Field>
       {accounts.length > 1 && (
-        <Field label="Paid from" htmlFor="fl-acc">
+        <Field label={t("upad.paidFrom")} htmlFor="fl-acc">
           <NativeSelect id="fl-acc" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
@@ -105,24 +109,25 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
           </NativeSelect>
         </Field>
       )}
-      <Field label="Note (optional)" htmlFor="fl-note">
-        <Input id="fl-note" maxLength={300} placeholder="e.g. For house repair" value={note} onChange={(e) => setNote(e.target.value)} />
+      <Field label={t("common.noteOptional")} htmlFor="fl-note">
+        <Input id="fl-note" maxLength={300} placeholder={t("upad.notePh")} value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
       {monthly > 0 && (
         <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-          Interest of <span className="font-semibold">{formatINR(monthly)}</span> will be due every month from {nextMonthName}, on the amount still outstanding. Unpaid interest carries forward.
+          {t("upad.willBeDue", { amount: formatINR(monthly), month: nextMonthName })}
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Give upad
+        {pending && <Loader2 className="animate-spin" />} {t("upad.give")}
       </Button>
     </form>
   );
 }
 
 export function GiveLoanDialog(props: Props & { defaultOpen?: boolean }) {
+  const t = useT();
   return (
-    <FormDialog defaultOpen={props.defaultOpen} trigger={<><HandCoins /> Give upad</>} title="Give upad from the Mandal fund" description="Cash goes out of the fund to the member; it is paid back with monthly interest.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><HandCoins /> {t("upad.give")}</>} title={t("upad.giveTitle")} description={t("upad.giveDesc")}>
       <Form {...props} />
     </FormDialog>
   );

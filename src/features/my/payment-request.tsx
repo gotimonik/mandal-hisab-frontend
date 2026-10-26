@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
-import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate, apiRead } from "@/app/actions/api";
-import { METHOD_LABEL, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { METHOD_LABEL, formatINR, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees, rupeesOrZero } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
+import { useLang, useT } from "@/i18n/client";
+import { intlLocale, type Key } from "@/i18n/core";
 
 type Purpose = "hapta" | "upad" | "other";
 
@@ -23,12 +24,15 @@ interface Options {
   methods: string[];
 }
 
-const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
+const monthName = (lang: "en" | "gu", m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
 
 function Form({ methods }: { methods: string[] }) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
+  const t = useT();
+  const lang = useLang();
+  const methodLabel = (m: string) => (m in METHOD_LABEL ? t(`pay.method.${m}` as Key) : label(METHOD_LABEL, m));
   const [opts, setOpts] = useState<Options | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [purpose, setPurpose] = useState<Purpose>("hapta");
@@ -71,21 +75,21 @@ function Form({ methods }: { methods: string[] }) {
     if (purpose === "upad") {
       const i = rupeesOrZero.safeParse(interest);
       const p = rupeesOrZero.safeParse(principal);
-      if (!loanId) return setError("Choose the upad");
-      if (!i.success) return setError(`Interest: ${i.error.issues[0].message}`);
-      if (!p.success) return setError(`Upad returned: ${p.error.issues[0].message}`);
-      if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError("Enter the interest and/or upad amount you paid");
+      if (!loanId) return setError(t("pay.vUpad"));
+      if (!i.success) return setError(t("pay.vInterest", { msg: i.error.issues[0].message }));
+      if (!p.success) return setError(t("pay.vReturned", { msg: p.error.issues[0].message }));
+      if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError(t("pay.vEnter"));
       req = { path: `/orgs/${orgId}/me/upad-payments`, body: { loanId, interestAmount: i.data, principalAmount: p.data, date, method, reference: reference || undefined, notes: notes || undefined, idempotencyKey: key } };
     } else {
       const a = rupees.safeParse(amount);
       if (!a.success) return setError(a.error.issues[0].message);
-      if (purpose === "other" && notes.trim().length < 2) return setError("Say what this payment is for");
+      if (purpose === "other" && notes.trim().length < 2) return setError(t("pay.vOther"));
       req = { path: `/orgs/${orgId}/me/payment-requests`, body: { purpose, amount: a.data, date, method, reference: reference || undefined, notes: notes || undefined, idempotencyKey: key } };
     }
     start(async () => {
       const res = await apiMutate(req);
       if (!res.ok) return setError(res.fieldErrors?.interestAmount ?? res.fieldErrors?.amount ?? res.error);
-      toast.success("Sent for verification");
+      toast.success(t("pay.sent"));
       close();
       router.refresh();
     });
@@ -95,15 +99,15 @@ function Form({ methods }: { methods: string[] }) {
   if (!opts) {
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading what you owe…
+        <Loader2 className="size-4 animate-spin" /> {t("pay.loadingOwe")}
       </div>
     );
   }
 
   const choices: { key: Purpose; title: string; hint: React.ReactNode; icon: React.ReactNode; show: boolean }[] = [
-    { key: "hapta", title: "Monthly hapta", icon: <CalendarDays />, show: true, hint: opts.hapta.duePaise ? <>Due now <Money paise={opts.hapta.duePaise} /></> : "Nothing due right now" },
-    { key: "upad", title: "Upad", icon: <HandCoins />, show: opts.upads.length > 0, hint: <>Interest <Money paise={opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)} /> due</> },
-    { key: "other", title: "Other", icon: <Heart />, show: true, hint: "Donation, event, etc." },
+    { key: "hapta", title: t("pay.monthly"), icon: <CalendarDays />, show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: formatINR(opts.hapta.duePaise) }) : t("pay.nothingNow") },
+    { key: "upad", title: t("pay.upad"), icon: <HandCoins />, show: opts.upads.length > 0, hint: t("pay.upadInterestDue", { amount: formatINR(opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)) }) },
+    { key: "other", title: t("pay.other"), icon: <Heart />, show: true, hint: t("pay.otherHint") },
   ];
 
   return (
@@ -117,7 +121,7 @@ function Form({ methods }: { methods: string[] }) {
     >
       <FormError message={error} />
       <fieldset>
-        <legend className="mb-1.5 text-sm font-medium">What is this payment for?</legend>
+        <legend className="mb-1.5 text-sm font-medium">{t("pay.whatFor")}</legend>
         <div className="grid grid-cols-3 gap-2" role="radiogroup">
           {choices
             .filter((c) => c.show)
@@ -148,24 +152,24 @@ function Form({ methods }: { methods: string[] }) {
       </fieldset>
 
       {purpose === "hapta" && (
-        <Field label="Amount paid (₹)" htmlFor="pr-amount" hint={opts.hapta.months ? `Applied to your oldest unpaid month first (${opts.hapta.months} month${opts.hapta.months === 1 ? "" : "s"} due).` : "Applied to your next hapta."}>
+        <Field label={t("pay.amountPaid")} htmlFor="pr-amount" hint={opts.hapta.months > 1 ? t("pay.oldestFirst", { n: opts.hapta.months }) : opts.hapta.months === 1 ? t("pay.oneMonthDue") : t("pay.nextHapta")}>
           <Input id="pr-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
       )}
       {purpose === "hapta" && opts.hapta.pendingPaise > 0 && (
         <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs">
-          <Money paise={opts.hapta.pendingPaise} /> you reported earlier is still waiting for verification.
+          {t("pay.waiting", { amount: formatINR(opts.hapta.pendingPaise) })}
         </p>
       )}
 
       {purpose === "upad" && (
         <>
           {opts.upads.length > 1 && (
-            <Field label="Which upad?" htmlFor="pr-upad">
+            <Field label={t("pay.whichUpad")} htmlFor="pr-upad">
               <NativeSelect id="pr-upad" value={loanId} onChange={(e) => pickUpad(e.target.value)}>
                 {opts.upads.map((u) => (
                   <option key={u._id} value={u._id}>
-                    {u.number} — {paiseToRupeeInput(u.outstandingPaise)} outstanding
+                    {t("pay.optOutstanding", { number: u.number, amount: formatINR(u.outstandingPaise) })}
                   </option>
                 ))}
               </NativeSelect>
@@ -173,15 +177,15 @@ function Form({ methods }: { methods: string[] }) {
           )}
           {upad && (
             <p className="rounded-lg bg-muted px-3 py-2 text-xs">
-              {upad.number}: <Money paise={upad.outstandingPaise} /> outstanding at {upad.monthlyRate}% / month · interest due <Money paise={upad.interestDuePaise} className="font-medium" />
-              {upad.unpaidMonths.length > 0 && <> ({upad.unpaidMonths.map(monthName).join(", ")})</>}
+              {t("pay.outstandingAt", { number: upad.number, amount: formatINR(upad.outstandingPaise), rate: upad.monthlyRate, due: formatINR(upad.interestDuePaise) })}
+              {upad.unpaidMonths.length > 0 && <> ({upad.unpaidMonths.map((m) => monthName(lang, m)).join(", ")})</>}
             </p>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Interest paid (₹)" htmlFor="pr-int">
+            <Field label={t("pay.interestPaid")} htmlFor="pr-int">
               <Input id="pr-int" inputMode="decimal" placeholder="0" value={interest} onChange={(e) => setInterest(e.target.value)} />
             </Field>
-            <Field label="Upad returned (₹)" htmlFor="pr-princ" hint="Optional">
+            <Field label={t("pay.upadReturned")} htmlFor="pr-princ" hint={t("common.optional")}>
               <Input id="pr-princ" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
             </Field>
           </div>
@@ -190,47 +194,48 @@ function Form({ methods }: { methods: string[] }) {
 
       {purpose === "other" && (
         <>
-          <Field label="Amount paid (₹)" htmlFor="pr-amount-o">
+          <Field label={t("pay.amountPaid")} htmlFor="pr-amount-o">
             <Input id="pr-amount-o" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </Field>
-          <Field label="What is it for?" htmlFor="pr-what">
-            <Input id="pr-what" maxLength={300} placeholder="e.g. Navratri donation" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Field label={t("pay.whatIsIt")} htmlFor="pr-what">
+            <Input id="pr-what" maxLength={300} placeholder={t("pay.whatPh")} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
         </>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date paid" htmlFor="pr-date">
+        <Field label={t("pay.datePaid")} htmlFor="pr-date">
           <Input id="pr-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field label="Paid by" htmlFor="pr-method">
+        <Field label={t("pay.paidBy")} htmlFor="pr-method">
           <NativeSelect id="pr-method" value={method} onChange={(e) => setMethod(e.target.value)}>
             {(opts.methods.length ? opts.methods : methods).map((m) => (
               <option key={m} value={m}>
-                {label(METHOD_LABEL, m)}
+                {methodLabel(m)}
               </option>
             ))}
           </NativeSelect>
         </Field>
       </div>
       {method !== "cash" && (
-        <Field label="UPI / bank reference" htmlFor="pr-ref" hint="Helps the treasurer find your payment.">
+        <Field label={t("pay.reference")} htmlFor="pr-ref" hint={t("pay.referenceHint")}>
           <Input id="pr-ref" maxLength={100} value={reference} onChange={(e) => setReference(e.target.value)} />
         </Field>
       )}
       {purpose !== "other" && (
-        <Field label="Note (optional)" htmlFor="pr-notes">
+        <Field label={t("pay.note")} htmlFor="pr-notes">
           <Input id="pr-notes" maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
       )}
       <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Submit for verification
+        {pending && <Loader2 className="animate-spin" />} {t("pay.submit")}
       </Button>
     </form>
   );
 }
 
 export function PaymentRequestDialog({ methods, defaultOpen, triggerClassName }: { methods: string[]; defaultOpen?: boolean; triggerClassName?: string }) {
+  const t = useT();
   return (
     <FormDialog
       defaultOpen={defaultOpen}
@@ -238,11 +243,11 @@ export function PaymentRequestDialog({ methods, defaultOpen, triggerClassName }:
       triggerClassName={triggerClassName}
       trigger={
         <>
-          <Send /> I have paid
+          <Send /> {t("pay.iHavePaid")}
         </>
       }
-      title="Tell the treasurer about a payment"
-      description="It counts once the admin verifies it, and you get a receipt."
+      title={t("pay.title")}
+      description={t("pay.desc")}
     >
       <Form methods={methods} />
     </FormDialog>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { FormError } from "@/components/app/field";
 import { apiMutate } from "@/app/actions/api";
+import { useT } from "@/i18n/client";
 
 interface Result {
   created: number;
@@ -93,8 +94,9 @@ function ImportForm({ orgId }: { orgId: string }) {
 }
 
 export function ImportMembersDialog({ orgId }: { orgId: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><Upload /> Import CSV</>} triggerVariant="outline" title="Import members from CSV" wide>
+    <FormDialog trigger={<><Upload /> {t("members.importCsv")}</>} triggerVariant="outline" title="Import members from CSV" wide>
       <ImportForm orgId={orgId} />
     </FormDialog>
   );

@@ -13,12 +13,14 @@ import { Field, FormError } from "@/components/app/field";
 import { loginAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
 import { LoginSchema } from "./schemas";
+import { useT } from "@/i18n/client";
 
 export function LoginForm() {
   const router = useRouter();
+  const t = useT();
   const sp = useSearchParams();
   const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(sp.get("expired") ? "Your session expired. Please sign in again." : null);
+  const [error, setError] = useState<string | null>(sp.get("expired") ? t("auth.expired") : null);
   const form = useForm<z.infer<typeof LoginSchema>>({ resolver: zodResolver(LoginSchema), defaultValues: { email: "", password: "" } });
   const next = sp.get("next");
 
@@ -34,30 +36,30 @@ export function LoginForm() {
 
   return (
     <AuthCard
-      title="Sign in"
-      description={next?.startsWith("/invite") ? "Sign in to accept your Mandal invitation. New to MandalHisab? Create an account below." : "Welcome back to MandalHisab."}
+      title={t("auth.signIn")}
+      description={next?.startsWith("/invite") ? t("auth.signInToAccept") : t("auth.welcomeBack")}
       footer={
         <>
-          New here?{" "}
+          {t("auth.newHere")}{" "}
           <Link href={next && next.startsWith("/") && !next.startsWith("//") ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium text-primary underline-offset-4 hover:underline">
-            Create an account
+            {t("auth.createAccount")}
           </Link>
         </>
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <FormError message={error} />
-        <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
+        <Field label={t("auth.email")} htmlFor="email" error={form.formState.errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" inputMode="email" aria-invalid={!!form.formState.errors.email} {...form.register("email")} />
         </Field>
-        <Field label="Password" htmlFor="password" error={form.formState.errors.password?.message}>
+        <Field label={t("auth.password")} htmlFor="password" error={form.formState.errors.password?.message}>
           <Input id="password" type="password" autoComplete="current-password" aria-invalid={!!form.formState.errors.password} {...form.register("password")} />
         </Field>
         <Button type="submit" disabled={pending} size="lg">
-          {pending && <Loader2 className="animate-spin" />} Sign in
+          {pending && <Loader2 className="animate-spin" />} {t("auth.signIn")}
         </Button>
         <Link href="/forgot-password" className="text-center text-sm text-muted-foreground hover:underline">
-          Forgot password?
+          {t("auth.forgot")}
         </Link>
       </form>
     </AuthCard>

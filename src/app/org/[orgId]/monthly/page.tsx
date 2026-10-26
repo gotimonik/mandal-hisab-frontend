@@ -10,12 +10,14 @@ import { EmptyState } from "@/components/app/empty-state";
 import { ActionButton } from "@/components/app/action-button";
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatINR, paiseToRupeeInput } from "@/lib/format";
+import { formatINR, formatINRShort, paiseToRupeeInput } from "@/lib/format";
 import { requestMonth } from "@/lib/server/today";
 import { MonthList, MonthSwitcher } from "@/features/monthly/month-list";
 import { IconChip, ProgressBar } from "@/components/app/bits";
 import { ChangeHaptaDialog, HaptaSetupForm } from "@/features/monthly/hapta-setup";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
+import { getT } from "@/i18n/server";
+import { monthName as monthNameL } from "@/i18n/core";
 
 export const metadata = { title: "Monthly hapta" };
 
@@ -23,7 +25,6 @@ const addMonths = (m: string, n: number) => {
   const [y, mo] = m.split("-").map(Number);
   return new Date(Date.UTC(y, mo - 1 + n, 1)).toISOString().slice(0, 7);
 };
-const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
 
 export default async function MonthlyPage({ params, searchParams }: PageProps<"/org/[orgId]/monthly">) {
   const { orgId } = await params;
@@ -36,19 +37,21 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
   const canCollect = can(org, "payments.record") && org.status === "active";
   const isAdmin = can(org, "org.settings.manage");
   const hapta = org.settings.monthlyHapta;
+  const { t, lang } = await getT();
+  const monthName = (x: string) => monthNameL(lang, x);
 
   if (!hapta) {
     return (
       <>
-        <PageHeader title="Monthly hapta" description="Each active member pays a fixed amount every month, in cash." />
+        <PageHeader title={t("monthly.title")} description={t("monthly.desc")} />
         {isAdmin ? (
           <Card className="p-5">
-            <h2 className="mb-1 font-medium">Set up your Mandal&apos;s monthly hapta</h2>
-            <p className="mb-4 text-sm text-muted-foreground">For example ₹500 for a family Mandal or ₹1,000 for a friends&apos; Mandal. You can change it later — changes apply to future months only.</p>
+            <h2 className="mb-1 font-medium">{t("monthly.setupTitle")}</h2>
+            <p className="mb-4 text-sm text-muted-foreground">{t("monthly.setupDesc")}</p>
             <HaptaSetupForm inline />
           </Card>
         ) : (
-          <EmptyState icon={<CalendarDays />} title="Monthly hapta isn't set up yet" description="Ask the Mandal admin to set the monthly amount in Settings." />
+          <EmptyState icon={<CalendarDays />} title={t("monthly.notSetUp")} description={t("monthly.notSetUpDesc")} />
         )}
       </>
     );
@@ -60,17 +63,13 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
   return (
     <>
       <PageHeader
-        title="Monthly hapta"
-        description={
-          <>
-            {formatINR(hapta.amountPaise)} per member, due by day {hapta.dueDay} of each month
-          </>
-        }
+        title={t("monthly.title")}
+        description={t("monthly.perMember", { amount: formatINR(hapta.amountPaise), day: hapta.dueDay })}
         actions={
           <>
             {can(org, "reports.view") && (
               <Link href={`${base}/report?month=${m}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                <BarChart3 /> Month summary
+                <BarChart3 /> {t("monthly.summary")}
               </Link>
             )}
             {isAdmin && <ChangeHaptaDialog currentRupees={paiseToRupeeInput(hapta.amountPaise)} nextMonth={addMonths(thisMonth, 1)} />}
@@ -84,31 +83,31 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
           <div className="pointer-events-none absolute -top-12 -right-8 size-36 rounded-full bg-white/10" />
           <div className="relative flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-medium text-white/80">Collected in {monthName(m)}</p>
+              <p className="text-xs font-medium text-white/80">{t("monthly.collectedIn", { month: monthName(m) })}</p>
               <p className="text-3xl font-extrabold tracking-tight tabular-nums">
                 <Money paise={s.collectedPaise} short />
               </p>
               <p className="text-xs text-white/80">
-                of <Money paise={s.expectedPaise} short /> expected · {s.members} member{s.members === 1 ? "" : "s"}
+                {t("monthly.expectedMembers", { amount: formatINRShort(s.expectedPaise), n: s.members })}
               </p>
             </div>
             <span className="rounded-2xl bg-white/15 px-3 py-1.5 text-lg font-bold tabular-nums">{pct}%</span>
           </div>
-          <ProgressBar value={pct} className="relative mt-3 h-2.5 bg-white/20" barClassName="bg-gradient-to-r from-amber-300 to-yellow-200" label="Collected this month" />
+          <ProgressBar value={pct} className="relative mt-3 h-2.5 bg-white/20" barClassName="bg-gradient-to-r from-amber-300 to-yellow-200" label={t("monthly.collectedThisMonth")} />
           <div className="relative mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-2xl bg-white/12 px-2 py-2">
               <p className="text-lg leading-tight font-bold tabular-nums">{s.paid}</p>
-              <p className="text-[11px] text-white/80">paid</p>
+              <p className="text-[11px] text-white/80">{t("monthly.paid")}</p>
             </div>
             <div className="rounded-2xl bg-white/12 px-2 py-2">
               <p className="text-lg leading-tight font-bold tabular-nums">{toCollect}</p>
-              <p className="text-[11px] text-white/80">to collect</p>
+              <p className="text-[11px] text-white/80">{t("monthly.toCollect")}</p>
             </div>
             <div className="rounded-2xl bg-white/12 px-2 py-2">
               <p className="text-lg leading-tight font-bold tabular-nums">
                 <Money paise={s.outstandingPaise} short />
               </p>
-              <p className="text-[11px] text-white/80">still due</p>
+              <p className="text-[11px] text-white/80">{t("monthly.stillDue")}</p>
             </div>
           </div>
         </section>
@@ -116,7 +115,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
           <IconChip tone="emerald" size="sm">
             <ArrowDownToLine />
           </IconChip>
-          <span className="min-w-0 flex-1 text-muted-foreground">Cash received in {monthName(m)} (any month&apos;s hapta)</span>
+          <span className="min-w-0 flex-1 text-muted-foreground">{t("monthly.cashIn", { month: monthName(m) })}</span>
           <Money paise={s.cashReceivedInMonthPaise} className="font-bold text-foreground" />
         </div>
       </div>
@@ -127,13 +126,13 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
         <section className="mt-8" aria-label="Upad interest">
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold">Upad interest — {monthName(m)}</h2>
+              <h2 className="text-base font-bold">{t("monthly.upadInterest", { month: monthName(m) })}</h2>
               <p className="text-sm text-muted-foreground">
-                Interest on upad given from the fund. This month <Money paise={loans.summary.interestThisMonthPaise} />, collected <Money paise={loans.summary.collectedThisMonthPaise} />, still due (incl. earlier months) <Money paise={loans.summary.totalDuePaise} className="font-medium text-foreground" />.
+                {t("monthly.upadInterestDesc", { a: formatINR(loans.summary.interestThisMonthPaise), b: formatINR(loans.summary.collectedThisMonthPaise), c: formatINR(loans.summary.totalDuePaise) })}
               </p>
             </div>
             <Link href={`/org/${orgId}/fund-loans`} className="text-sm font-medium text-primary hover:underline">
-              All upad
+              {t("monthly.allUpad")}
             </Link>
           </div>
           <Card className="divide-y p-0">
@@ -148,17 +147,17 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                   </div>
                 </div>
                 <div className="col-span-2 row-start-2 text-sm md:col-span-1 md:row-start-auto">
-                  <span className="text-xs text-muted-foreground md:hidden">This month </span>
+                  <span className="text-xs text-muted-foreground md:hidden">{t("monthly.thisMonthLbl")}</span>
                   {r.thisMonth ? <Money paise={r.thisMonth.interestPaise} /> : "—"}
-                  {r.thisMonth && r.thisMonth.paidPaise > 0 && r.thisMonth.paidPaise < r.thisMonth.interestPaise && <span className="text-xs text-muted-foreground"> (paid <Money paise={r.thisMonth.paidPaise} />)</span>}
+                  {r.thisMonth && r.thisMonth.paidPaise > 0 && r.thisMonth.paidPaise < r.thisMonth.interestPaise && <span className="text-xs text-muted-foreground">{t("monthly.paidPart", { amount: formatINR(r.thisMonth.paidPaise) })}</span>}
                 </div>
                 <div className="col-span-2 row-start-3 text-sm md:col-span-1 md:row-start-auto">
                   {r.carriedForwardPaise > 0 ? (
                     <span className="text-warning-ink">
-                      + <Money paise={r.carriedForwardPaise} /> unpaid from {r.carriedForwardMonths.length} earlier month{r.carriedForwardMonths.length === 1 ? "" : "s"}
+                      {t("monthly.unpaidEarlier", { amount: formatINR(r.carriedForwardPaise), n: r.carriedForwardMonths.length })}
                     </span>
                   ) : (
-                    <span className="hidden text-muted-foreground md:inline">No earlier dues</span>
+                    <span className="hidden text-muted-foreground md:inline">{t("monthly.noEarlier")}</span>
                   )}
                 </div>
                 <div className="col-span-2 row-start-4 flex items-center gap-2 md:col-span-1 md:row-start-auto">
@@ -166,7 +165,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                   {r.totalDuePaise > 0 && <Money paise={r.totalDuePaise} className="text-sm font-medium" />}
                 </div>
                 <div className="col-start-2 row-start-1 flex justify-end md:col-start-auto md:row-start-auto md:w-24">
-                  {canCollect && r.totalDuePaise > 0 && <LoanPaymentDialog loanId={r.loanId} number={r.number} memberName={r.member?.name ?? "member"} interestDuePaise={r.totalDuePaise} outstandingPaise={r.outstandingPaise} size="xs" label="Receive" />}
+                  {canCollect && r.totalDuePaise > 0 && <LoanPaymentDialog loanId={r.loanId} number={r.number} memberName={r.member?.name ?? "member"} interestDuePaise={r.totalDuePaise} outstandingPaise={r.outstandingPaise} size="xs" label={t("monthly.receive")} />}
                 </div>
               </div>
             ))}
@@ -178,12 +177,12 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
         <Card className="mt-4 gap-2 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="font-medium">Not in the monthly hapta for {monthName(m)}</h2>
-              <p className="text-sm text-muted-foreground">These active members have no hapta for this month (added without hapta, or joined later).</p>
+              <h2 className="font-medium">{t("monthly.notEnrolled", { month: monthName(m) })}</h2>
+              <p className="text-sm text-muted-foreground">{t("monthly.notEnrolledDesc")}</p>
             </div>
             {org.status === "active" && (
-              <ActionButton path={`/orgs/${orgId}/monthly/enroll`} body={{ memberIds: view.notEnrolled.map((x) => x._id), startMonth: m }} successMessage="Members added to the monthly hapta" confirm={{ title: `Add ${view.notEnrolled.length} member(s) to the monthly hapta from ${monthName(m)}?`, confirmLabel: "Add" }}>
-                Add all from {monthName(m)}
+              <ActionButton path={`/orgs/${orgId}/monthly/enroll`} body={{ memberIds: view.notEnrolled.map((x) => x._id), startMonth: m }} successMessage={t("monthly.membersAdded")} confirm={{ title: t("monthly.addConfirm", { n: view.notEnrolled.length, month: monthName(m) }), confirmLabel: t("monthly.add") }}>
+                {t("monthly.addAllFrom", { month: monthName(m) })}
               </ActionButton>
             )}
           </div>

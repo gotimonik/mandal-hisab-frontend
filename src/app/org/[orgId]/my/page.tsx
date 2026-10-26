@@ -11,12 +11,14 @@ import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { METHOD_LABEL, formatDate, label } from "@/lib/format";
+import { METHOD_LABEL, formatDate, formatINR, formatINRShort, label } from "@/lib/format";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
 import { SavingsLedgerTable, SavingsSummary } from "@/features/savings/savings-ledger";
 import { RequestUpadDialog } from "@/features/fund-loans/request-upad-dialog";
 import { ActionButton } from "@/components/app/action-button";
+import { getT } from "@/i18n/server";
+import type { Key } from "@/i18n/core";
 
 export const metadata = { title: "My savings" };
 
@@ -24,12 +26,14 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
   const { orgId } = await params;
   const sp = await searchParams;
   const tab = sp.tab === "upad" ? "fundloans" : "savings";
+  const { t } = await getT();
+  const methodLabel = (m: string) => (m in METHOD_LABEL ? t(`pay.method.${m}` as Key) : label(METHOD_LABEL, m));
   const [org, me] = await Promise.all([getOrg(orgId), api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`)]);
   if (!me.linked) {
     return (
       <>
-        <PageHeader title="My account" />
-        <EmptyState title="Not linked to a member record" description="Ask your Mandal admin to link your login to your membership (Users & roles → Link member)." />
+        <PageHeader title={t("my.title")} />
+        <EmptyState title={t("my.notLinked")} description={t("my.notLinkedDesc")} />
       </>
     );
   }
@@ -50,7 +54,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
   const myLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
   return (
     <>
-      <PageHeader title={me.member!.name} description={`Member no. ${me.member!.membershipNumber}`} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} defaultOpen={sp.pay === "1"} />} />
+      <PageHeader title={me.member!.name} description={t("my.memberNo", { no: me.member!.membershipNumber })} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} defaultOpen={sp.pay === "1"} />} />
       <div className="mb-4">
         <SavingsSummary l={ledger} />
       </div>
@@ -61,26 +65,26 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
           </IconChip>
           <span className="min-w-0 flex-1">
             <span className="block font-semibold">
-              My upad · <Money paise={fundLoans.totals.outstandingPaise} short /> outstanding
+              {t("my.myUpad", { amount: formatINRShort(fundLoans.totals.outstandingPaise) })}
             </span>
-            <span className="text-xs text-muted-foreground">Pay the interest to the Mandal admin each month.</span>
+            <span className="text-xs text-muted-foreground">{t("my.payInterest")}</span>
           </span>
           <span className="text-right">
             <Money paise={fundLoans.totals.interestDuePaise} short className="block text-lg font-bold text-warning-ink" />
-            <span className="text-[11px] text-muted-foreground">interest due</span>
+            <span className="text-[11px] text-muted-foreground">{t("my.interestDue")}</span>
           </span>
         </div>
       )}
       <Tabs defaultValue={tab}>
         <TabsList className="w-full max-w-full justify-start overflow-x-auto [scrollbar-width:none] sm:w-fit">
-          <TabsTrigger value="savings">Savings</TabsTrigger>
-          <TabsTrigger value="dues">Monthly hapta</TabsTrigger>
-          <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-          {(myLoans.length > 0 || upadReqs.items.length > 0 || canRequest) && <TabsTrigger value="fundloans">My upad</TabsTrigger>}
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="receipts">Receipts</TabsTrigger>
-          <TabsTrigger value="statement">Statement</TabsTrigger>
-          {loans.length > 0 && <TabsTrigger value="loans">Loans</TabsTrigger>}
+          <TabsTrigger value="savings">{t("my.tabSavings")}</TabsTrigger>
+          <TabsTrigger value="dues">{t("my.tabDues")}</TabsTrigger>
+          <TabsTrigger value="withdrawals">{t("my.tabWithdrawals")}</TabsTrigger>
+          {(myLoans.length > 0 || upadReqs.items.length > 0 || canRequest) && <TabsTrigger value="fundloans">{t("my.tabUpad")}</TabsTrigger>}
+          <TabsTrigger value="payments">{t("my.tabPayments")}</TabsTrigger>
+          <TabsTrigger value="receipts">{t("my.tabReceipts")}</TabsTrigger>
+          <TabsTrigger value="statement">{t("my.tabStatement")}</TabsTrigger>
+          {loans.length > 0 && <TabsTrigger value="loans">{t("my.tabLoans")}</TabsTrigger>}
         </TabsList>
         <TabsContent value="savings">
           <SavingsLedgerTable l={ledger} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/me/ledger` })}`} />
@@ -89,24 +93,24 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
           <TabsContent value="fundloans" className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ring-1 ring-foreground/10">
               <span>
-                Available in the Mandal: <Money paise={upadReqs.availablePaise} className="font-semibold" />
+                {t("my.available")} <Money paise={upadReqs.availablePaise} className="font-semibold" />
               </span>
-              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">Your request is waiting for approval</span> : null}
+              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">{t("my.waitingApproval")}</span> : null}
             </div>
             {upadReqs.items.length > 0 && (
               <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
                 {upadReqs.items.map((r) => (
                   <li key={r._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      Request for <Money paise={r.amountPaise} className="font-medium" /> <span className="text-muted-foreground">· {formatDate(r.createdAt)}</span>
+                      {t("my.requestFor", { amount: formatINR(r.amountPaise) })} <span className="text-muted-foreground">· {formatDate(r.createdAt)}</span>
                       {r.purpose && <span className="block text-xs text-muted-foreground">{r.purpose}</span>}
-                      {r.status === "rejected" && r.decisionReason && <span className="block text-xs text-destructive">Not approved: {r.decisionReason}</span>}
+                      {r.status === "rejected" && r.decisionReason && <span className="block text-xs text-destructive">{t("my.notApproved", { reason: r.decisionReason })}</span>}
                     </span>
                     <span className="flex items-center gap-2">
                       <StatusBadge status={r.status} />
                       {r.status === "pending" && (
-                        <ActionButton path={`/orgs/${orgId}/me/upad-requests/${r._id}/cancel`} size="xs" variant="ghost" successMessage="Request cancelled" confirm={{ title: "Cancel your upad request?", confirmLabel: "Cancel request" }}>
-                          Cancel
+                        <ActionButton path={`/orgs/${orgId}/me/upad-requests/${r._id}/cancel`} size="xs" variant="ghost" successMessage={t("my.requestCancelled")} confirm={{ title: t("my.cancelRequest"), confirmLabel: t("my.cancelRequestBtn") }}>
+                          {t("my.cancel")}
                         </ActionButton>
                       )}
                     </span>
@@ -115,17 +119,17 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               </ul>
             )}
             {upadClaims.length > 0 && (
-              <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10" aria-label="Upad payments you reported">
+              <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10" aria-label={t("my.reportedLabel")}>
                 {upadClaims.map((x) => (
                   <li key={x._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      Paid <Money paise={x.interestPaise + x.principalPaise} className="font-medium" /> on {x.loanNumber} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
+                      {t("my.paidOn", { amount: formatINR(x.interestPaise + x.principalPaise), number: x.loanNumber })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {x.interestPaise > 0 && <>interest <Money paise={x.interestPaise} /></>}
+                        {x.interestPaise > 0 && t("my.interestX", { amount: formatINR(x.interestPaise) })}
                         {x.interestPaise > 0 && x.principalPaise > 0 && " + "}
-                        {x.principalPaise > 0 && <>upad returned <Money paise={x.principalPaise} /></>}
+                        {x.principalPaise > 0 && t("my.upadReturnedX", { amount: formatINR(x.principalPaise) })}
                       </span>
-                      {x.status === "rejected" && x.rejectedReason && <span className="block text-xs text-destructive">Not verified: {x.rejectedReason}</span>}
+                      {x.status === "rejected" && x.rejectedReason && <span className="block text-xs text-destructive">{t("my.notVerified", { reason: x.rejectedReason })}</span>}
                     </span>
                     <StatusBadge status={x.status} />
                   </li>
@@ -138,9 +142,9 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 <li key={l._id}>
                   <Link href={`/org/${orgId}/fund-loans/${l._id}`} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50">
                     <span>
-                      <span className="font-mono">{l.number}</span> <span className="text-muted-foreground">· {formatDate(l.date)} · {l.monthlyRate}% / month</span>
+                      <span className="font-mono">{l.number}</span> <span className="text-muted-foreground">· {formatDate(l.date)} · {t("my.rateMonth", { rate: l.monthlyRate })}</span>
                       <span className="block text-xs text-muted-foreground">
-                        Outstanding <Money paise={l.outstandingPaise} /> · interest due <Money paise={l.interestDuePaise} />
+                        {t("my.loanLine", { outstanding: formatINR(l.outstandingPaise), due: formatINR(l.interestDuePaise) })}
                       </span>
                     </span>
                     <StatusBadge status={l.status} />
@@ -153,7 +157,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
         )}
         <TabsContent value="withdrawals">
           {withdrawals.items.length === 0 ? (
-            <EmptyState title="No withdrawals" />
+            <EmptyState title={t("my.noWithdrawals")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
               {withdrawals.items.map((w) => (
@@ -178,12 +182,12 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Scheme / period</TableHead>
-                  <TableHead>Due</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("my.colScheme")}</TableHead>
+                  <TableHead>{t("my.colDue")}</TableHead>
+                  <TableHead className="text-right">{t("my.colAmount")}</TableHead>
+                  <TableHead className="text-right">{t("my.colPaid")}</TableHead>
+                  <TableHead className="text-right">{t("my.colBalance")}</TableHead>
+                  <TableHead>{t("common.status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,13 +218,13 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
         </TabsContent>
         <TabsContent value="payments">
           {payments.items.length === 0 ? (
-            <EmptyState title="No payments yet" />
+            <EmptyState title={t("my.noPayments")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
               {payments.items.map((p) => (
                 <li key={p._id} className="flex items-center justify-between gap-2 px-3 py-2">
                   <span>
-                    {formatDate(p.date)} · {label(METHOD_LABEL, p.method)}
+                    {formatDate(p.date)} · {methodLabel(p.method)}
                     {p.reference && <span className="text-muted-foreground"> · {p.reference}</span>}
                     {p.rejectedReason && <div className="text-xs text-destructive">{p.rejectedReason}</div>}
                   </span>
@@ -235,7 +239,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
         </TabsContent>
         <TabsContent value="receipts">
           {receipts.length === 0 ? (
-            <EmptyState title="No receipts yet" />
+            <EmptyState title={t("my.noReceipts")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
               {receipts.map((r) => (
@@ -266,7 +270,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                     <span>
                       <span className="font-mono">{l.loanNumber}</span>
                       <span className="block text-xs text-muted-foreground">
-                        {l.annualRate}% · outstanding <Money paise={l.outstandingPrincipalPaise} />
+                        {t("my.loanRate", { rate: l.annualRate, amount: formatINR(l.outstandingPrincipalPaise) })}
                       </span>
                     </span>
                     <StatusBadge status={l.status} />

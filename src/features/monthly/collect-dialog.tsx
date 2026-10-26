@@ -13,6 +13,7 @@ import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
 import { formatINRShort, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
+import { useT } from "@/i18n/client";
 
 /**
  * Quick cash entry for one member's month. Defaults to the full outstanding amount; a smaller
@@ -22,6 +23,7 @@ import { rupees } from "@/lib/schemas";
 export function CollectDialog({ installmentId, memberName, period, outstandingPaise, size = "xs", showAmount = false }: { installmentId: string; memberName: string; period: string; outstandingPaise: number; size?: "xs" | "sm"; showAmount?: boolean }) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState(paiseToRupeeInput(outstandingPaise));
   const [date, setDate] = useState(todayISO());
@@ -50,7 +52,7 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
         if (res.code === "DUPLICATE_SUSPECTED") return setDupWarning(res.error);
         return setError(res.fieldErrors?.amount ?? res.error);
       }
-      toast.success(`Cash received from ${memberName}`);
+      toast.success(t("collect.received", { name: memberName }));
       setOpen(false);
       reset();
       router.refresh();
@@ -59,8 +61,8 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
 
   return (
     <>
-      <Button size={size} onClick={() => setOpen(true)} aria-label={`Collect from ${memberName}`} className={cn(showAmount && "h-10 rounded-xl px-3.5 text-sm md:h-9")}>
-        <HandCoins /> {showAmount ? formatINRShort(outstandingPaise) : "Collect"}
+      <Button size={size} onClick={() => setOpen(true)} aria-label={t("collect.collectFrom", { name: memberName })} className={cn(showAmount && "h-10 rounded-xl px-3.5 text-sm md:h-9")}>
+        <HandCoins /> {showAmount ? formatINRShort(outstandingPaise) : t("collect.collect")}
       </Button>
       <Dialog
         open={open}
@@ -71,9 +73,9 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cash from {memberName}</DialogTitle>
+            <DialogTitle>{t("collect.cashFrom", { name: memberName })}</DialogTitle>
             <DialogDescription>
-              {period} · outstanding <Money paise={outstandingPaise} className="font-medium text-foreground" />
+              {t("collect.outstanding", { period })} <Money paise={outstandingPaise} className="font-medium text-foreground" />
             </DialogDescription>
           </DialogHeader>
           <form
@@ -85,13 +87,13 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
             }}
           >
             <FormError message={error} />
-            <Field label="Amount (₹)" htmlFor="col-amt" hint="Less than due is saved as a part payment">
+            <Field label={t("common.amountRs")} htmlFor="col-amt" hint={t("collect.partHint")}>
               <Input id="col-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-14 rounded-2xl text-center text-2xl font-bold tabular-nums md:h-12 md:text-xl" />
             </Field>
-            <div className="flex flex-wrap gap-2" aria-label="Amount shortcuts">
+            <div className="flex flex-wrap gap-2" aria-label={t("collect.shortcuts")}>
               {[
-                ["Full", outstandingPaise],
-                ["Half", Math.round(outstandingPaise / 200) * 100],
+                [t("collect.full"), outstandingPaise],
+                [t("collect.half"), Math.round(outstandingPaise / 200) * 100],
               ]
                 .filter(([, p]) => (p as number) > 0)
                 .map(([l, p]) => (
@@ -105,10 +107,10 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
                   </button>
                 ))}
             </div>
-            <Field label="Date received" htmlFor="col-date">
+            <Field label={t("common.dateReceived")} htmlFor="col-date">
               <Input id="col-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="Note (optional)" htmlFor="col-note">
+            <Field label={t("common.noteOptional")} htmlFor="col-note">
               <Input id="col-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>
             {dupWarning ? (
@@ -116,16 +118,16 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
                 <p>{dupWarning}</p>
                 <div className="flex gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => setDupWarning(null)} disabled={pending}>
-                    Go back
+                    {t("collect.goBack")}
                   </Button>
                   <Button type="button" size="sm" onClick={() => save(true)} disabled={pending}>
-                    {pending && <Loader2 className="animate-spin" />} Yes, record a second payment
+                    {pending && <Loader2 className="animate-spin" />} {t("collect.recordSecond")}
                   </Button>
                 </div>
               </div>
             ) : (
               <Button type="submit" size="lg" disabled={pending} className="w-full">
-                {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Record cash received
+                {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} {t("collect.record")}
               </Button>
             )}
           </form>
