@@ -167,6 +167,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           pendingHaptaPaise={t.outstandingHaptaPaise ?? 0}
           upadInterestPaise={t.fundLoanInterestDuePaise ?? 0}
           members={t.activeMembers ?? 0}
+          shares={t.activeShares ?? t.activeMembers ?? 0}
         />
         {isAdmin && (t.activeLoans > 0 || incomeBooks) && (
           <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -359,9 +360,12 @@ function BalanceParts({ parts }: { parts?: { openingPaise: number; haptaPaise: n
  * Everything the Mandal has or is owed — cash, upad still out, hapta not yet paid and upad interest
  * due — shared equally by the active members.
  */
-function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members }: { cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number }) {
+function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPaise, members, shares }: { cashPaise: number; upadPaise: number; pendingHaptaPaise: number; upadInterestPaise: number; members: number; shares: number }) {
   const total = cashPaise + upadPaise + pendingHaptaPaise + upadInterestPaise;
-  const each = members > 0 ? Math.floor(total / members) : 0;
+  // members paying several haptas count once per hapta
+  const byShares = shares !== members;
+  const parts = byShares ? shares : members;
+  const each = parts > 0 ? Math.floor(total / parts) : 0;
   const rows: [string, number, Tone][] = [
     ["Cash in hand & bank", cashPaise, "emerald"],
     ["Upad given out", upadPaise, "orange"],
@@ -371,11 +375,12 @@ function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPais
   return (
     <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label="Each member's share">
       <div className="bg-hero-green flex flex-col justify-center gap-1 p-5 md:w-72 md:shrink-0">
-        <p className="text-sm font-medium text-white/85">Each member&apos;s share</p>
+        <p className="text-sm font-medium text-white/85">{byShares ? "Each hapta share" : "Each member's share"}</p>
         <p className="text-4xl font-extrabold tracking-tight tabular-nums">{formatINRShort(each)}</p>
         <p className="text-sm text-white/85">
-          {formatINRShort(total)} ÷ {members} member{members === 1 ? "" : "s"}
+          {formatINRShort(total)} ÷ {byShares ? `${shares} shares (${members} member${members === 1 ? "" : "s"})` : `${members} member${members === 1 ? "" : "s"}`}
         </p>
+        {byShares && <p className="mt-1 text-xs text-white/75">A member paying 3 haptas gets {formatINRShort(each * 3)}.</p>}
       </div>
       <div className="flex-1 p-4 sm:px-5">
         <ul className="divide-y text-sm">
@@ -393,7 +398,9 @@ function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPais
             <Money paise={total} short />
           </li>
         </ul>
-        <p className="mt-1 text-xs text-muted-foreground">What each active member would get if the cash, upad and all pending dues were shared equally.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {byShares ? "What each hapta share would get if the cash, upad and all pending dues were shared — members paying more haptas get more shares." : "What each active member would get if the cash, upad and all pending dues were shared equally."}
+        </p>
       </div>
     </Card>
   );

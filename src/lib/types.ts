@@ -123,6 +123,8 @@ export interface Member {
   status: "active" | "inactive" | "left";
   userId?: string | null;
   notes?: string;
+  /** haptas paid each month (default 1) */
+  haptaShares?: number;
   outstandingPaise?: number;
   dueInstallments?: number;
   balancePaise?: number;
@@ -339,6 +341,8 @@ export interface MonthRow {
   installmentId: string;
   memberId: string;
   member: { _id: string; name: string; membershipNumber: string; phone?: string } | null;
+  /** hapta shares this month (3 = pays 3 × the monthly amount) */
+  shares?: number;
   periodLabel: string;
   dueDate: string;
   expectedPaise: number;

@@ -11,7 +11,7 @@ import { FilterBar, FilterField } from "@/components/app/filter-bar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
+import { FREQUENCY_LABEL, formatDate, formatINR, label } from "@/lib/format";
 import { MemberDialog } from "@/features/members/member-form";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
 import { SavingsLedgerTable, SavingsSummary } from "@/features/savings/savings-ledger";
@@ -46,7 +46,14 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
         title={m.name}
         description={
           <>
-            Member no. {m.membershipNumber} · joined {formatDate(m.joiningDate)} · <StatusBadge status={m.status} />
+            Member no. {m.membershipNumber} · joined {formatDate(m.joiningDate)}
+            {(m.haptaShares ?? 1) > 1 && org.settings.monthlyHapta && (
+              <>
+                {" "}
+                · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({formatINR(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
+              </>
+            )}{" "}
+            · <StatusBadge status={m.status} />
           </>
         }
         actions={

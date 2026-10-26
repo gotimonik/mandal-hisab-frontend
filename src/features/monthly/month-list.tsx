@@ -17,6 +17,15 @@ import { CollectDialog } from "./collect-dialog";
 
 type Filter = "" | "due" | "paid";
 
+/** "×3" — this member pays 3 haptas a month */
+export function SharesChip({ n, className }: { n: number; className?: string }) {
+  return (
+    <span title={`Pays ${n} haptas a month`} aria-label={`${n} haptas`} className={cn("shrink-0 rounded-md bg-violet-500/12 px-1.5 py-0.5 text-[11px] font-bold text-violet-700 tabular-nums dark:text-violet-300", className)}>
+      ×{n}
+    </span>
+  );
+}
+
 /** ‹ October 2026 › — tapping the month opens the phone's month picker. */
 export function MonthSwitcher({ month, label, base, prev, next }: { month: string; label: string; base: string; prev: string; next: string }) {
   const router = useRouter();
@@ -116,6 +125,7 @@ export function MonthList({ orgId, rows, period, canCollect, initialFilter }: { 
                     <Link href={`/org/${orgId}/members/${r.memberId}`} className="truncate font-semibold hover:underline">
                       {name}
                     </Link>
+                    {(r.shares ?? 1) > 1 && <SharesChip n={r.shares!} />}
                     <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{r.member?.membershipNumber}</span>
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">

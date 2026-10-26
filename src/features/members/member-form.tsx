@@ -35,6 +35,11 @@ const Schema = z.object({
   joiningDate: z.string().optional(),
   status: z.enum(["active", "inactive", "left"]),
   notes: z.string().max(1000).optional(),
+  haptaShares: z
+    .string()
+    .trim()
+    .regex(/^\d+$/, "Enter a whole number")
+    .refine((v) => Number(v) >= 1 && Number(v) <= 50, "From 1 to 50"),
   inviteToApp: z.boolean(),
 });
 
@@ -65,10 +70,13 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       joiningDate: member ? isoDate(member.joiningDate) : todayISO(),
       status: member?.status ?? "active",
       notes: member?.notes ?? "",
+      haptaShares: String(member?.haptaShares ?? 1),
       inviteToApp: true,
     },
   });
   const emailValue = form.watch("email");
+  const sharesValue = Number(form.watch("haptaShares")) || 1;
+  const sharesChanged = !!member && sharesValue !== (member.haptaShares ?? 1);
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
@@ -76,12 +84,12 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       noValidate
       className="grid gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) => {
-        const { inviteToApp, ...rest } = v;
-        const body = { ...rest, membershipNumber: v.membershipNumber || undefined, email: v.email || undefined, phone: v.phone || undefined };
+        const { inviteToApp, haptaShares, ...rest } = v;
+        const body = { ...rest, haptaShares: Number(haptaShares), membershipNumber: v.membershipNumber || undefined, email: v.email || undefined, phone: v.phone || undefined };
         submit<Created>(
           member ? { path: `/orgs/${orgId}/members/${member._id}`, method: "PATCH", body } : { path: `/orgs/${orgId}/members`, body: { ...body, inviteToApp: !!v.email && inviteToApp } },
           {
-            success: member ? "Member updated" : undefined,
+            success: member ? (sharesChanged ? `Saved — now ${sharesValue} hapta${sharesValue === 1 ? "" : "s"} a month` : "Member updated") : undefined,
             onSuccess: (m) => {
               close();
               if (!member) {
@@ -124,6 +132,14 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       )}
       <Field label="Address" htmlFor="m-addr" className="sm:col-span-2">
         <Input id="m-addr" {...form.register("address")} />
+      </Field>
+      <Field
+        label="Haptas per month"
+        htmlFor="m-shares"
+        error={e.haptaShares?.message}
+        hint={sharesChanged ? "Changes their unpaid hapta from this month on. Paid months stay as they are." : sharesValue > 1 ? `Pays ${sharesValue} haptas every month — one name, one login.` : "1 for most members. Use 3 if they pay 3 haptas a month."}
+      >
+        <Input id="m-shares" type="number" inputMode="numeric" min={1} max={50} step={1} {...form.register("haptaShares")} />
       </Field>
       <Field label="Status" htmlFor="m-status">
         <NativeSelect id="m-status" {...form.register("status")}>

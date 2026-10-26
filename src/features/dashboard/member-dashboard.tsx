@@ -49,7 +49,7 @@ export function MemberDashboard({ orgId, data, org }: { orgId: string; data: any
                 Request upad
               </Link>
             )}
-            {data.monthlyHaptaPaise ? <span className="ml-auto text-right text-xs text-white/80">Monthly hapta<br /><span className="text-sm font-bold text-white">{formatINRShort(data.monthlyHaptaPaise)}</span></span> : null}
+            {data.monthlyHaptaPaise ? <span className="ml-auto text-right text-xs text-white/80">Monthly hapta<br /><span className="text-sm font-bold text-white">{formatINRShort(data.monthlyHaptaPaise)}</span>{data.haptaShares > 1 && <span className="block text-[11px]">{data.haptaShares} haptas</span>}</span> : null}
           </div>
         </section>
       )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Phone, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberAvatar } from "@/components/app/bits";
+import { SharesChip } from "@/features/monthly/month-list";
 import { api, qs } from "@/lib/server/api";
 import { getOrg, can } from "@/lib/server/data";
 import type { Member, Paged } from "@/lib/types";
@@ -107,8 +108,9 @@ export default async function MembersPage({
                     href={`/org/${orgId}/members/${m._id}`}
                     className="min-w-0 flex-1"
                   >
-                    <span className="block truncate font-semibold">
-                      {m.name}
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate font-semibold">{m.name}</span>
+                      {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} />}
                     </span>
                     <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                       <span className="font-mono">{m.membershipNumber}</span>
@@ -178,6 +180,7 @@ export default async function MembersPage({
                           <MemberAvatar name={m.name} size="sm" />
                           {m.name}
                         </Link>
+                        {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} className="ml-2" />}
                         {m.userId && (
                           <span className="ml-2 text-xs text-muted-foreground">
                             · app user
