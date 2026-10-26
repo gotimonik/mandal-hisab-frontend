@@ -9,7 +9,7 @@ export default async function NewLoanPage({ params }: PageProps<"/org/[orgId]/lo
   const [org, members] = await Promise.all([getOrg(orgId), getActiveMembers(orgId)]);
   return (
     <>
-      <PageHeader title="New loan application" description="Applications are approved and disbursed separately. Preview the repayment schedule before submitting." />
+      <PageHeader title="New loan application" description="Fill in the member and terms, preview the repayment schedule, then submit for approval." />
       <LoanForm orgId={orgId} members={members.map((m) => ({ _id: m._id, name: m.name, membershipNumber: m.membershipNumber }))} canSetRate={can(org, "interest.manage")} />
     </>
   );

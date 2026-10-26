@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calculator, Loader2 } from "lucide-react";
+import { Calculator, ChevronDown, FileText, Landmark, Loader2, Percent, SlidersHorizontal } from "lucide-react";
+import { IconChip } from "@/components/app/bits";
+import type { Tone } from "@/lib/tones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -49,6 +50,21 @@ interface Preview {
   totals: { principalPaise: number; interestPaise: number; totalPaise: number };
 }
 
+/** A titled block of the form: coloured icon, heading, then its fields. */
+function Section({ icon, tone, title, children }: { icon: React.ReactNode; tone: Tone; title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5">
+      <h2 className="flex items-center gap-2.5 text-base font-bold">
+        <IconChip tone={tone} size="sm">
+          {icon}
+        </IconChip>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
 function nextMonth(iso: string) {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCMonth(d.getUTCMonth() + 1);
@@ -83,7 +99,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
   );
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -93,11 +109,8 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
         })}
       >
         <FormError message={error} />
-        <Card>
-          <CardHeader>
-            <CardTitle>Application</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+        <Section icon={<FileText />} tone="indigo" title="Application">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Member" htmlFor="l-member" error={e.memberId?.message} className="sm:col-span-2">
               <NativeSelect id="l-member" {...form.register("memberId")}>
                 <option value="">Select member</option>
@@ -112,15 +125,12 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
               <Input id="l-amt" inputMode="decimal" {...form.register("amount")} />
             </Field>
             <Field label="Purpose" htmlFor="l-purpose">
-              <Input id="l-purpose" {...form.register("purpose")} />
+              <Input id="l-purpose" placeholder="e.g. Shop renovation" {...form.register("purpose")} />
             </Field>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Terms</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+          </div>
+        </Section>
+        <Section icon={<Percent />} tone="violet" title="Interest & repayment">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Interest method" htmlFor="l-method" hint={METHOD_INFO[method]} className="sm:col-span-2">
               <NativeSelect id="l-method" {...form.register("interestMethod")}>
                 <option value="reducing_balance">Reducing balance (EMI)</option>
@@ -149,6 +159,20 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
                 <option value="weekly">Weekly</option>
               </NativeSelect>
             </Field>
+          </div>
+        </Section>
+        <details className="group rounded-3xl bg-card shadow-card ring-1 ring-foreground/[0.06] [&_summary::-webkit-details-marker]:hidden" open={method === "compound" || method === "simple" ? true : undefined}>
+          <summary className="flex cursor-pointer list-none items-center gap-2.5 p-4 sm:px-5">
+            <IconChip tone="slate" size="sm">
+              <SlidersHorizontal />
+            </IconChip>
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-bold">More options</span>
+              <span className="block text-xs text-muted-foreground">Grace days, prepayment, compounding and notes — the defaults suit most loans.</span>
+            </span>
+            <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 sm:px-5 sm:pb-5">
             {method === "compound" && (
               <Field label="Compounding" htmlFor="l-comp">
                 <NativeSelect id="l-comp" {...form.register("compoundingPerYear")}>
@@ -180,18 +204,21 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
             <Field label="Notes" htmlFor="l-notes" className="sm:col-span-2">
               <Textarea id="l-notes" rows={2} {...form.register("notes")} />
             </Field>
-          </CardContent>
-        </Card>
-        <Button type="submit" disabled={pending} size="lg" className="self-start">
+          </div>
+        </details>
+        <Button type="submit" disabled={pending} size="lg" className="h-12 w-full rounded-2xl text-base sm:w-auto sm:self-start">
           {pending && <Loader2 className="animate-spin" />} Submit application
         </Button>
       </form>
 
-      <Card className="h-fit">
-        <CardHeader>
-          <CardTitle>Repayment preview</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+      <section className="flex h-fit flex-col gap-3 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5 lg:sticky lg:top-4">
+        <h2 className="flex items-center gap-2.5 text-base font-bold">
+          <IconChip tone="emerald" size="sm">
+            <Landmark />
+          </IconChip>
+          Repayment preview
+        </h2>
+        <p className="-mt-1 text-xs text-muted-foreground">See the EMI and full schedule before submitting. Approval and disbursement happen separately.</p>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Disbursement date" htmlFor="l-pstart">
               <Input id="l-pstart" type="date" {...form.register("previewStart")} />
@@ -205,8 +232,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
           </Button>
           <FormError message={pErr} />
           {preview && <ScheduleTable preview={preview} />}
-        </CardContent>
-      </Card>
+      </section>
     </div>
   );
 }
@@ -214,16 +240,20 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
 export function ScheduleTable({ preview }: { preview: Preview }) {
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <p>
-        Rate {preview.annualRate}% p.a.
-        {preview.emiPaise !== null && (
-          <>
-            {" "}
-            · EMI <Money paise={preview.emiPaise} className="font-semibold" />
-          </>
-        )}
-      </p>
-      <div className="max-h-96 overflow-auto rounded-lg ring-1 ring-foreground/10">
+      <div className="bg-hero-green grid grid-cols-3 gap-2 rounded-2xl p-3 text-white">
+        {[
+          [preview.emiPaise !== null ? "EMI" : "Rate", preview.emiPaise !== null ? <Money key="e" paise={preview.emiPaise} short /> : `${preview.annualRate}% p.a.`],
+          ["Total interest", <Money key="i" paise={preview.totals.interestPaise} short />],
+          ["Total to repay", <Money key="t" paise={preview.totals.totalPaise} short />],
+        ].map(([l, v], i) => (
+          <div key={i} className="min-w-0 rounded-xl bg-white/15 px-2.5 py-2">
+            <p className="truncate text-[11px] text-white/85">{l}</p>
+            <p className="truncate font-bold tabular-nums">{v}</p>
+          </div>
+        ))}
+      </div>
+      {preview.emiPaise !== null && <p className="text-xs text-muted-foreground">Rate {preview.annualRate}% per year · {preview.rows.length} installments</p>}
+      <div className="max-h-96 overflow-auto rounded-2xl ring-1 ring-foreground/10">
         <Table>
           <TableHeader>
             <TableRow>

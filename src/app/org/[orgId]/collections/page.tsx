@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HandCoins } from "lucide-react";
+import { ArrowDownToLine, CalendarDays, HandCoins, Receipt, Sparkles, Ticket } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import { getAccounts, getActiveMembers, getOrg, getSchemes, can } from "@/lib/server/data";
 import type { Paged, Payment } from "@/lib/types";
@@ -16,11 +16,30 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { RecordPaymentDialog } from "@/features/collections/record-payment";
+import { SummaryBand } from "@/components/app/summary-band";
+import { ChipLinks } from "@/components/app/chip-links";
+import { IconChip, MemberAvatar } from "@/components/app/bits";
+import { cn } from "@/lib/utils";
+import type { Tone } from "@/lib/tones";
 import { VerifyDialog } from "@/features/collections/verify-dialog";
 
 export const metadata = { title: "Collections" };
 
 const KIND: Record<string, string> = { hapta: "Hapta", membership_fee: "Membership fee", event: "Event", other_income: "Other income" };
+const KIND_LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
+  hapta: { tone: "emerald", icon: <CalendarDays /> },
+  membership_fee: { tone: "sky", icon: <Ticket /> },
+  event: { tone: "violet", icon: <Sparkles /> },
+  other_income: { tone: "indigo", icon: <ArrowDownToLine /> },
+};
+const look = (k: string) => KIND_LOOK[k] ?? { tone: "slate" as Tone, icon: <HandCoins /> };
+const STATUSES = [
+  ["", "All"],
+  ["pending", "To verify"],
+  ["verified", "Verified"],
+  ["rejected", "Rejected"],
+  ["reversed", "Reversed"],
+] as const;
 
 export default async function CollectionsPage({ params, searchParams }: PageProps<"/org/[orgId]/collections">) {
   const { orgId } = await params;
@@ -39,11 +58,44 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
   const activeAccounts = accounts.filter((a) => a.isActive).map((a) => ({ _id: a._id, name: a.name }));
   const canVerify = can(org, "payments.verify");
   const canReverse = can(org, "payments.reverse");
+  const href = (over: Record<string, string>) => `/org/${orgId}/collections${qs({ ...f, ...over })}`;
+  const payer = (p: Payment) =>
+    p.memberId ? (
+      <Link href={`/org/${orgId}/members/${p.memberId}`} className="font-semibold hover:underline">
+        {p.payerName}
+      </Link>
+    ) : (
+      <span className="font-semibold">{p.payerName}</span>
+    );
+  const actions = (p: Payment) => (
+    <>
+      {p.receiptId && (
+        <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
+          <Receipt className="size-3.5" /> Receipt
+        </Link>
+      )}
+      {p.status === "pending" && canVerify && (
+        <>
+          <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reject`} size="xs" variant="ghost" successMessage="Payment rejected" confirm={{ title: "Reject this payment?", description: "It will not count towards any dues.", reason: "required", destructive: true, confirmLabel: "Reject" }}>
+            Reject
+          </ActionButton>
+          <VerifyDialog paymentId={p._id} accounts={accounts.filter((a) => a.isActive)} accountId={p.accountId} payer={p.payerName ?? ""} amountPaise={p.amountPaise} date={p.date} path={`/payments/${p._id}/verify`} />
+        </>
+      )}
+      {p.status === "verified" && canReverse && (
+        <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: "A reversal entry is posted, the receipt is cancelled and the member's dues are restored. The original record is kept.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
+          Reverse
+        </ActionButton>
+      )}
+    </>
+  );
+  const methodLine = (p: Payment) => [label(METHOD_LABEL, p.method), p.reference, p.accountName && `→ ${p.accountName}`].filter(Boolean).join(" · ");
+
   return (
     <>
       <PageHeader
         title="Collections"
-        description={`Money received · ${data.total} ${f.status ? `${f.status} ` : ""}record${data.total === 1 ? "" : "s"}`}
+        description="All money received — hapta, fees, events and other income."
         actions={
           canRecord ? (
             <RecordPaymentDialog
@@ -57,16 +109,16 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
           ) : null
         }
       />
+      <SummaryBand
+        tone="green"
+        icon={<HandCoins />}
+        label={f.status === "pending" ? "Waiting for verification" : "Total of the listed collections"}
+        value={<Money paise={data.totalAmountPaise} />}
+        sub={`${data.total} record${data.total === 1 ? "" : "s"}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : "start"} – ${f.to ? formatDate(f.to) : "today"}` : ""}`}
+      />
+      <ChipLinks label="Status" current={f.status} items={STATUSES.map(([k, l]) => ({ key: k, label: l, href: href({ status: k, page: "" }) }))} />
       <FilterBar resetHref={`/org/${orgId}/collections`}>
-        <FilterField label="Status">
-          <NativeSelect name="status" defaultValue={f.status}>
-            <option value="">All</option>
-            <option value="pending">Pending verification</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-            <option value="reversed">Reversed</option>
-          </NativeSelect>
-        </FilterField>
+        {f.status && <input type="hidden" name="status" value={f.status} />}
         <FilterField label="Type">
           <NativeSelect name="kind" defaultValue={f.kind}>
             <option value="">All</option>
@@ -94,82 +146,102 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
       </FilterBar>
-      <p className="mb-2 text-sm">
-        Total of listed records: <Money paise={data.totalAmountPaise} className="font-semibold" />
-      </p>
       {data.items.length === 0 ? (
-        <EmptyState icon={<HandCoins />} title="No collections found" />
+        <EmptyState icon={<HandCoins />} title="No collections found" description="Try another status or date range." />
       ) : (
-        <TableWrap>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Payer</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.items.map((p) => (
-                <TableRow key={p._id}>
-                  <TableCell className="whitespace-nowrap">{formatDate(p.date)}</TableCell>
-                  <TableCell>
-                    {p.memberId ? (
-                      <Link href={`/org/${orgId}/members/${p.memberId}`} className="font-medium hover:underline">
-                        {p.payerName}
-                      </Link>
-                    ) : (
-                      <span className="font-medium">{p.payerName}</span>
-                    )}
-                    {p.source === "member_request" && <div className="text-xs text-muted-foreground">submitted by member</div>}
-                  </TableCell>
-                  <TableCell>
-                    {KIND[p.kind]}
-                    {p.eventName && <div className="text-xs text-muted-foreground">{p.eventName}</div>}
-                  </TableCell>
-                  <TableCell>
-                    {label(METHOD_LABEL, p.method)}
-                    {p.reference && <div className="text-xs text-muted-foreground">{p.reference}</div>}
-                    {p.accountName && <div className="text-xs text-muted-foreground">→ {p.accountName}</div>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Money paise={p.amountPaise} />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={p.status} />
-                    {(p.rejectedReason || p.reversalReason) && <div className="max-w-40 truncate text-xs text-muted-foreground">{p.rejectedReason ?? p.reversalReason}</div>}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      {p.receiptId && (
-                        <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:underline">
-                          Receipt
-                        </Link>
-                      )}
-                      {p.status === "pending" && canVerify && (
-                        <>
-                          <VerifyDialog paymentId={p._id} accounts={accounts.filter((a) => a.isActive)} accountId={p.accountId} payer={p.payerName ?? ""} amountPaise={p.amountPaise} date={p.date} path={`/payments/${p._id}/verify`} />
-                          <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reject`} size="xs" variant="ghost" successMessage="Payment rejected" confirm={{ title: "Reject this payment?", description: "It will not count towards any dues.", reason: "required", destructive: true, confirmLabel: "Reject" }}>
-                            Reject
-                          </ActionButton>
-                        </>
-                      )}
-                      {p.status === "verified" && canReverse && (
-                        <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: "A reversal entry is posted, the receipt is cancelled and the member's dues are restored. The original record is kept.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-                          Reverse
-                        </ActionButton>
-                      )}
+        <>
+          <ul className="flex flex-col gap-2 md:hidden" aria-label="Collections">
+            {data.items.map((p) => {
+              const lk = look(p.kind);
+              return (
+                <li key={p._id} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", p.status === "pending" && "ring-2 ring-amber-400/40", (p.status === "rejected" || p.status === "reversed") && "opacity-70")}>
+                  <div className="flex items-start gap-3">
+                    <IconChip tone={lk.tone} size="sm">
+                      {lk.icon}
+                    </IconChip>
+                    <div className="min-w-0 flex-1 text-sm">
+                      {payer(p)}
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(p.date)} · {KIND[p.kind] ?? p.kind}
+                        {p.eventName ? ` · ${p.eventName}` : ""}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{methodLine(p)}</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableWrap>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <Money paise={p.amountPaise} className="font-bold" />
+                      <StatusBadge status={p.status} />
+                    </div>
+                  </div>
+                  {(p.rejectedReason || p.reversalReason) && <p className="mt-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">{p.rejectedReason ?? p.reversalReason}</p>}
+                  {p.source === "member_request" && <p className="mt-1 text-xs text-muted-foreground">Reported by the member</p>}
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-1 empty:hidden">{actions(p)}</div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden md:block">
+            <TableWrap>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payer</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.items.map((p) => {
+                    const lk = look(p.kind);
+                    return (
+                      <TableRow key={p._id} className={cn((p.status === "rejected" || p.status === "reversed") && "text-muted-foreground")}>
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <MemberAvatar name={p.payerName ?? "?"} size="sm" />
+                            <div className="min-w-0">
+                              {payer(p)}
+                              <div className="text-xs text-muted-foreground">
+                                {formatDate(p.date)}
+                                {p.source === "member_request" ? " · reported by member" : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center gap-2">
+                            <IconChip tone={lk.tone} size="sm">
+                              {lk.icon}
+                            </IconChip>
+                            <span>
+                              {KIND[p.kind] ?? p.kind}
+                              {p.eventName && <span className="block text-xs text-muted-foreground">{p.eventName}</span>}
+                            </span>
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-56 whitespace-normal text-sm">
+                          {label(METHOD_LABEL, p.method)}
+                          {(p.reference || p.accountName) && <div className="text-xs text-muted-foreground">{[p.reference, p.accountName && `→ ${p.accountName}`].filter(Boolean).join(" · ")}</div>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Money paise={p.amountPaise} className="font-semibold" />
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={p.status} />
+                          {(p.rejectedReason || p.reversalReason) && <div className="max-w-40 truncate text-xs text-muted-foreground">{p.rejectedReason ?? p.reversalReason}</div>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">{actions(p)}</div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableWrap>
+          </div>
+        </>
       )}
       <Pagination page={data.page} pageSize={data.pageSize} total={data.total} baseHref={`/org/${orgId}/collections`} params={f} />
     </>

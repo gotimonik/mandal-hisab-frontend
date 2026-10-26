@@ -3,10 +3,11 @@
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Calculator, Loader2 } from "lucide-react";
+import { Calculator, CheckCircle2, Loader2, Percent } from "lucide-react";
+import { IconChip, MemberAvatar } from "@/components/app/bits";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
@@ -100,13 +101,32 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
     });
 
   return (
-    <Card className="gap-4 p-4 sm:p-5">
-      <div>
-        <h2 className="font-medium">Credit monthly interest</h2>
-        <p className="text-sm text-muted-foreground">Interest is added to each member&apos;s balance. No cash moves until a member withdraws.</p>
+    <section className="flex flex-col gap-4 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5">
+      <div className="flex items-start gap-3">
+        <IconChip tone="pink">
+          <Percent />
+        </IconChip>
+        <div>
+          <h2 className="text-base font-bold">Credit monthly interest</h2>
+          <p className="text-sm text-muted-foreground">Choose the month and method, preview what each member gets, then credit it.</p>
+        </div>
       </div>
+      <ol className="flex items-center gap-2 text-xs font-semibold text-muted-foreground" aria-label="Steps">
+        {["Choose", "Preview", "Credit"].map((l, i) => {
+          const on = i === 0 ? !preview : i === 1 ? !!preview : false;
+          return (
+            <li key={l} className="flex items-center gap-2">
+              {i > 0 && <span className="h-px w-5 bg-border" />}
+              <span className={cn("flex items-center gap-1.5 rounded-full px-2.5 py-1", on ? "bg-primary/10 text-primary" : "bg-muted")}>
+                <span className={cn("flex size-4 items-center justify-center rounded-full text-[10px]", on ? "bg-primary text-primary-foreground" : "bg-foreground/10")}>{i + 1}</span>
+                {l}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
       <FormError message={error} />
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3 sm:grid-cols-4">
         <Field label="Month" htmlFor="i-period">
           <Input
             id="i-period"
@@ -161,13 +181,13 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
           </>
         )}
       </div>
-      <Button variant="secondary" className="justify-self-start" onClick={runPreview} disabled={pending}>
-        {pending && !preview ? <Loader2 className="animate-spin" /> : <Calculator />} Preview
+      <Button variant={preview ? "outline" : "default"} className="self-start" onClick={runPreview} disabled={pending}>
+        {pending && !preview ? <Loader2 className="animate-spin" /> : <Calculator />} {preview ? "Preview again" : "Preview"}
       </Button>
 
       {preview && (
-        <div className="grid gap-3">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col gap-3">
+          <p className="rounded-xl bg-sky-500/8 px-3 py-2.5 text-sm text-muted-foreground">
             {preview.mode === "rate" ? (
               <>
                 {preview.monthlyRate}% of the eligible balance — {BASIS_LABEL[preview.basis ?? ""]} ({formatDate(preview.basisDate)}). Rounded to the nearest paisa.
@@ -178,20 +198,23 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
             Credited on {formatDate(preview.creditDate)}.
             {preview.alreadyCreditedCount > 0 && <span className="text-warning-ink"> {preview.alreadyCreditedCount} member(s) were already credited for this month and are skipped.</span>}
           </p>
-          <div className="divide-y rounded-lg border">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-3 py-2 text-xs font-medium text-muted-foreground">
+          <div className="divide-y overflow-hidden rounded-2xl ring-1 ring-foreground/[0.08]">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-3 bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
               <span>Member</span>
-              <span className="w-28 text-right">{preview.mode === "rate" ? "Eligible balance" : "Balance now"}</span>
-              <span className="w-28 text-right">Interest</span>
+              <span className="w-24 text-right sm:w-28">{preview.mode === "rate" ? "Eligible balance" : "Balance now"}</span>
+              <span className="w-24 text-right sm:w-28">Interest</span>
             </div>
             {preview.rows.map((r) => (
               <div key={r.memberId} className={`grid grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-2 text-sm ${r.alreadyCredited ? "opacity-60" : ""}`}>
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <MemberAvatar name={r.name} size="sm" />
+                  <div className="min-w-0">
                   <div className="truncate font-medium">{r.name}</div>
                   <div className="text-xs text-muted-foreground">{r.alreadyCredited ? "Already credited" : r.membershipNumber}</div>
+                  </div>
                 </div>
-                <Money paise={preview.mode === "rate" ? r.eligibleBalancePaise : r.currentBalancePaise} className="w-28 text-right" />
-                <div className="w-28 text-right">
+                <Money paise={preview.mode === "rate" ? r.eligibleBalancePaise : r.currentBalancePaise} className="w-24 text-right sm:w-28" />
+                <div className="w-24 text-right sm:w-28">
                   {preview.mode === "manual" && !r.alreadyCredited ? (
                     <Input aria-label={`Interest for ${r.name}`} inputMode="decimal" className="h-7 text-right" placeholder="0" value={manual[r.memberId] ?? ""} onChange={(e) => setManual((m) => ({ ...m, [r.memberId]: e.target.value }))} />
                   ) : (
@@ -200,7 +223,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
                 </div>
               </div>
             ))}
-            <div className="grid grid-cols-[1fr_auto] px-3 py-2 text-sm font-semibold">
+            <div className="grid grid-cols-[1fr_auto] bg-pink-500/8 px-3 py-2.5 text-sm font-bold">
               <span>Total to credit</span>
               <Money paise={total} />
             </div>
@@ -208,12 +231,12 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
           <Field label="Note (optional)" htmlFor="i-note">
             <Input id="i-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. As decided in the monthly meeting" />
           </Field>
-          <Button onClick={finalize} disabled={pending || total <= 0} className="justify-self-start">
-            {pending && <Loader2 className="animate-spin" />} Credit {total ? money.short(total) : ""} interest
+          <Button onClick={finalize} disabled={pending || total <= 0} size="lg" className="h-11 w-full rounded-2xl sm:w-auto sm:self-start">
+            {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Credit {total ? money.short(total) : ""} interest
           </Button>
           <p className="text-xs text-muted-foreground">Once credited, interest can&apos;t be edited or credited again for this month. Corrections are made as member balance adjustments.</p>
         </div>
       )}
-    </Card>
+    </section>
   );
 }
