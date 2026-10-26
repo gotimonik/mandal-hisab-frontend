@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -77,6 +78,14 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
   const emailValue = form.watch("email");
   const sharesValue = Number(form.watch("haptaShares")) || 1;
   const sharesChanged = !!member && sharesValue !== (member.haptaShares ?? 1);
+  // which months a share change applies to
+  const thisMonth = todayISO().slice(0, 7);
+  const [ty, tm] = thisMonth.split("-").map(Number);
+  const nextMonth = new Date(Date.UTC(ty, tm, 1)).toISOString().slice(0, 7);
+  const monthLabel = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
+  const [applyFrom, setApplyFrom] = useState<"" | "this" | "next">("");
+  const effectiveApply = applyFrom || (sharesChanged ? "this" : "");
+  const showApply = !!member && (sharesChanged || sharesValue > 1);
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
@@ -85,7 +94,14 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       className="grid gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) => {
         const { inviteToApp, haptaShares, ...rest } = v;
-        const body = { ...rest, haptaShares: Number(haptaShares), membershipNumber: v.membershipNumber || undefined, email: v.email || undefined, phone: v.phone || undefined };
+        const body = {
+          ...rest,
+          haptaShares: Number(haptaShares),
+          ...(member && effectiveApply ? { sharesFromMonth: effectiveApply === "this" ? thisMonth : nextMonth } : {}),
+          membershipNumber: v.membershipNumber || undefined,
+          email: v.email || undefined,
+          phone: v.phone || undefined,
+        };
         submit<Created>(
           member ? { path: `/orgs/${orgId}/members/${member._id}`, method: "PATCH", body } : { path: `/orgs/${orgId}/members`, body: { ...body, inviteToApp: !!v.email && inviteToApp } },
           {
@@ -137,10 +153,29 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
         label="Haptas per month"
         htmlFor="m-shares"
         error={e.haptaShares?.message}
-        hint={sharesChanged ? "Changes their unpaid hapta from this month on. Paid months stay as they are." : sharesValue > 1 ? `Pays ${sharesValue} haptas every month — one name, one login.` : "1 for most members. Use 3 if they pay 3 haptas a month."}
+        hint={sharesValue > 1 ? `Pays ${sharesValue} haptas every month — one name, one login.` : "1 for most members. Use 3 if they pay 3 haptas a month."}
       >
         <Input id="m-shares" type="number" inputMode="numeric" min={1} max={50} step={1} {...form.register("haptaShares")} />
       </Field>
+      {showApply && (
+        <Field
+          label="Apply from"
+          htmlFor="m-apply"
+          hint={
+            effectiveApply === "this"
+              ? `${monthLabel(thisMonth)} becomes ${sharesValue} hapta${sharesValue === 1 ? "" : "s"} — if it's already paid, the rest shows as due. Earlier months don't change.`
+              : effectiveApply === "next"
+                ? `${monthLabel(thisMonth)} stays as it is; ${sharesValue} hapta${sharesValue === 1 ? "" : "s"} from ${monthLabel(nextMonth)}.`
+                : "Existing months stay as they are."
+          }
+        >
+          <NativeSelect id="m-apply" value={effectiveApply} onChange={(ev) => setApplyFrom(ev.target.value as "" | "this" | "next")}>
+            {!sharesChanged && <option value="">Don&apos;t change existing months</option>}
+            <option value="this">This month ({monthLabel(thisMonth)})</option>
+            <option value="next">Next month ({monthLabel(nextMonth)})</option>
+          </NativeSelect>
+        </Field>
+      )}
       <Field label="Status" htmlFor="m-status">
         <NativeSelect id="m-status" {...form.register("status")}>
           <option value="active">Active</option>

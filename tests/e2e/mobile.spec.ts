@@ -59,6 +59,18 @@ test("phone: quick actions, deep-linked forms and instant search on monthly hapt
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Collect from Hiral Shah" })).toHaveCount(0);
 
+  // she now pays 3 haptas a month, starting this month: the paid month asks for the other ₹1,000
+  await page.goto(`${orgUrl}/members`);
+  await page.getByRole("link", { name: /Hiral Shah/ }).first().click();
+  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("dialog").getByLabel("Haptas per month").fill("3");
+  await expect(page.getByRole("dialog").getByLabel("Apply from")).toHaveValue("this");
+  await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("3 haptas a month", { exact: true })).toBeVisible();
+  await page.goto(`${orgUrl}/monthly`);
+  await expect(page.getByRole("button", { name: "Collect from Hiral Shah" })).toContainText("₹1,000");
+
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
