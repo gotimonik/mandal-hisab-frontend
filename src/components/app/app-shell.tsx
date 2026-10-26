@@ -119,7 +119,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
       <div className="flex min-h-dvh w-full">
         <aside className="no-print sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-3 border-r bg-sidebar p-3 lg:flex">{sidebar}</aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="no-print sticky top-0 z-30 flex h-14 items-center gap-1 border-b border-border/60 bg-background/85 pr-2 pl-1 backdrop-blur-md lg:hidden">
+          <header className="no-print sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center gap-1 border-b pt-[env(safe-area-inset-top)] border-border/60 bg-background/85 pr-2 pl-1 backdrop-blur-md lg:hidden">
             <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setOpen(true)}>
               <Menu />
             </Button>
@@ -135,7 +135,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
           <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-end px-1">{bottomNav}</div>
         </nav>
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-[19rem] bg-sidebar p-3">
+          <SheetContent side="left" className="w-[19rem] bg-sidebar p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <SheetHeader className="p-0">
               <SheetTitle className="sr-only">Menu</SheetTitle>
             </SheetHeader>

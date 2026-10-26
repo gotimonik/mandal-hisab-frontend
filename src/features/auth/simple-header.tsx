@@ -10,7 +10,7 @@ import { LanguageSwitcher } from "@/i18n/switcher";
 export function SimpleHeader() {
   const t = useT();
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/85 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between gap-2 border-b pt-[env(safe-area-inset-top)] border-border/60 bg-background/85 px-4 backdrop-blur-md sm:px-6">
       <Link href="/onboarding" className="flex items-center gap-2 font-bold tracking-tight">
         <span className="bg-hero flex size-8 items-center justify-center rounded-lg">
           <HandCoins className="size-4" />

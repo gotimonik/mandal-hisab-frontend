@@ -19,6 +19,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // native app projects (Capacitor)
+    "android/**",
+    "ios/**",
+    "mobile/**",
   ]),
 ]);
 

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MandalHisab</string>
+    <string name="title_activity_main">MandalHisab</string>
+    <string name="package_name">com.mandalhisab.app</string>
+    <string name="custom_url_scheme">com.mandalhisab.app</string>
+</resources>

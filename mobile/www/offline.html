@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>MandalHisab — offline</title>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body { display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;
+        font-family: -apple-system, system-ui, sans-serif; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; text-align: center; }
+      button { margin-top: 16px; padding: 12px 22px; border: 0; border-radius: 12px; background: #fff; color: #4338ca; font-size: 16px; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>You're offline</h1>
+      <p>MandalHisab needs the internet to show your Mandal.<br />Check your connection and try again.</p>
+      <button onclick="location.href = window.Capacitor?.getServerUrl?.() || 'https://mandalhisab.com'">Try again</button>
+    </div>
+  </body>
+</html>
