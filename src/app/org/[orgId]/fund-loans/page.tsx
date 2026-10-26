@@ -9,7 +9,7 @@ import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { METHOD_LABEL, formatDate, label } from "@/lib/format";
+import { METHOD_LABEL, formatDate, formatINR, label } from "@/lib/format";
 import { MemberAvatar } from "@/components/app/bits";
 import { GiveLoanDialog } from "@/features/fund-loans/give-loan-dialog";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
@@ -108,7 +108,19 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     {x.notes ? ` · ${x.notes}` : ""}
                   </p>
                 </div>
-                {canVerify && (
+                {x.alreadyRecorded && (
+                  <p className="w-full rounded-lg bg-emerald-500/10 px-3 py-2 text-xs text-emerald-800 sm:order-last dark:text-emerald-200">
+                    Already recorded with Receive on {formatDate(x.alreadyRecorded.date)} (
+                    {[x.alreadyRecorded.interestPaise ? `${formatINR(x.alreadyRecorded.interestPaise)} interest` : "", x.alreadyRecorded.principalPaise ? `${formatINR(x.alreadyRecorded.principalPaise)} upad` : ""].filter(Boolean).join(" + ")}). Close this so it isn&apos;t counted twice.
+                  </p>
+                )}
+                {canVerify && x.alreadyRecorded ? (
+                  <div className="flex gap-1">
+                    <ActionButton path={`/orgs/${orgId}/upad-payments/${x._id}/settle`} size="xs" variant="default" successMessage="Closed — matched to the recorded payment" confirm={{ title: "Close this as already recorded?", description: "No new payment is created. The member is told it was received and gets the receipt.", confirmLabel: "Already recorded" }}>
+                      Already recorded
+                    </ActionButton>
+                  </div>
+                ) : canVerify && (
                   <div className="flex gap-1">
                     <ActionButton path={`/orgs/${orgId}/upad-payments/${x._id}/reject`} size="xs" variant="ghost" successMessage="Payment rejected" confirm={{ title: "Reject this payment?", reason: "required", reasonLabel: "Reason (shown to the member)", destructive: true, confirmLabel: "Reject" }}>
                       Reject
@@ -191,7 +203,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
               </div>
               {canCollect && l.status === "active" && (
                 <div className="mt-3 [&_button]:w-full">
-                  <LoanPaymentDialog loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label="Receive payment" />
+                  <LoanPaymentDialog reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label="Receive payment" />
                 </div>
               )}
             </li>
@@ -237,7 +249,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     <StatusBadge status={l.status} />
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">
-                    {canCollect && l.status === "active" && <LoanPaymentDialog loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label="Receive" />}
+                    {canCollect && l.status === "active" && <LoanPaymentDialog reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label="Receive" />}
                   </TableCell>
                 </TableRow>
               ))}

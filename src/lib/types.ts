@@ -475,4 +475,6 @@ export interface UpadPaymentClaim {
   status: "pending" | "verified" | "rejected";
   rejectedReason?: string;
   createdAt: string;
+  /** the admin already recorded this money with Receive */
+  alreadyRecorded?: { paymentId: string; date: string; interestPaise: number; principalPaise: number; receiptId: string } | null;
 }

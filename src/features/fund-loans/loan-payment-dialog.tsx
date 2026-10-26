@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Field, FormError } from "@/components/app/field";
 import { Money } from "@/components/app/money";
 import { apiMutate } from "@/app/actions/api";
-import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { formatDate, formatINR, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupeesOrZero } from "@/lib/schemas";
 
 /**
@@ -26,6 +26,7 @@ export function LoanPaymentDialog({
   label = "Receive payment",
   size = "sm",
   variant = "default",
+  reported = [],
 }: {
   loanId: string;
   number: string;
@@ -35,6 +36,8 @@ export function LoanPaymentDialog({
   label?: string;
   size?: "xs" | "sm" | "default";
   variant?: "default" | "outline";
+  /** payments the member reported with "I have paid" that are waiting for verification */
+  reported?: { interestPaise: number; principalPaise: number; method: string; date: string }[];
 }) {
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -64,9 +67,9 @@ export function LoanPaymentDialog({
     if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError("Enter the interest and/or upad amount received");
     start(async () => {
       setError(null);
-      const res = await apiMutate({ path: `/orgs/${orgId}/fund-loans/${loanId}/payments`, body: { interestAmount: i.data, principalAmount: p.data, date, note: note || undefined, idempotencyKey: key } });
+      const res = await apiMutate<{ settledClaimId: string | null }>({ path: `/orgs/${orgId}/fund-loans/${loanId}/payments`, body: { interestAmount: i.data, principalAmount: p.data, date, note: note || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.fieldErrors?.interestAmount ?? res.error);
-      toast.success(`Payment from ${memberName} recorded`);
+      toast.success(`Payment from ${memberName} recorded`, res.data.settledClaimId ? { description: "It matched the payment they reported, so that one is closed too." } : undefined);
       setOpen(false);
       reset();
       router.refresh();
@@ -103,6 +106,18 @@ export function LoanPaymentDialog({
             }}
           >
             <FormError message={error} />
+            {reported.length > 0 && (
+              <div className="rounded-xl bg-amber-500/12 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200" role="note">
+                <b>{memberName} already reported paying</b>{" "}
+                {reported.map((r, k) => (
+                  <span key={k}>
+                    {k > 0 && "; "}
+                    {[r.interestPaise ? `${formatINR(r.interestPaise)} interest` : "", r.principalPaise ? `${formatINR(r.principalPaise)} upad` : ""].filter(Boolean).join(" + ")} ({r.method}, {formatDate(r.date)})
+                  </span>
+                ))}
+                . If this is that money, use <b>Verify</b> under Payments to verify instead — or record the same amount here and it will be matched automatically.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <Field label="Interest received (₹)" htmlFor="lp-int" hint="Oldest month first">
                 <Input id="lp-int" inputMode="decimal" value={interest} onChange={(e) => setInterest(e.target.value)} />
