@@ -3,6 +3,6 @@ import path from "node:path";
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
-  esbuild: { jsx: "automatic" },
+  oxc: { jsx: { runtime: "automatic" } },
   test: { environment: "jsdom", include: ["tests/unit/**/*.test.{ts,tsx}"], setupFiles: ["tests/unit/setup.ts"] },
 });
