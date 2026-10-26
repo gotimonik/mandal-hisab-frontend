@@ -14,7 +14,7 @@ import { METHOD_LABEL, formatINR, label, newIdempotencyKey, paiseToRupeeInput, t
 import { rupees, rupeesOrZero } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/client";
-import { intlLocale, type Key } from "@/i18n/core";
+import { intlLocale, type Key, type Lang } from "@/i18n/core";
 
 type Purpose = "hapta" | "upad" | "other";
 
@@ -24,7 +24,7 @@ interface Options {
   methods: string[];
 }
 
-const monthName = (lang: "en" | "gu", m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
+const monthName = (lang: Lang, m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
 
 function Form({ methods }: { methods: string[] }) {
   const { orgId } = useParams<{ orgId: string }>();

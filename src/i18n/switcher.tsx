@@ -8,7 +8,7 @@ import { setLanguage } from "@/app/actions/lang";
 import { LANGS } from "./core";
 import { useLang, useT } from "./client";
 
-/** English | ગુજરાતી — a small segmented switch. */
+/** English | ગુજરાતી | हिन्दी — a small segmented switch. */
 export function LanguageSwitcher({ className, compact = false }: { className?: string; compact?: boolean }) {
   const lang = useLang();
   const t = useT();

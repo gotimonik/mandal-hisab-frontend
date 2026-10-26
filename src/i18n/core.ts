@@ -5,21 +5,23 @@
  */
 import { en } from "./dict/en";
 import { gu } from "./dict/gu";
+import { hi } from "./dict/hi";
 
-export type Lang = "en" | "gu";
+export type Lang = "en" | "gu" | "hi";
 export const LANGS: { code: Lang; label: string; native: string }[] = [
   { code: "en", label: "English", native: "English" },
   { code: "gu", label: "Gujarati", native: "ગુજરાતી" },
+  { code: "hi", label: "Hindi", native: "हिन्दी" },
 ];
 export const LANG_COOKIE = "mh_lang";
-export const isLang = (v: unknown): v is Lang => v === "en" || v === "gu";
+export const isLang = (v: unknown): v is Lang => v === "en" || v === "gu" || v === "hi";
 
 type Leaves<T, P extends string = ""> = { [K in keyof T & string]: T[K] extends string ? `${P}${K}` : Leaves<T[K], `${P}${K}.`> }[keyof T & string];
 export type Key = Leaves<typeof en>;
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
 export type Dict = Widen<typeof en>;
 
-const DICTS: Record<Lang, Dict> = { en, gu };
+const DICTS: Record<Lang, Dict> = { en, gu, hi };
 
 export type Vars = Record<string, string | number>;
 export type T = (key: Key, vars?: Vars) => string;
@@ -38,7 +40,7 @@ export function makeT(lang: Lang): T {
 }
 
 /** Intl locale for month names etc. */
-export const intlLocale = (lang: Lang) => (lang === "gu" ? "gu-IN" : "en-IN");
+export const intlLocale = (lang: Lang) => (lang === "gu" ? "gu-IN" : lang === "hi" ? "hi-IN" : "en-IN");
 
 /** "October 2026" / "ઑક્ટોબર 2026" for a YYYY-MM month */
 export function monthName(lang: Lang, ym: string, style: "long" | "short" = "long") {

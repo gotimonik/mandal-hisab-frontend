@@ -9,7 +9,7 @@ const Ctx = createContext<{ lang: Lang; t: T }>({ lang: "en", t: makeT("en") });
 export function I18nProvider({ lang, children }: { lang: Lang; children: ReactNode }) {
   const value = useMemo(() => ({ lang, t: makeT(lang) }), [lang]);
   useEffect(() => {
-    document.documentElement.lang = lang === "gu" ? "gu" : "en";
+    document.documentElement.lang = lang;
   }, [lang]);
   return <Ctx value={value}>{children}</Ctx>;
 }
