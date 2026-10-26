@@ -413,7 +413,8 @@ test("Invite by email: adding a member with an email invites them; they register
   await inv.goto(link);
   await expect(inv.getByText("You're invited — create your account")).toBeVisible();
   await expect(inv.getByLabel("Email")).toHaveValue(memberEmail);
-  await inv.getByLabel("Full name").fill("Hema Invited");
+  await expect(inv.getByLabel("Email")).toHaveAttribute("readonly", "");
+  await expect(inv.getByLabel("Full name")).toHaveValue("Hema Invited");
   await inv.getByLabel("Password", { exact: true }).fill("secret123");
   await inv.getByLabel("Confirm password").fill("secret123");
   await inv.getByRole("button", { name: "Create account" }).click();

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
@@ -22,7 +22,15 @@ export function RegisterForm() {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const invited = !!next?.startsWith("/invite");
-  const form = useForm<z.infer<typeof RegisterSchema>>({ resolver: zodResolver(RegisterSchema), defaultValues: { name: "", email: sp.get("email") ?? "", phone: "", password: "", confirm: "" } });
+  const invitedEmail = sp.get("email") ?? "";
+  const invitedName = sp.get("name") ?? "";
+  const form = useForm<z.infer<typeof RegisterSchema>>({ resolver: zodResolver(RegisterSchema), defaultValues: { name: invitedName, email: invitedEmail, phone: "", password: "", confirm: "" } });
+  // the page can be served from a static shell: make sure the invited name/email land in the fields
+  useEffect(() => {
+    if (invitedEmail && !form.getValues("email")) form.setValue("email", invitedEmail);
+    if (invitedName && !form.getValues("name")) form.setValue("name", invitedName);
+  }, [invitedEmail, invitedName, form]);
+  const lockEmail = invited && !!invitedEmail;
   const e = form.formState.errors;
 
   const onSubmit = form.handleSubmit(({ confirm: _c, phone, ...values }) =>
@@ -56,8 +64,8 @@ export function RegisterForm() {
         <Field label="Full name" htmlFor="name" error={e.name?.message}>
           <Input id="name" autoComplete="name" aria-invalid={!!e.name} {...form.register("name")} />
         </Field>
-        <Field label="Email" htmlFor="email" error={e.email?.message} hint={invited ? "Use the email the invitation was sent to." : undefined}>
-          <Input id="email" type="email" autoComplete="email" inputMode="email" aria-invalid={!!e.email} {...form.register("email")} />
+        <Field label="Email" htmlFor="email" error={e.email?.message} hint={lockEmail ? "The invitation was sent to this email — you'll sign in with it." : undefined}>
+          <Input id="email" type="email" autoComplete="email" inputMode="email" readOnly={lockEmail} className={lockEmail ? "bg-muted/60 text-muted-foreground" : undefined} aria-invalid={!!e.email} {...form.register("email")} />
         </Field>
         <Field label="Mobile (optional)" htmlFor="phone" error={e.phone?.message}>
           <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" aria-invalid={!!e.phone} {...form.register("phone")} />
