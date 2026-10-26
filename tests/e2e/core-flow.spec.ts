@@ -134,7 +134,7 @@ test("Parivar Mandal: monthly hapta in cash, interest, withdrawal and cash book"
   // Monthly hapta: both the admin (a member too) and Asha owe ₹500
   await page.goto(`${orgUrl}/monthly`);
   await expect(page.getByText("₹500.00 per member")).toBeVisible();
-  await expect(page.getByText("₹1,000.00").first()).toBeVisible();
+  await expect(page.getByText(/of ₹1,000 expected/)).toBeVisible();
   await page.getByRole("button", { name: "Collect from Asha Patel" }).click();
   const collect = page.getByRole("dialog");
   await expect(collect.getByLabel("Amount (₹)")).toHaveValue("500");
