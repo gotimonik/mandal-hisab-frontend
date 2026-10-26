@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
+import { DURATIONS, endMonthFor, monthLabelYM } from "@/lib/months";
 
 const Schema = z.object({
   name: z.string().trim().min(3, "Enter the Mandal name").max(120),
@@ -25,19 +26,22 @@ const Schema = z.object({
   contactPhone: z.string().trim().max(20).optional(),
   registrationNumber: z.string().trim().max(100).optional(),
   financialYearStartMonth: z.coerce.number().int().min(1).max(12),
-});
+  duration: z.string(),
+  customEndMonth: z.string().optional(),
+}).refine((v) => v.duration !== "custom" || /^\d{4}-(0[1-9]|1[0-2])$/.test(v.customEndMonth ?? ""), { message: "Choose the last month", path: ["customEndMonth"] })
+  .refine((v) => v.duration !== "custom" || (v.customEndMonth ?? "") >= v.haptaStartMonth, { message: "Must be on or after the first hapta month", path: ["customEndMonth"] });
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export function CreateOrgForm() {
   const router = useRouter();
-  const form = useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>({ resolver: zodResolver(Schema), defaultValues: { name: "", description: "", monthlyHaptaAmount: "", haptaStartMonth: todayISO().slice(0, 7), haptaDueDay: 10, city: "", state: "", contactPhone: "", registrationNumber: "", financialYearStartMonth: 4 } });
+  const form = useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>({ resolver: zodResolver(Schema), defaultValues: { name: "", description: "", monthlyHaptaAmount: "", haptaStartMonth: todayISO().slice(0, 7), haptaDueDay: 10, duration: "", customEndMonth: "", city: "", state: "", contactPhone: "", registrationNumber: "", financialYearStartMonth: 4 } });
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
     <form
       noValidate
       className="grid gap-3 sm:grid-cols-2"
-      onSubmit={form.handleSubmit((v) => submit<{ id: string }>({ path: "/organizations", body: { ...v, description: v.description || undefined, monthlyHaptaAmount: v.monthlyHaptaAmount || undefined } }, { success: "Mandal registered", onSuccess: (o) => router.push(`/org/${o.id}`) }))}
+      onSubmit={form.handleSubmit((v) => submit<{ id: string }>({ path: "/organizations", body: (({ duration, customEndMonth, ...rest }) => ({ ...rest, description: v.description || undefined, monthlyHaptaAmount: v.monthlyHaptaAmount || undefined, endMonth: endMonthFor(v.haptaStartMonth, duration, customEndMonth) }))(v) }, { success: "Mandal registered", onSuccess: (o) => router.push(`/org/${o.id}`) }))}
     >
       <div className="sm:col-span-2">
         <FormError message={error} />
@@ -58,6 +62,30 @@ export function CreateOrgForm() {
         <Field label="Due by day" htmlFor="org-hdue" error={e.haptaDueDay?.message}>
           <Input id="org-hdue" type="number" min={1} max={28} {...form.register("haptaDueDay")} />
         </Field>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field
+          label="How long will it run?"
+          htmlFor="org-duration"
+          hint={(() => {
+            const end = endMonthFor(form.watch("haptaStartMonth"), form.watch("duration"), form.watch("customEndMonth"));
+            return end ? `Last hapta month: ${monthLabelYM(end)}. You can change it later.` : "You can set an end later in Settings.";
+          })()}
+          className={form.watch("duration") === "custom" ? undefined : "col-span-2"}
+        >
+          <NativeSelect id="org-duration" {...form.register("duration")}>
+            {DURATIONS.map(([k, l]) => (
+              <option key={k} value={k}>
+                {l}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        {form.watch("duration") === "custom" && (
+          <Field label="Last month" htmlFor="org-end" error={e.customEndMonth?.message}>
+            <Input id="org-end" type="month" {...form.register("customEndMonth")} />
+          </Field>
+        )}
       </div>
       <Field label="City" htmlFor="org-city">
         <Input id="org-city" {...form.register("city")} />

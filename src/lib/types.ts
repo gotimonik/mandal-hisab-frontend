@@ -81,6 +81,9 @@ export interface OrgSettings {
   withdrawals: { allowExceptions: boolean };
   fundLoans: { defaultMonthlyRate: string; dueDay: number; allowMemberRequests: boolean };
   membership: { discoverable: boolean; allowJoinRequests: boolean; autoCreateMember: boolean };
+  /** last month the Mandal runs (YYYY-MM), if set */
+  endMonth?: string | null;
+  settlement?: { startedAt: string; closedAt?: string | null; payouts: { memberId: string; netPaise: number }[] } | null;
 }
 
 export interface Org {

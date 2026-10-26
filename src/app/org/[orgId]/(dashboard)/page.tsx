@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   HandCoins,
   Landmark,
+  Lock,
   Percent,
   PiggyBank,
   Receipt,
@@ -33,6 +34,7 @@ import { formatDate, formatINR, formatINRCompact, formatINRShort, label } from "
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 import { MonthlyChart } from "@/features/dashboard/monthly-chart";
+import { monthLabelYM, monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
 
 export const metadata = { title: "Dashboard" };
@@ -57,6 +59,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
   const pct = expected > 0 ? Math.round((collected / expected) * 100) : 0;
   const olderDue = Math.max(0, (t.outstandingHaptaPaise ?? 0) - monthDue);
   const month = monthLabel(d.asOf);
+  const monthsLeft = org.settings.endMonth ? monthsBetween(String(d.asOf).slice(0, 7), org.settings.endMonth) : 0;
 
   type Todo = { key: string; href: string; tone: Tone; icon: React.ReactNode; title: string; subtitle?: string; trailing: React.ReactNode };
   const todos: Todo[] = [];
@@ -77,7 +80,22 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           {org.name} · FY {d.financialYear}
         </p>
         <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">Namaste, {me.user.name.split(" ")[0]}</h1>
+        {org.settings.endMonth && !org.settings.settlement && (
+          <p className="mt-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
+            Runs until {monthLabelYM(org.settings.endMonth)} · {monthsLeft > 0 ? `${monthsLeft} month${monthsLeft === 1 ? "" : "s"} left` : "ended"}
+          </p>
+        )}
       </div>
+      {isAdmin && (org.settings.settlement || (org.settings.endMonth && monthsLeft <= 1)) && org.status === "active" && (
+        <Link href={`${base}/settings/close`} className="mb-4 flex items-center gap-3 rounded-2xl bg-amber-500/12 p-3.5 text-sm ring-1 ring-amber-500/30">
+          <Lock className="size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <span className="min-w-0 flex-1">
+            <b>{org.settings.settlement ? "Closing in progress" : monthsLeft > 0 ? "The Mandal ends this month" : "The Mandal's end month has passed"}</b>
+            <span className="block text-xs text-muted-foreground">{org.settings.settlement ? `${org.settings.settlement.payouts.length} member(s) paid out so far — continue settling.` : "Share out the money and pay every member when you're ready."}</span>
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
         {/* ---- this month's hapta: the hero */}
