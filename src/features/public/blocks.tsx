@@ -12,7 +12,7 @@ export function Container({ children, className }: { children: ReactNode; classN
 /** A vertical band of the page. */
 export function Section({ id, children, className, tinted = false }: { id?: string; children: ReactNode; className?: string; tinted?: boolean }) {
   return (
-    <section id={id} className={cn("scroll-mt-20 py-14 sm:py-20", tinted && "bg-secondary/40", className)}>
+    <section id={id} className={cn("scroll-mt-20 py-10 sm:py-20", tinted && "bg-secondary/40", className)}>
       <Container>{children}</Container>
     </section>
   );
@@ -20,10 +20,10 @@ export function Section({ id, children, className, tinted = false }: { id?: stri
 
 export function SectionHeading({ eyebrow, title, description, center = false, className }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; center?: boolean; className?: string }) {
   return (
-    <div className={cn("mb-8 max-w-2xl sm:mb-10", center && "mx-auto text-center", className)}>
+    <div className={cn("mb-5 max-w-2xl sm:mb-10", center && "mx-auto text-center", className)}>
       {eyebrow && <p className="mb-2 text-xs font-bold tracking-wider text-primary uppercase">{eyebrow}</p>}
-      <h2 className="text-2xl font-extrabold tracking-tight text-balance sm:text-4xl">{title}</h2>
-      {description && <p className="mt-3 text-base text-pretty text-muted-foreground sm:text-lg">{description}</p>}
+      <h2 className="text-[1.4rem] leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">{title}</h2>
+      {description && <p className="mt-2 text-sm text-pretty text-muted-foreground sm:mt-3 sm:text-lg">{description}</p>}
     </div>
   );
 }
@@ -35,10 +35,10 @@ export function PageHero({ eyebrow, title, description, children, tone = "indigo
     <section className={cn("relative overflow-hidden text-white", bg)}>
       <div aria-hidden className="pointer-events-none absolute -top-24 -right-16 size-72 rounded-full bg-white/10" />
       <div aria-hidden className="pointer-events-none absolute -bottom-32 left-1/3 size-72 rounded-full bg-white/10" />
-      <Container className="relative py-14 sm:py-20">
+      <Container className="relative py-10 sm:py-20">
         {eyebrow && <p className="mb-2 text-xs font-bold tracking-wider text-white/80 uppercase">{eyebrow}</p>}
-        <h1 className="max-w-3xl text-3xl font-extrabold tracking-tight text-balance sm:text-5xl">{title}</h1>
-        {description && <p className="mt-4 max-w-2xl text-base text-pretty text-white/85 sm:text-lg">{description}</p>}
+        <h1 className="max-w-3xl text-[1.85rem] leading-tight font-extrabold tracking-tight text-balance sm:text-5xl">{title}</h1>
+        {description && <p className="mt-3 max-w-2xl text-sm text-pretty text-white/85 sm:mt-4 sm:text-lg">{description}</p>}
         {children && <div className="mt-6">{children}</div>}
       </Container>
     </section>
