@@ -12,6 +12,7 @@ import { Field, FormError } from "@/components/app/field";
 import { forgotPasswordAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
 import { email } from "./schemas";
+import { track } from "@/lib/analytics";
 
 const Schema = z.object({ email });
 
@@ -24,6 +25,7 @@ export function ForgotForm() {
     start(async () => {
       const r = await forgotPasswordAction(v);
       if (!r.ok) return setError(r.error);
+      track("password_reset_requested");
       setSent(true);
     }),
   );

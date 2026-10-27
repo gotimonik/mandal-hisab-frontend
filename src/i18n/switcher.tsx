@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { setLanguage } from "@/app/actions/lang";
 import { LANGS } from "./core";
 import { useLang, useT } from "./client";
+import { track } from "@/lib/analytics";
 
 /** English | ગુજરાતી | हिन्दी — a small segmented switch. */
 export function LanguageSwitcher({ className, compact = false }: { className?: string; compact?: boolean }) {
@@ -26,6 +27,7 @@ export function LanguageSwitcher({ className, compact = false }: { className?: s
           onClick={() =>
             start(async () => {
               await setLanguage(l.code);
+              track("language_change", { language: l.code });
               router.refresh();
             })
           }

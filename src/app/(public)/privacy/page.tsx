@@ -63,7 +63,20 @@ export default function PrivacyPage() {
               These protect your account and the Mandal&apos;s records.
             </li>
           </ul>
-          <p>We do not use advertising cookies, third-party trackers or analytics that follow you across other websites.</p>
+          <ul>
+            <li>
+              <b>Google Analytics.</b> To understand how people use {site.name} — which pages are visited, roughly from which city or country, on what kind of device — we use Google
+              Analytics. It sets its own cookies (named <code>_ga</code>) and sends Google the address of the page you open, your browser and device type, an approximate location, your role in the
+              Mandal (admin, manager or member) and the kind of action you take — for example &quot;a payment was recorded&quot; or &quot;a member was added&quot;. It never receives names,
+              emails, phone numbers, amounts, balances, notes or any other part of a Mandal&apos;s records; page addresses are sent with internal IDs removed. You can block it with your
+              browser&apos;s privacy settings, a content blocker, or Google&apos;s{" "}
+              <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">
+                opt-out add-on
+              </a>
+              ; {site.name} works the same either way.
+            </li>
+          </ul>
+          <p>We do not use advertising cookies, and we don&apos;t use analytics to show you ads or build advertising profiles.</p>
 
           <h2>3. Why we use it</h2>
           <ul>
@@ -105,6 +118,9 @@ export default function PrivacyPage() {
             </li>
             <li>
               <b>Resend</b> — sends service emails such as verification, password reset and invitations.
+            </li>
+            <li>
+              <b>Google Analytics</b> (Google) — measures how the website and app are used, as described in section 2.
             </li>
           </ul>
           <p>Some of these providers may process data on servers outside India as part of delivering their service. Where that happens, we rely on their contractual and security commitments.</p>

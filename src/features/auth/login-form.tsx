@@ -14,6 +14,7 @@ import { loginAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
 import { LoginSchema } from "./schemas";
 import { useT } from "@/i18n/client";
+import { track } from "@/lib/analytics";
 
 export function LoginForm() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export function LoginForm() {
       setError(null);
       const res = await loginAction(values);
       if (!res.ok) return setError(res.error);
+      track("login", { method: "email" });
       router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding?auto=1");
       router.refresh();
     }),

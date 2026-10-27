@@ -14,6 +14,7 @@ import { registerAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
 import { RegisterSchema } from "./schemas";
 import { useT } from "@/i18n/client";
+import { track } from "@/lib/analytics";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export function RegisterForm() {
         if (res.fieldErrors) for (const [k, v] of Object.entries(res.fieldErrors)) form.setError(k as "email", { message: v });
         return setError(res.error);
       }
+      track("sign_up", { method: "email" });
       router.replace(next ?? "/onboarding?auto=1");
       router.refresh();
     }),

@@ -245,7 +245,7 @@ function UserMenu({ user }: { user: { name: string; email: string } }) {
         <span className="block truncate text-sm font-medium">{user.name}</span>
         <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
       </Link>
-      <form action={logoutAction}>
+      <form action={logoutAction} data-track="logout">
         <Button type="submit" variant="ghost" size="icon-sm" aria-label={t("shell.signOut")}>
           <LogOut />
         </Button>
@@ -385,6 +385,8 @@ export function QuickGrid({ actions, onPick, className, row = false }: { actions
             key={a.key}
             href={a.href}
             onClick={onPick}
+            data-track="quick_action"
+            data-track-action={a.key}
             className={cn("flex flex-col items-center gap-2 rounded-2xl bg-card px-1.5 py-3.5 text-center shadow-card ring-1 ring-foreground/[0.06] transition-transform active:scale-[0.97]", row && "w-[6.5rem] shrink-0 snap-start sm:w-auto")}
           >
             <span className={cn("flex size-12 items-center justify-center rounded-2xl", TONE_CHIP[a.tone])}>

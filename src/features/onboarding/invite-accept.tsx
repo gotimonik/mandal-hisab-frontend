@@ -7,7 +7,7 @@ import { CheckCircle2, HandCoins, Loader2, LogOut, UserRound } from "lucide-reac
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormError } from "@/components/app/field";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { logoutAction } from "@/app/actions/auth";
 import { useT } from "@/i18n/client";
 
@@ -58,7 +58,7 @@ export function InviteAccept({ token, preview, error: initialError }: { token: s
         {preview && !preview.emailMatches ? (
           <div className="flex flex-col gap-3 rounded-xl bg-amber-500/10 p-3 text-sm">
             <p>{t("invite.wrongEmail", { email: preview.email, me: preview.signedInAs })}</p>
-            <form action={logoutAction}>
+            <form action={logoutAction} data-track="logout">
               <Button type="submit" variant="outline" className="w-full">
                 <LogOut /> {t("shell.signOut")}
               </Button>

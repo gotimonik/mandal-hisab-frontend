@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/app/native-select";
 import { Field, FormError } from "@/components/app/field";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { DURATIONS, endMonthFor, monthLabelYM } from "@/lib/months";
 
 /** Set, change or remove the last month the Mandal runs. */

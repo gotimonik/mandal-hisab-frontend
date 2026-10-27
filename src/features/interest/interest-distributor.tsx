@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { formatDate, newIdempotencyKey } from "@/lib/format";
 import { rupeesOrZero } from "@/lib/schemas";
 import type { InterestSettings } from "@/lib/types";

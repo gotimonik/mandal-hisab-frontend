@@ -13,6 +13,7 @@ import { Field, FormError } from "@/components/app/field";
 import { resetPasswordAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
 import { password } from "./schemas";
+import { track } from "@/lib/analytics";
 
 const Schema = z.object({ password, confirm: z.string() }).refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords do not match" });
 
@@ -26,6 +27,7 @@ export function ResetForm() {
     start(async () => {
       const r = await resetPasswordAction({ token, password: v.password });
       if (!r.ok) return setError(r.error);
+      track("password_reset_completed");
       setDone(true);
     }),
   );

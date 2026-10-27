@@ -9,7 +9,7 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useLang, useT } from "@/i18n/client";

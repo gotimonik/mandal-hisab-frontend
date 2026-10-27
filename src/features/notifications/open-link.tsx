@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Loader2 } from "lucide-react";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 
 /**
  * "Open" on a notification. An unread one is marked as read first, so the bell count

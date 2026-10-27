@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Noto_Sans_Devanagari, Noto_Sans_Gujarati } from "nex
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { NativeShell } from "@/components/app/native-shell";
+import { GoogleTag } from "@/components/app/google-tag";
+import { AnalyticsClicks } from "@/components/app/analytics-clicks";
 import "./globals.css";
 
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"] });
@@ -36,6 +38,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <Toaster position="top-center" richColors mobileOffset={{ top: "calc(env(safe-area-inset-top) + 12px)" }} />
           <NativeShell />
+          <GoogleTag />
+          <AnalyticsClicks />
         </ThemeProvider>
       </body>
     </html>

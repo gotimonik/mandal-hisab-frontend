@@ -12,6 +12,7 @@ import { MailOpen } from "lucide-react";
 import { ActionButton } from "@/components/app/action-button";
 import { CurrencyProvider } from "@/components/app/currency";
 import { PageSkeleton } from "@/components/app/page-skeleton";
+import { AnalyticsRole } from "@/components/app/analytics-clicks";
 
 /**
  * The frame and {children} render without waiting for the session. Everything that
@@ -97,6 +98,7 @@ async function Sidebar({ params }: P) {
   const data = await loadShell((await params).orgId);
   return (
     <I18nProvider lang={data.lang}>
+      <AnalyticsRole role={data.org.role} />
       <SidebarContent data={data} />
     </I18nProvider>
   );

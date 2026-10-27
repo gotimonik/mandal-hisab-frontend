@@ -7,7 +7,7 @@ import { Check, HandCoins } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";

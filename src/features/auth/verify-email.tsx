@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { verifyEmailAction } from "@/app/actions/auth";
 import { AuthCard } from "./auth-card";
+import { track } from "@/lib/analytics";
 
 export function VerifyEmail() {
   const token = useSearchParams().get("token");
@@ -14,6 +15,7 @@ export function VerifyEmail() {
     if (!token) return;
     verifyEmailAction(token).then((r) => {
       setState(r.ok ? "ok" : "error");
+      if (r.ok) track("email_verified");
       if (!r.ok) setMsg(r.error);
     });
   }, [token]);

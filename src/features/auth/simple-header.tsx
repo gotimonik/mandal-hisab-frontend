@@ -19,7 +19,7 @@ export function SimpleHeader() {
       </Link>
       <div className="flex items-center gap-2">
         <LanguageSwitcher compact />
-        <form action={logoutAction}>
+        <form action={logoutAction} data-track="logout">
           <Button variant="ghost" size="sm" type="submit">
             <LogOut /> <span className="hidden sm:inline">{t("shell.signOut")}</span>
           </Button>

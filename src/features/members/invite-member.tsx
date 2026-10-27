@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog } from "@/components/app/form-dialog";
 import { FormNote, SubmitButton } from "@/components/app/form-bits";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { useT } from "@/i18n/client";
 
 type Result = { inviteLink: string; existingUser: boolean; emailed: boolean };

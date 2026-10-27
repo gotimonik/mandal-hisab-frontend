@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FormError } from "@/components/app/field";
 import { ChoicePills, FormNote, SubmitButton } from "@/components/app/form-bits";
 import { site } from "@/config/site";
+import { track } from "@/lib/analytics";
 
 const TOPICS = ["Getting started", "Support", "Feedback", "Partnership", "Other"] as const;
 type Topic = (typeof TOPICS)[number];
@@ -35,6 +36,7 @@ export function ContactForm() {
     const subject = `[${topic}] ${mandal.trim() ? `${mandal.trim()} — ` : ""}${name.trim()}`;
     const details = [`Name: ${name.trim()}`, phone.trim() ? `Phone: ${phone.trim()}` : null, mandal.trim() ? `Mandal: ${mandal.trim()}` : null, `Topic: ${topic}`].filter(Boolean);
     const body = [message.trim(), "", "—", ...details].join("\n");
+    track("contact_form_submit");
     window.location.href = `mailto:${site.contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setOpened(true);
   };

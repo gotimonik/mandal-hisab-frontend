@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import type { ActionResult } from "@/lib/action-result";
 
 /**

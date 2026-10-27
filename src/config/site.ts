@@ -42,6 +42,11 @@ export const site = {
     detail: "Every feature is free while we're in early access. If paid plans ever come, existing Mandals will be told well in advance — and your data is always yours to export.",
   },
 
+  /** Google Analytics (gtag.js). Loaded only in production builds; set to null to turn it off. */
+  analytics: {
+    googleTagId: "G-H94RE38JJF" as string | null,
+  },
+
   languages: ["English", "ગુજરાતી", "हिन्दी"],
   copyrightYear: 2026,
 } as const;

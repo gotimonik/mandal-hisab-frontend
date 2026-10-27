@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { newIdempotencyKey } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useT } from "@/i18n/client";

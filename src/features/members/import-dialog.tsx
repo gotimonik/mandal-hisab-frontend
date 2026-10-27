@@ -9,7 +9,7 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { FormError } from "@/components/app/field";
 import { FormNote } from "@/components/app/form-bits";
 import { cn } from "@/lib/utils";
-import { apiMutate } from "@/app/actions/api";
+import { apiMutate } from "@/lib/api-client";
 import { useT } from "@/i18n/client";
 
 interface Result {
