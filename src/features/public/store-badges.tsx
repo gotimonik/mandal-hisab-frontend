@@ -27,11 +27,11 @@ function Badge({ href, glyph, top, bottom, dark }: { href: string | null; glyph:
       {glyph}
       <span className="flex flex-col text-left leading-tight">
         <span className="text-[10px] opacity-80">{href ? top : "Coming soon on"}</span>
-        <span className="text-base font-semibold">{bottom}</span>
+        <span className="text-sm font-semibold sm:text-base">{bottom}</span>
       </span>
     </>
   );
-  const cls = cn("inline-flex h-14 min-w-44 items-center gap-2.5 rounded-2xl px-4 ring-1 transition-opacity", dark ? "bg-zinc-950 text-white ring-white/15" : "bg-white text-zinc-950 ring-black/10", !href && "opacity-75");
+  const cls = cn("inline-flex h-12 min-w-0 items-center gap-2 rounded-xl px-3 ring-1 transition-opacity sm:h-14 sm:min-w-44 sm:gap-2.5 sm:rounded-2xl sm:px-4", dark ? "bg-zinc-950 text-white ring-white/15" : "bg-white text-zinc-950 ring-black/10", !href && "opacity-75");
   return href ? (
     <a href={href} target="_blank" rel="noopener noreferrer" className={cn(cls, "hover:opacity-90")}>
       {body}
@@ -46,11 +46,11 @@ function Badge({ href, glyph, top, bottom, dark }: { href: string | null; glyph:
 /** Play Store / App Store badges (shown as "Coming soon" until links are set in site config) + the web app. */
 export function StoreBadges({ dark = true, showWeb = true, className }: { dark?: boolean; showWeb?: boolean; className?: string }) {
   return (
-    <div className={cn("flex flex-wrap gap-3", className)}>
+    <div className={cn("grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3", className)}>
       <Badge href={site.stores.android} glyph={<PlayGlyph />} top="Get it on" bottom="Google Play" dark={dark} />
       <Badge href={site.stores.ios} glyph={<AppleGlyph />} top="Download on the" bottom="App Store" dark={dark} />
       {showWeb && (
-        <Link href="/register" className={cn("inline-flex h-14 items-center gap-2.5 rounded-2xl px-4 ring-1 transition-opacity hover:opacity-90", dark ? "bg-white/15 text-white ring-white/25 backdrop-blur" : "bg-primary text-primary-foreground ring-primary")}>
+        <Link href="/register" className={cn("col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl px-3 ring-1 transition-opacity hover:opacity-90 sm:h-14 sm:justify-start sm:gap-2.5 sm:rounded-2xl sm:px-4", dark ? "bg-white/15 text-white ring-white/25 backdrop-blur" : "bg-primary text-primary-foreground ring-primary")}>
           <Globe className="size-6" />
           <span className="flex flex-col text-left leading-tight">
             <span className="text-[10px] opacity-80">Works today in</span>
