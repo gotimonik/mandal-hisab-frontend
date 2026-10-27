@@ -2,9 +2,12 @@
 
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
+import { APP_START, WEB_ONLY_PATHS } from "@/lib/native";
 
 /**
  * Only does something inside the iOS / Android app (Capacitor); on the website it renders nothing.
+ * - Hides the launch splash once the page has loaded.
+ * - Stops links to website-only pages (e.g. the logo) from opening them in the app.
  * - Android back button: closes an open dialog/sheet first, then goes back, and leaves the app on the first screen.
  * - Status bar text follows light / dark mode.
  * - Adds `native-app` / `native-ios` / `native-android` classes to <html> for app-only styling.
@@ -16,7 +19,26 @@ export function NativeShell() {
     html.classList.add("native-app", `native-${Capacitor.getPlatform()}`);
     const cleanups: (() => void)[] = [];
 
+    // Website-only pages (home, features, download, about, FAQ) never open in the app.
+    // Links to them — like the logo — do nothing on sign-in pages and go to the Mandal elsewhere.
+    const AUTH = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a) return;
+      const url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin || !WEB_ONLY_PATHS.includes(url.pathname)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!AUTH.includes(window.location.pathname)) window.location.assign(APP_START);
+    };
+    document.addEventListener("click", onClick, { capture: true });
+    cleanups.push(() => document.removeEventListener("click", onClick, { capture: true }));
+
     (async () => {
+      // The page has loaded: take down the launch splash (app icon on purple).
+      const { SplashScreen } = await import("@capacitor/splash-screen");
+      void SplashScreen.hide({ fadeOutDuration: 300 }).catch(() => {});
+
       const { App } = await import("@capacitor/app");
       const back = await App.addListener("backButton", ({ canGoBack }) => {
         const dialog = document.querySelector('[role="dialog"], [role="alertdialog"]');

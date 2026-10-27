@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { site } from "@/config/site";
 import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { IconChip } from "@/components/app/bits";
+import { NativeRedirect } from "@/features/public/native-redirect";
 
 export const metadata = {
   title: "About us",
@@ -30,6 +31,7 @@ const AUDIENCE = [
 export default function AboutPage() {
   return (
     <>
+      <NativeRedirect />
       <PageHero eyebrow="About us" title="Hisab everyone can trust — and check." description="MandalHisab helps the people who look after a group's money keep clear, honest records, and lets every member see where things stand." />
 
       <Section>

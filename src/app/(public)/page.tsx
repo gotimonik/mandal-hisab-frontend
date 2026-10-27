@@ -34,7 +34,6 @@ import type { Tone } from "@/lib/tones";
 import { site } from "@/config/site";
 import { Container, Section, SectionHeading } from "@/features/public/blocks";
 import { StoreBadges } from "@/features/public/store-badges";
-import { NativeRedirect } from "@/features/public/native-redirect";
 import { PhoneMockup } from "@/features/public/home/phone-mockup";
 import { RoleTabs, type RoleInfo } from "@/features/public/home/role-tabs";
 
@@ -138,7 +137,6 @@ const FAQ_TEASER = [
 export default function HomePage() {
   return (
     <>
-      <NativeRedirect />
 
       {/* 1. Hero */}
       <section className="bg-hero relative overflow-hidden text-white">
@@ -168,7 +166,7 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <StoreBadges className="mt-5 sm:mt-8" showWeb={false} />
+            <StoreBadges className="mt-5 sm:mt-8 [.native-app_&]:hidden" showWeb={false} />
           </div>
           <PhoneMockup className="max-w-[15.5rem] sm:max-w-[18.5rem]" />
         </Container>
@@ -209,7 +207,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-        <div className="mt-6 flex justify-center sm:mt-8">
+        <div className="mt-6 flex justify-center sm:mt-8 [.native-app_&]:hidden">
           <Link href="/features" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 rounded-2xl")}>
             See every feature <ArrowRight />
           </Link>
@@ -250,7 +248,7 @@ export default function HomePage() {
               <p className="mb-2 text-xs font-bold tracking-wider text-white/80 uppercase">Trust & accuracy</p>
               <h2 className="text-[1.4rem] leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">Every rupee accounted for</h2>
               <p className="mt-2 text-sm text-white/85 sm:mt-3 sm:text-base">MandalHisab keeps the books the way an accountant would, so the numbers always agree and nothing can quietly disappear.</p>
-              <Link href="/features#security" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold ring-1 ring-white/25 hover:bg-white/25">
+              <Link href="/features#security" className="mt-4 inline-flex [.native-app_&]:hidden items-center gap-1.5 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold ring-1 ring-white/25 hover:bg-white/25">
                 How we keep your data safe <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -289,8 +287,8 @@ export default function HomePage() {
 
       {/* 8. Download + pricing */}
       <Section>
-        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <div className="bg-hero relative min-w-0 overflow-hidden rounded-3xl p-5 text-white shadow-lg shadow-primary/20 sm:rounded-[2rem] sm:p-10">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[1.4fr_1fr] lg:[.native-app_&]:grid-cols-1">
+          <div className="bg-hero relative min-w-0 overflow-hidden [.native-app_&]:hidden rounded-3xl p-5 text-white shadow-lg shadow-primary/20 sm:rounded-[2rem] sm:p-10">
             <div aria-hidden className="pointer-events-none absolute -right-12 -bottom-16 size-56 rounded-full bg-white/10" />
             <div className="relative">
               <h2 className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight sm:text-3xl">
@@ -336,7 +334,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="mt-4 text-center sm:mt-6">
-          <Link href="/faq" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+          <Link href="/faq" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline [.native-app_&]:hidden">
             Read all questions <ArrowRight className="size-4" />
           </Link>
         </div>

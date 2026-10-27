@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "494169858794",
+    "project_id": "mandalhisab-android",
+    "storage_bucket": "mandalhisab-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:494169858794:android:3db72bcbe939cdd69e2d93",
+        "android_client_info": {
+          "package_name": "com.mandalhisab.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBN3IzFiPiaWcB7MSQze54E9RnQIJUrcv4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

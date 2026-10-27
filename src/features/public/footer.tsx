@@ -72,7 +72,7 @@ export function PublicFooter() {
             </li>
           </ul>
         </div>
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 [.native-app_&]:hidden">
           {COLUMNS.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h2 className="mb-3 text-sm font-bold">{col.title}</h2>

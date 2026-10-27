@@ -17,5 +17,9 @@
       <p>MandalHisab needs the internet to show your Mandal.<br />Check your connection and try again.</p>
       <button onclick="location.href = window.Capacitor?.getServerUrl?.() || 'https://mandalhisab.com'">Try again</button>
     </div>
+    <script>
+      // Offline page: take down the launch splash so this message is visible.
+      try { window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen && window.Capacitor.Plugins.SplashScreen.hide(); } catch (e) {}
+    </script>
   </body>
 </html>

@@ -6,8 +6,26 @@
  * The only parameters allowed are short enum values (kind, purpose, role …) — see SAFE_PARAMS.
  */
 
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import type { FirebaseAnalyticsPlugin } from "@capacitor-firebase/analytics";
+
 type Params = Record<string, string | number | boolean | undefined>;
 type Gtag = (command: "event" | "set", name: string, params?: Record<string, unknown>) => void;
+
+/**
+ * Inside the iOS / Android app, events go to Firebase Analytics (the app's own stream, with
+ * proper screen names) instead of the website tag, which isn't loaded in the app.
+ */
+const isApp = () => typeof window !== "undefined" && Capacitor.isNativePlatform();
+// Talks to the native plugin by name only: importing the package itself would pull the
+// Firebase JavaScript SDK (its web fallback) into the website, which we don't use.
+// Never return the plugin from a Promise / async function: Capacitor plugin objects look
+// "thenable", so awaiting one calls a native method named "then" that doesn't exist.
+let plugin: FirebaseAnalyticsPlugin | null = null;
+function firebase(): FirebaseAnalyticsPlugin {
+  plugin ??= registerPlugin<FirebaseAnalyticsPlugin>("FirebaseAnalytics");
+  return plugin;
+}
 
 function gtag(): Gtag | null {
   if (typeof window === "undefined") return null;
@@ -19,6 +37,18 @@ function gtag(): Gtag | null {
 export function track(name: string, params: Params = {}) {
   const clean: Record<string, string | number | boolean> = {};
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") clean[k] = v;
+  if (isApp()) {
+    // Page views become app screens, e.g. "/org/:id/monthly" (IDs already removed).
+    if (name === "page_view") {
+      const screen = String(clean.page_location ?? "").replace(/^https?:\/\/[^/]+/, "") || "/";
+      firebase().setCurrentScreen({ screenName: screen, screenClassOverride: screen }).catch(() => {});
+      return;
+    }
+    const p: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(clean)) p[k] = typeof v === "boolean" ? String(v) : v;
+    firebase().logEvent({ name, params: p }).catch(() => {});
+    return;
+  }
   const g = gtag();
   if (g) g("event", name, clean);
   else if (process.env.NODE_ENV !== "production") console.debug("[analytics]", name, clean);
@@ -26,6 +56,10 @@ export function track(name: string, params: Params = {}) {
 
 /** Who the visitor is in the current Mandal (admin / manager / member) — no identity. */
 export function setAnalyticsRole(role: string | null) {
+  if (isApp()) {
+    firebase().setUserProperty({ key: "mandal_role", value: role ?? "none" }).catch(() => {});
+    return;
+  }
   gtag()?.("set", "user_properties", { mandal_role: role ?? "none" });
 }
 

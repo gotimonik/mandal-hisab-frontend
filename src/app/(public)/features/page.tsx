@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 import { Container, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { site } from "@/config/site";
+import { NativeRedirect } from "@/features/public/native-redirect";
 
 export const metadata = {
   title: "Features",
@@ -219,6 +220,7 @@ const SECURITY = [
 export default function FeaturesPage() {
   return (
     <>
+      <NativeRedirect />
       <PageHero eyebrow="Features" title="Everything your Mandal's hisab needs, in one place" description="From the first hapta to closing and settling the Mandal — members, savings, upad, interest, loans, expenses, withdrawals, cash book and reports, accurate to the paisa.">
         <div className="flex flex-wrap gap-2">
           <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "bg-white text-primary hover:bg-white/90")}>

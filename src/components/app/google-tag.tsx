@@ -1,14 +1,26 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import Script from "next/script";
+import { Capacitor } from "@capacitor/core";
 import { site } from "@/config/site";
 
 /**
- * Google tag (gtag.js) for Google Analytics. Production only, so local development
- * doesn't send test visits. Automatic page views are off: <AnalyticsClicks /> sends each
- * page view itself with IDs and the query string (which can hold search text) removed.
+ * Google tag (gtag.js) for Google Analytics on the website. Production only, so local
+ * development doesn't send test visits. Not loaded inside the iOS / Android app — there,
+ * src/lib/analytics.ts sends to Firebase Analytics instead, so nothing is counted twice.
+ * Automatic page views are off: <AnalyticsClicks /> sends each page view itself with IDs
+ * and the query string (which can hold search text) removed.
  */
 export function GoogleTag() {
+  // false on the server and inside the app; true in a browser.
+  const load = useSyncExternalStore(
+    () => () => {},
+    () => !Capacitor.isNativePlatform(),
+    () => false,
+  );
   const id = site.analytics.googleTagId;
-  if (!id || process.env.NODE_ENV !== "production") return null;
+  if (!load || !id || process.env.NODE_ENV !== "production") return null;
   return (
     <>
       <Script src={`https://www.googletagmanager.com/gtag/js?id=${id}`} strategy="afterInteractive" />

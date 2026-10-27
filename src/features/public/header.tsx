@@ -19,15 +19,15 @@ export function PublicHeader({ actions, mobileActions }: { actions: ReactNode; m
     <header className="no-print sticky top-0 z-40 border-b border-border/60 bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
         <BrandMark />
-        <nav aria-label="Main" className="ml-6 hidden items-center gap-1 lg:flex">
+        <nav aria-label="Main" className="ml-6 hidden items-center gap-1 lg:flex [.native-app_&]:!hidden">
           {PUBLIC_NAV.map((l) => (
             <Link key={l.href} href={l.href} aria-current={active(l.href) ? "page" : undefined} className={cn("rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground", active(l.href) && "text-foreground")}>
               {l.label}
             </Link>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-2 sm:flex">{actions}</div>
-        <Button variant="ghost" size="icon" className="ml-auto sm:ml-0 lg:hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
+        <div className="ml-auto hidden items-center gap-2 sm:flex [.native-app_&]:!hidden">{actions}</div>
+        <Button variant="ghost" size="icon" className="ml-auto sm:ml-0 lg:hidden [.native-app_&]:!hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
           <Menu />
         </Button>
       </div>

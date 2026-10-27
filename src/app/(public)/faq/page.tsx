@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
 import { Container, PageHero } from "@/features/public/blocks";
 import { FAQ_GROUPS } from "@/features/public/features/faq-data";
+import { NativeRedirect } from "@/features/public/native-redirect";
 
 export const metadata = {
   title: "Frequently asked questions",
@@ -19,6 +20,7 @@ const jsonLd = {
 export default function FaqPage() {
   return (
     <>
+      <NativeRedirect />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <PageHero eyebrow="FAQ" title="Questions, answered" description="Everything people usually ask before moving their Mandal's hisab to MandalHisab." />
 

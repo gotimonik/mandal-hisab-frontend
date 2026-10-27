@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { StoreBadges } from "@/features/public/store-badges";
 import { site } from "@/config/site";
+import { NativeRedirect } from "@/features/public/native-redirect";
 
 export const metadata = {
   title: "Download the app",
@@ -36,6 +37,7 @@ function Steps({ tone, icon, title, steps }: { tone: "emerald" | "sky"; icon: Re
 export default function DownloadPage() {
   return (
     <>
+      <NativeRedirect />
       <PageHero
         eyebrow="Download"
         title={comingSoon ? "MandalHisab on your phone" : "Get the MandalHisab app"}

@@ -75,6 +75,12 @@ export default function PrivacyPage() {
               </a>
               ; {site.name} works the same either way.
             </li>
+            <li>
+              <b>Google Analytics for Firebase (Android and iOS apps).</b> Inside the apps, the same information is sent to Firebase Analytics instead of the website tag: the screen
+              you open (with IDs removed), your role in the Mandal and the kind of action you take, plus installs, app opens, sessions and the app and phone software versions. It uses a
+              random ID for the app installation, not the device&apos;s advertising ID — advertising-ID collection and ad personalisation are turned off. Like the website, it never
+              receives names, contact details, amounts or any Mandal&apos;s records.
+            </li>
           </ul>
           <p>We do not use advertising cookies, and we don&apos;t use analytics to show you ads or build advertising profiles.</p>
 
@@ -120,7 +126,7 @@ export default function PrivacyPage() {
               <b>Resend</b> — sends service emails such as verification, password reset and invitations.
             </li>
             <li>
-              <b>Google Analytics</b> (Google) — measures how the website and app are used, as described in section 2.
+              <b>Google Analytics and Firebase</b> (Google) — measure how the website and apps are used, as described in section 2.
             </li>
           </ul>
           <p>Some of these providers may process data on servers outside India as part of delivering their service. Where that happens, we rely on their contractual and security commitments.</p>
