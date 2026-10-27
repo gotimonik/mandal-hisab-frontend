@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Devanagari, Noto_Sans_Gujarati } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -39,7 +40,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Toaster position="top-center" richColors mobileOffset={{ top: "calc(env(safe-area-inset-top) + 12px)" }} />
           <NativeShell />
           <GoogleTag />
-          <AnalyticsClicks />
+          {/* usePathname() inside: Suspense keeps pages prerenderable (cacheComponents) */}
+          <Suspense fallback={null}>
+            <AnalyticsClicks />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>
