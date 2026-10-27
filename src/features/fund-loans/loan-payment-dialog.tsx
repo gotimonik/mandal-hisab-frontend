@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, HandCoins, NotebookPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,8 @@ import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/li
 import { rupeesOrZero } from "@/lib/schemas";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";
+import { IconChip } from "@/components/app/bits";
+import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 
 /**
  * Record money received on a fund loan: the interest (oldest unpaid month first) and/or part of
@@ -93,17 +95,20 @@ export function LoanPaymentDialog({
         }}
       >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {memberName} · {number}
-            </DialogTitle>
-            <DialogDescription>
-              {t("upad.payDesc", { interest: money.fmt(interestDuePaise), outstanding: money.fmt(outstandingPaise) })}
-            </DialogDescription>
+          <DialogHeader className="flex-row items-start gap-3">
+            <IconChip tone="orange" className="mt-0.5">
+              <HandCoins />
+            </IconChip>
+            <div className="flex min-w-0 flex-col gap-1">
+              <DialogTitle>
+                {memberName} · {number}
+              </DialogTitle>
+              <DialogDescription>{t("upad.payDesc", { interest: money.fmt(interestDuePaise), outstanding: money.fmt(outstandingPaise) })}</DialogDescription>
+            </div>
           </DialogHeader>
           <form
             noValidate
-            className="grid gap-3"
+            className="grid grid-cols-1 gap-3"
             onSubmit={(e) => {
               e.preventDefault();
               save();
@@ -111,7 +116,7 @@ export function LoanPaymentDialog({
           >
             <FormError message={error} />
             {reported.length > 0 && (
-              <div className="rounded-xl bg-amber-500/12 p-3 text-xs leading-relaxed text-amber-900 dark:text-amber-200" role="note">
+              <FormNote tone="warn" className="leading-relaxed">
                 <b>{t("upad.reportedAlready", { name: memberName })}</b>{" "}
                 {reported.map((r, k) => (
                   <span key={k}>
@@ -120,26 +125,40 @@ export function LoanPaymentDialog({
                   </span>
                 ))}
                 . {t("upad.reportedHint")}
-              </div>
+              </FormNote>
+            )}
+            <Field label={t("upad.interestReceivedRs")} htmlFor="lp-int" hint={t("upad.oldestFirst")}>
+              <AmountInput id="lp-int" value={interest} onChange={(e) => setInterest(e.target.value)} />
+            </Field>
+            {interestDuePaise > 0 && (
+              <ChoicePills
+                label={t("collect.shortcuts")}
+                value={interest}
+                onChange={setInterest}
+                options={[
+                  { value: paiseToRupeeInput(interestDuePaise), label: `${t("collect.full")} · ${money.short(interestDuePaise)}` },
+                  { value: "0", label: money.short(0) },
+                ]}
+              />
             )}
             <div className="grid grid-cols-2 gap-3">
-              <Field label={t("upad.interestReceivedRs")} htmlFor="lp-int" hint={t("upad.oldestFirst")}>
-                <Input id="lp-int" inputMode="decimal" value={interest} onChange={(e) => setInterest(e.target.value)} />
-              </Field>
               <Field label={t("upad.returnedRs")} htmlFor="lp-pr" hint={t("common.optional")}>
                 <Input id="lp-pr" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
               </Field>
+              <Field label={t("common.dateReceived")} htmlFor="lp-date">
+                <Input id="lp-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
+              </Field>
             </div>
-            <Field label={t("common.dateReceived")} htmlFor="lp-date">
-              <Input id="lp-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
-            </Field>
-            <Field label={t("common.noteOptional")} htmlFor="lp-note">
-              <Input id="lp-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
-            </Field>
-            <p className="text-xs text-muted-foreground">{t("upad.payNote")}</p>
-            <Button type="submit" disabled={pending}>
-              {pending && <Loader2 className="animate-spin" />} {t("upad.recordPaid")}
-            </Button>
+            {outstandingPaise > 0 && <ChoicePills label={t("upad.returnedRs")} value={principal} onChange={setPrincipal} options={[{ value: paiseToRupeeInput(outstandingPaise), label: `${t("collect.full")} · ${money.short(outstandingPaise)}` }]} />}
+            <MoreOptions bare icon={<NotebookPen />} title={t("common.noteOptional")}>
+              <Field label={t("common.noteOptional")} htmlFor="lp-note" className="sm:col-span-2">
+                <Input id="lp-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+              </Field>
+            </MoreOptions>
+            <FormNote>{t("upad.payNote")}</FormNote>
+            <SubmitButton pending={pending} icon={<CheckCircle2 />}>
+              {t("upad.recordPaid")}
+            </SubmitButton>
           </form>
         </DialogContent>
       </Dialog>

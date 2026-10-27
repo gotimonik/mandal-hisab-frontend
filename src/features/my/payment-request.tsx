@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CalendarDays, Check, HandCoins, Heart, Loader2, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -16,6 +15,9 @@ import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/client";
 import { intlLocale, type Key, type Lang } from "@/i18n/core";
 import { useMoney } from "@/components/app/currency";
+import { IconChip } from "@/components/app/bits";
+import { AmountInput, ChoicePills, FormNote, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import type { Tone } from "@/lib/tones";
 
 type Purpose = "hapta" | "upad" | "other";
 
@@ -27,7 +29,7 @@ interface Options {
 
 const monthName = (lang: Lang, m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
 
-function Form({ methods }: { methods: string[] }) {
+function Form(_props: { methods: string[] }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -43,7 +45,7 @@ function Form({ methods }: { methods: string[] }) {
   const [interest, setInterest] = useState("");
   const [principal, setPrincipal] = useState("");
   const [date, setDate] = useState(todayISO());
-  const [method, setMethod] = useState(methods.includes("upi") ? "upi" : methods[0]);
+  const method = "cash"; // cash only for now
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -106,10 +108,10 @@ function Form({ methods }: { methods: string[] }) {
     );
   }
 
-  const choices: { key: Purpose; title: string; hint: React.ReactNode; icon: React.ReactNode; show: boolean }[] = [
-    { key: "hapta", title: t("pay.monthly"), icon: <CalendarDays />, show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: money.fmt(opts.hapta.duePaise) }) : t("pay.nothingNow") },
-    { key: "upad", title: t("pay.upad"), icon: <HandCoins />, show: opts.upads.length > 0, hint: t("pay.upadInterestDue", { amount: money.fmt(opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)) }) },
-    { key: "other", title: t("pay.other"), icon: <Heart />, show: true, hint: t("pay.otherHint") },
+  const choices: { key: Purpose; title: string; hint: React.ReactNode; icon: React.ReactNode; tone: Tone; show: boolean }[] = [
+    { key: "hapta", title: t("pay.monthly"), icon: <CalendarDays />, tone: "indigo", show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: money.fmt(opts.hapta.duePaise) }) : t("pay.nothingNow") },
+    { key: "upad", title: t("pay.upad"), icon: <HandCoins />, tone: "orange", show: opts.upads.length > 0, hint: t("pay.upadInterestDue", { amount: money.fmt(opts.upads.reduce((s, u) => s + u.interestDuePaise, 0)) }) },
+    { key: "other", title: t("pay.other"), icon: <Heart />, tone: "pink", show: true, hint: t("pay.otherHint") },
   ];
 
   return (
@@ -138,16 +140,16 @@ function Form({ methods }: { methods: string[] }) {
                   setError(null);
                 }}
                 className={cn(
-                  "relative flex flex-col items-start gap-1 rounded-lg border p-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-4",
-                  purpose === c.key ? "border-2 border-primary bg-primary/10" : "border-border hover:bg-muted",
+                  "relative flex flex-col items-start gap-1.5 rounded-2xl p-2.5 text-left text-sm ring-1 transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+                  purpose === c.key ? "bg-primary/10 ring-2 ring-primary" : "bg-card ring-foreground/10 hover:bg-muted",
                 )}
               >
-                {purpose === c.key && <Check className="absolute top-1.5 right-1.5 size-3.5! text-primary" aria-hidden />}
-                <span className="flex items-center gap-1.5 font-medium">
+                {purpose === c.key && <Check className="absolute top-2 right-2 size-3.5 text-primary" aria-hidden />}
+                <IconChip tone={c.tone} size="sm">
                   {c.icon}
-                  {c.title}
-                </span>
-                <span className="text-xs text-muted-foreground">{c.hint}</span>
+                </IconChip>
+                <span className="font-semibold leading-tight">{c.title}</span>
+                <span className="text-xs leading-snug text-muted-foreground">{c.hint}</span>
               </button>
             ))}
         </div>
@@ -155,13 +157,14 @@ function Form({ methods }: { methods: string[] }) {
 
       {purpose === "hapta" && (
         <Field label={t("pay.amountPaid")} htmlFor="pr-amount" hint={opts.hapta.months > 1 ? t("pay.oldestFirst", { n: opts.hapta.months }) : opts.hapta.months === 1 ? t("pay.oneMonthDue") : t("pay.nextHapta")}>
-          <Input id="pr-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <AmountInput id="pr-amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
       )}
+      {purpose === "hapta" && opts.hapta.duePaise > 0 && (
+        <ChoicePills label={t("pay.amountPaid")} value={amount} onChange={setAmount} options={[{ value: paiseToRupeeInput(opts.hapta.duePaise), label: t("pay.dueNow", { amount: money.fmt(opts.hapta.duePaise) }) }]} />
+      )}
       {purpose === "hapta" && opts.hapta.pendingPaise > 0 && (
-        <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs">
-          {t("pay.waiting", { amount: money.fmt(opts.hapta.pendingPaise) })}
-        </p>
+        <FormNote tone="warn">{t("pay.waiting", { amount: money.fmt(opts.hapta.pendingPaise) })}</FormNote>
       )}
 
       {purpose === "upad" && (
@@ -178,17 +181,17 @@ function Form({ methods }: { methods: string[] }) {
             </Field>
           )}
           {upad && (
-            <p className="rounded-lg bg-muted px-3 py-2 text-xs">
+            <FormNote>
               {t("pay.outstandingAt", { number: upad.number, amount: money.fmt(upad.outstandingPaise), rate: upad.monthlyRate, due: money.fmt(upad.interestDuePaise) })}
               {upad.unpaidMonths.length > 0 && <> ({upad.unpaidMonths.map((m) => monthName(lang, m)).join(", ")})</>}
-            </p>
+            </FormNote>
           )}
           <div className="grid grid-cols-2 gap-3">
             <Field label={t("pay.interestPaid")} htmlFor="pr-int">
-              <Input id="pr-int" inputMode="decimal" placeholder="0" value={interest} onChange={(e) => setInterest(e.target.value)} />
+              <AmountInput id="pr-int" placeholder="0" className="text-xl md:text-lg" value={interest} onChange={(e) => setInterest(e.target.value)} />
             </Field>
             <Field label={t("pay.upadReturned")} htmlFor="pr-princ" hint={t("common.optional")}>
-              <Input id="pr-princ" inputMode="decimal" placeholder="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
+              <AmountInput id="pr-princ" placeholder="0" className="text-xl md:text-lg" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
             </Field>
           </div>
         </>
@@ -197,7 +200,7 @@ function Form({ methods }: { methods: string[] }) {
       {purpose === "other" && (
         <>
           <Field label={t("pay.amountPaid")} htmlFor="pr-amount-o">
-            <Input id="pr-amount-o" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <AmountInput id="pr-amount-o" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </Field>
           <Field label={t("pay.whatIsIt")} htmlFor="pr-what">
             <Input id="pr-what" maxLength={300} placeholder={t("pay.whatPh")} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -209,15 +212,7 @@ function Form({ methods }: { methods: string[] }) {
         <Field label={t("pay.datePaid")} htmlFor="pr-date">
           <Input id="pr-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field label={t("pay.paidBy")} htmlFor="pr-method">
-          <NativeSelect id="pr-method" value={method} onChange={(e) => setMethod(e.target.value)}>
-            {(opts.methods.length ? opts.methods : methods).map((m) => (
-              <option key={m} value={m}>
-                {methodLabel(m)}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
+        <PaidInCash label={t("pay.paidBy")} value={methodLabel("cash")} />
       </div>
       {method !== "cash" && (
         <Field label={t("pay.reference")} htmlFor="pr-ref" hint={t("pay.referenceHint")}>
@@ -229,9 +224,9 @@ function Form({ methods }: { methods: string[] }) {
           <Input id="pr-notes" maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
       )}
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} {t("pay.submit")}
-      </Button>
+      <SubmitButton pending={pending} icon={<Send />}>
+        {t("pay.submit")}
+      </SubmitButton>
     </form>
   );
 }
@@ -250,6 +245,8 @@ export function PaymentRequestDialog({ methods, defaultOpen, triggerClassName }:
       }
       title={t("pay.title")}
       description={t("pay.desc")}
+      icon={<Send />}
+      tone="emerald"
     >
       <Form methods={methods} />
     </FormDialog>

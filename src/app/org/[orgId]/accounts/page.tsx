@@ -59,7 +59,7 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
         </p>
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {sorted.map((a) => {
           const ty = TYPE[a.type];
           const Icon = ty.icon;

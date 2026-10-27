@@ -8,7 +8,7 @@ export default async function MyLoanPage({ params }: PageProps<"/org/[orgId]/my/
   const data = await api<LoanDetailData>(`/orgs/${orgId}/me/loans/${loanId}`);
   return (
     <>
-      <PageHeader title={`Loan ${data.loan.loanNumber}`} description={<StatusBadge status={data.loan.status} />} />
+      <PageHeader eyebrow="My loan" title={`Loan ${data.loan.loanNumber}`} description={<StatusBadge status={data.loan.status} />} />
       <LoanDetail data={data} orgId={orgId} receiptBase={`/org/${orgId}/receipts`} />
     </>
   );

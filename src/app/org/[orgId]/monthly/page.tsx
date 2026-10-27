@@ -28,12 +28,13 @@ const addMonths = (m: string, n: number) => {
 
 export default async function MonthlyPage({ params, searchParams }: PageProps<"/org/[orgId]/monthly">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const sp = await searchParams;
   const thisMonth = await requestMonth();
   const m = typeof sp.month === "string" && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : thisMonth;
   const filter = typeof sp.show === "string" ? sp.show : "";
   const [org, view, loans] = await Promise.all([getOrg(orgId), api<MonthView>(`/orgs/${orgId}/monthly${qs({ month: m })}`), api<FundLoanMonth>(`/orgs/${orgId}/fund-loans/month${qs({ month: m })}`)]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   const base = `/org/${orgId}/monthly`;
   const canCollect = can(org, "payments.record") && org.status === "active";
   const isAdmin = can(org, "org.settings.manage");
@@ -78,7 +79,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
         }
       />
 
-      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-stretch">
+      <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-stretch">
         <MonthSwitcher month={m} label={monthName(m)} base={base} prev={addMonths(m, -1)} next={addMonths(m, 1)} />
         <section aria-label={`${monthName(m)} collection`} className="bg-hero relative overflow-hidden rounded-3xl p-4 shadow-lg shadow-primary/20 sm:p-5 lg:row-span-2">
           <div className="pointer-events-none absolute -top-12 -right-8 size-36 rounded-full bg-white/10" />

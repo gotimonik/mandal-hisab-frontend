@@ -52,7 +52,7 @@ export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/sc
               { label: "Active schemes", value: schemes.filter((s) => s.status === "active").length },
             ]}
           />
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {sorted.map((s) => {
               const pct = s.duePaise ? Math.round(((s.collectedPaise ?? 0) / s.duePaise) * 100) : 100;
               return (

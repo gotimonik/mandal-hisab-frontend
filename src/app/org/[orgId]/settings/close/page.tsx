@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronRight, Lock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Lock, Scale } from "lucide-react";
 import { api } from "@/lib/server/api";
 import { getOrg, getMoney } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { formatDate } from "@/lib/format";
 import { monthLabelYM } from "@/lib/months";
 import { cn } from "@/lib/utils";
+import { SummaryBand } from "@/components/app/summary-band";
+import { IconChip, MemberAvatar } from "@/components/app/bits";
 
 export const metadata = { title: "Close & settle" };
 
@@ -43,22 +45,41 @@ function Step({ n, title, done, children, description }: { n: number; title: str
 
 export default async function ClosePage({ params }: PageProps<"/org/[orgId]/settings/close">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const [org, p] = await Promise.all([getOrg(orgId), api<Preview>(`/orgs/${orgId}/settlement`)]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   const started = !!p.state;
   const closed = !!p.state?.closedAt;
   const live = org.status === "active";
   const unpaidHapta = p.blockers.find((b) => b.key === "hapta");
   const openItems = p.blockers.filter((b) => !b.key.startsWith("short:"));
   const toPay = p.rows.filter((r) => !r.paidOut && (r.savingsPaise !== 0 || r.upadOwedPaise !== 0 || r.mandalSharePaise !== 0));
+  type Row = Preview["rows"][number];
+  const payout = (r: Row) =>
+    r.paidOut ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+        <CheckCircle2 className="size-3.5" /> Paid {formatDate(r.paidOut.at)}
+      </span>
+    ) : started && live && r.netPaise >= 0 && (r.savingsPaise !== 0 || r.upadOwedPaise !== 0) ? (
+      <ActionButton
+        path={`/orgs/${orgId}/settlement/payouts/${r.memberId}`}
+        body={{ idempotencyKey: `settle-payout:${r.memberId}` }}
+        size="xs"
+        variant="default"
+        successMessage={`${r.name} paid out`}
+        confirm={{
+          title: `Pay ${money.fmt(r.netPaise)} to ${r.name}?`,
+          description: `Savings ${money.fmt(r.savingsPaise)}${r.upadOwedPaise ? ` − upad ${money.fmt(r.upadOwedPaise)} (settled from the payout)` : ""}. Paid from the cash account; a payout voucher is recorded.`,
+          confirmLabel: "Pay out",
+        }}
+      >
+        Pay out
+      </ActionButton>
+    ) : null;
 
   return (
     <div className="max-w-4xl">
-      <PageHeader
-        title="Close & settle the Mandal"
-        description={p.endMonth ? `Runs until ${monthLabelYM(p.endMonth)}` : "Share out the money by hapta shares, pay every member, then close."}
-        actions={<PrintButton />}
-      />
+      <PageHeader title="Close & settle the Mandal" description={p.endMonth ? `Runs until ${monthLabelYM(p.endMonth)}` : "Share out the money by hapta shares, pay every member, then close."} actions={<PrintButton />} />
 
       {closed && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
@@ -67,21 +88,22 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
         </div>
       )}
 
-      <section className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Totals">
-        {[
-          ["Cash in the Mandal", p.totals.cashPaise],
-          ["Upad still out", p.totals.upadOutstandingPaise],
-          ["Members' savings", p.totals.memberFundsPaise],
-          ["Mandal's own money", p.totals.mandalOwnPaise],
-        ].map(([l, v]) => (
-          <div key={l as string} className="rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
-            <p className="text-xs text-muted-foreground">{l}</p>
-            <p className="text-lg font-bold tabular-nums">
-              <Money paise={v as number} />
-            </p>
-          </div>
-        ))}
-      </section>
+      <SummaryBand
+        tone={closed ? "green" : "warm"}
+        icon={<Scale />}
+        label={closed ? "Settled — still to pay" : "Still to pay members"}
+        value={<Money paise={p.totals.netPayoutPaise} />}
+        sub={
+          <>
+            Members&apos; savings <Money paise={p.totals.memberFundsPaise} /> · {p.totals.totalShares} hapta share{p.totals.totalShares === 1 ? "" : "s"}
+          </>
+        }
+        stats={[
+          { label: "Cash in the Mandal", value: <Money paise={p.totals.cashPaise} /> },
+          { label: "Upad still out", value: <Money paise={p.totals.upadOutstandingPaise} /> },
+          { label: "Mandal's own money", value: <Money paise={p.totals.mandalOwnPaise} /> },
+        ]}
+      />
 
       <Step n={1} title="Finish what's still open" done={openItems.length === 0} description="Everything must be collected, verified or waived before money is shared out.">
         {openItems.length === 0 ? (
@@ -93,7 +115,9 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             {openItems.map((b) => (
               <li key={b.key}>
                 <Link href={b.link} className="flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-muted/60">
-                  <AlertTriangle className="size-4 shrink-0 text-amber-600" />
+                  <IconChip tone="amber" size="sm">
+                    <AlertTriangle />
+                  </IconChip>
                   <span className="min-w-0 flex-1 text-sm font-medium">{b.label}</span>
                   {b.amountPaise !== undefined ? <Money paise={b.amountPaise} className="text-sm font-bold" /> : b.count ? <span className="text-sm font-bold">{b.count}</span> : null}
                   <ChevronRight className="size-4 text-muted-foreground" />
@@ -107,7 +131,14 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             <ActionButton
               path={`/orgs/${orgId}/settlement/waive-hapta`}
               successMessage="Unpaid hapta waived"
-              confirm={{ title: `Waive ${money.fmt(unpaidHapta.amountPaise ?? 0)} of unpaid hapta?`, description: "All hapta not yet paid up to today is waived. Members' savings stay as they are.", reason: "required", reasonLabel: "Why (e.g. members agreed)", confirmLabel: "Waive", destructive: true }}
+              confirm={{
+                title: `Waive ${money.fmt(unpaidHapta.amountPaise ?? 0)} of unpaid hapta?`,
+                description: "All hapta not yet paid up to today is waived. Members' savings stay as they are.",
+                reason: "required",
+                reasonLabel: "Why (e.g. members agreed)",
+                confirmLabel: "Waive",
+                destructive: true,
+              }}
             >
               Waive all unpaid hapta…
             </ActionButton>
@@ -148,70 +179,95 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
       </Step>
 
       <Step n={3} title="Pay each member" done={started && toPay.length === 0} description="Each member gets their savings + their share; upad they still owe is taken off. A payout voucher is recorded for each.">
-        <TableWrap>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead className="text-right">Savings</TableHead>
-                <TableHead className="text-right">+ Share</TableHead>
-                <TableHead className="text-right">− Upad</TableHead>
-                <TableHead className="text-right">Payout</TableHead>
-                <TableHead className="text-right" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {p.rows.map((r) => (
-                <TableRow key={r.memberId}>
-                  <TableCell>
-                    <span className="font-semibold">{r.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {r.membershipNumber}
-                      {r.shares > 1 ? ` · ${r.shares} shares` : ""}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Money paise={r.savingsPaise} />
-                  </TableCell>
-                  <TableCell className="text-right">{r.mandalSharePaise ? <Money paise={r.mandalSharePaise} /> : "—"}</TableCell>
-                  <TableCell className="text-right">{r.upadOwedPaise ? <Money paise={-r.upadOwedPaise} className="text-rose-600 dark:text-rose-300" /> : "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <Money paise={r.paidOut ? r.paidOut.netPaise : r.netPaise} className={cn("font-bold", r.netPaise < 0 && !r.paidOut && "text-destructive")} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {r.paidOut ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                        <CheckCircle2 className="size-3.5" /> Paid {formatDate(r.paidOut.at)}
-                      </span>
-                    ) : started && live && r.netPaise >= 0 && (r.savingsPaise !== 0 || r.upadOwedPaise !== 0) ? (
-                      <ActionButton
-                        path={`/orgs/${orgId}/settlement/payouts/${r.memberId}`}
-                        body={{ idempotencyKey: `settle-payout:${r.memberId}` }}
-                        size="xs"
-                        variant="default"
-                        successMessage={`${r.name} paid out`}
-                        confirm={{ title: `Pay ${money.fmt(r.netPaise)} to ${r.name}?`, description: `Savings ${money.fmt(r.savingsPaise)}${r.upadOwedPaise ? ` − upad ${money.fmt(r.upadOwedPaise)} (settled from the payout)` : ""}. Paid from the cash account; a payout voucher is recorded.`, confirmLabel: "Pay out" }}
-                      >
-                        Pay out
-                      </ActionButton>
-                    ) : null}
-                  </TableCell>
+        <ul className="flex flex-col gap-2 md:hidden print:hidden" aria-label="Payouts">
+          {p.rows.map((r) => (
+            <li key={r.memberId} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", r.paidOut && "opacity-80")}>
+              <div className="flex items-start gap-3">
+                <MemberAvatar name={r.name} size="sm" />
+                <div className="min-w-0 flex-1 text-sm">
+                  <span className="font-semibold">{r.name}</span>
+                  <p className="text-xs text-muted-foreground">
+                    {r.membershipNumber}
+                    {r.shares > 1 ? ` · ${r.shares} shares` : ""}
+                  </p>
+                </div>
+                <Money paise={r.paidOut ? r.paidOut.netPaise : r.netPaise} className={cn("shrink-0 font-bold", r.netPaise < 0 && !r.paidOut && "text-destructive")} />
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
+                <div className="rounded-lg bg-muted/60 px-2 py-1.5">
+                  <span className="block text-muted-foreground">Savings</span>
+                  <Money paise={r.savingsPaise} className="font-semibold" />
+                </div>
+                <div className="rounded-lg bg-emerald-500/8 px-2 py-1.5">
+                  <span className="block text-muted-foreground">+ Share</span>
+                  {r.mandalSharePaise ? <Money paise={r.mandalSharePaise} className="font-semibold" /> : "—"}
+                </div>
+                <div className="rounded-lg bg-rose-500/8 px-2 py-1.5">
+                  <span className="block text-muted-foreground">− Upad</span>
+                  {r.upadOwedPaise ? <Money paise={-r.upadOwedPaise} className="font-semibold text-rose-600 dark:text-rose-300" /> : "—"}
+                </div>
+              </div>
+              <div className="mt-2 flex justify-end empty:hidden">{payout(r)}</div>
+            </li>
+          ))}
+          <li className="flex items-center justify-between rounded-2xl bg-secondary/50 px-3.5 py-3 text-sm font-semibold">
+            Still to pay <Money paise={p.totals.netPayoutPaise} className="font-bold" />
+          </li>
+        </ul>
+        <div className="hidden md:block print:block">
+          <TableWrap>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead className="text-right">Savings</TableHead>
+                  <TableHead className="text-right">+ Share</TableHead>
+                  <TableHead className="text-right">− Upad</TableHead>
+                  <TableHead className="text-right">Payout</TableHead>
+                  <TableHead className="text-right" />
                 </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={4} className="font-semibold">
-                  Still to pay
-                </TableCell>
-                <TableCell className="text-right font-bold">
-                  <Money paise={p.totals.netPayoutPaise} />
-                </TableCell>
-                <TableCell />
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </TableWrap>
+              </TableHeader>
+              <TableBody>
+                {p.rows.map((r) => (
+                  <TableRow key={r.memberId}>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <MemberAvatar name={r.name} size="sm" />
+                        <div className="min-w-0">
+                          <span className="font-semibold">{r.name}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {r.membershipNumber}
+                            {r.shares > 1 ? ` · ${r.shares} shares` : ""}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Money paise={r.savingsPaise} />
+                    </TableCell>
+                    <TableCell className="text-right">{r.mandalSharePaise ? <Money paise={r.mandalSharePaise} /> : "—"}</TableCell>
+                    <TableCell className="text-right">{r.upadOwedPaise ? <Money paise={-r.upadOwedPaise} className="text-rose-600 dark:text-rose-300" /> : "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <Money paise={r.paidOut ? r.paidOut.netPaise : r.netPaise} className={cn("font-bold", r.netPaise < 0 && !r.paidOut && "text-destructive")} />
+                    </TableCell>
+                    <TableCell className="text-right">{payout(r)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={4} className="font-semibold">
+                    Still to pay
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    <Money paise={p.totals.netPayoutPaise} />
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </TableWrap>
+        </div>
         {!started && <p className="mt-2 text-xs text-muted-foreground">Payouts open after step 2.</p>}
       </Step>
 
@@ -222,7 +278,10 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
           <>
             {!p.canClose && started && (
               <p className="mb-2 text-xs text-muted-foreground">
-                {p.accounts.filter((a) => a.balancePaise !== 0).map((a) => `${a.name}: ${money.fmt(a.balancePaise)}`).join(" · ") || "Pay everyone out first."}
+                {p.accounts
+                  .filter((a) => a.balancePaise !== 0)
+                  .map((a) => `${a.name}: ${money.fmt(a.balancePaise)}`)
+                  .join(" · ") || "Pay everyone out first."}
               </p>
             )}
             {live && (

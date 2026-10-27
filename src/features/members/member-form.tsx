@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Mail, Plus, Pencil } from "lucide-react";
+import { Check, Mail, NotebookPen, Plus, Pencil, UserRound, UserRoundPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
+import { MoreOptions, SubmitButton } from "@/components/app/form-bits";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import type { Member } from "@/lib/types";
 import { isoDate, todayISO } from "@/lib/format";
@@ -95,7 +95,7 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
   return (
     <form
       noValidate
-      className="grid gap-3 sm:grid-cols-2"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) => {
         const { inviteToApp, haptaShares, ...rest } = v;
         const body = {
@@ -130,9 +130,6 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
       <Field label={t("mform.number")} htmlFor="m-no" error={e.membershipNumber?.message} hint={member ? undefined : t("mform.numberHint")}>
         <Input id="m-no" {...form.register("membershipNumber")} />
       </Field>
-      <Field label={t("mform.joining")} htmlFor="m-join">
-        <Input id="m-join" type="date" {...form.register("joiningDate")} />
-      </Field>
       <Field label={t("mform.mobile")} htmlFor="m-phone" error={e.phone?.message}>
         <Input id="m-phone" type="tel" inputMode="tel" {...form.register("phone")} />
       </Field>
@@ -140,7 +137,7 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
         <Input id="m-email" type="email" {...form.register("email")} />
       </Field>
       {!member && emailValue && !e.email && (
-        <label className="flex items-start gap-3 rounded-xl bg-secondary/60 p-3 text-sm sm:col-span-2">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-sky-500/10 p-3 text-sm ring-1 ring-sky-500/20 sm:col-span-2">
           <Checkbox checked={form.watch("inviteToApp")} onCheckedChange={(c) => form.setValue("inviteToApp", !!c)} className="mt-0.5" aria-label={t("mform.invite")} />
           <span>
             <span className="flex items-center gap-1.5 font-medium">
@@ -150,9 +147,6 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
           </span>
         </label>
       )}
-      <Field label={t("mform.address")} htmlFor="m-addr" className="sm:col-span-2">
-        <Input id="m-addr" {...form.register("address")} />
-      </Field>
       <Field
         label={t("mform.haptas")}
         htmlFor="m-shares"
@@ -187,12 +181,20 @@ function MemberForm({ orgId, member }: { orgId: string; member?: Member }) {
           <option value="left">{t("members.left")}</option>
         </NativeSelect>
       </Field>
-      <Field label={t("mform.notes")} htmlFor="m-notes" className="sm:col-span-2">
-        <Textarea id="m-notes" rows={2} {...form.register("notes")} />
-      </Field>
-      <Button type="submit" disabled={pending} className="sm:col-span-2">
-        {pending && <Loader2 className="animate-spin" />} {member ? t("common.saveChanges") : t("members.add")}
-      </Button>
+      <MoreOptions bare icon={<NotebookPen />} title={t("onb.secMore")} defaultOpen={!!(e.joiningDate || e.address || e.notes || member?.address || member?.notes)} className="sm:col-span-2">
+        <Field label={t("mform.joining")} htmlFor="m-join" error={e.joiningDate?.message}>
+          <Input id="m-join" type="date" {...form.register("joiningDate")} />
+        </Field>
+        <Field label={t("mform.address")} htmlFor="m-addr" error={e.address?.message}>
+          <Input id="m-addr" {...form.register("address")} />
+        </Field>
+        <Field label={t("mform.notes")} htmlFor="m-notes" error={e.notes?.message} className="sm:col-span-2">
+          <Textarea id="m-notes" rows={2} {...form.register("notes")} />
+        </Field>
+      </MoreOptions>
+      <SubmitButton pending={pending} icon={member ? <Check /> : <UserRoundPlus />} className="sm:col-span-2">
+        {member ? t("common.saveChanges") : t("members.add")}
+      </SubmitButton>
     </form>
   );
 }
@@ -206,6 +208,8 @@ export function MemberDialog({ orgId, member, defaultOpen }: { orgId: string; me
       trigger={member ? <><Pencil /> {t("members.edit")}</> : <><Plus /> {t("members.add")}</>}
       triggerVariant={member ? "outline" : "default"}
       title={member ? t("members.editTitle") : t("members.add")}
+      icon={member ? <UserRound /> : <UserRoundPlus />}
+      tone="sky"
     >
       <MemberForm orgId={orgId} member={member} />
     </FormDialog>

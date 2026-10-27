@@ -83,7 +83,7 @@ export function renderReport(kind: string, d: any, orgId: string): ReactNode {
     case "donations":
       return (
         <div className="flex flex-col gap-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card size="sm">
               <CardHeader>
                 <CardTitle>By event</CardTitle>
@@ -116,9 +116,9 @@ export function renderReport(kind: string, d: any, orgId: string): ReactNode {
             </Card>
           </div>
           <Simple
-            headers={["Date", "Donor", "PAN", "Event / purpose", "Method", ">Amount"]}
-            rows={d.items.map((x: any) => [formatDate(x.date), x.donorName, x.donorPan ?? "—", [x.eventName, x.purpose].filter(Boolean).join(" · ") || "—", label(METHOD_LABEL, x.method), M(x.amountPaise)])}
-            footer={["Total", "", "", "", "", M(d.totalPaise)]}
+            headers={["Date", "Donor", "Event / purpose", "Method", ">Amount"]}
+            rows={d.items.map((x: any) => [formatDate(x.date), x.donorName, [x.eventName, x.purpose].filter(Boolean).join(" · ") || "—", label(METHOD_LABEL, x.method), M(x.amountPaise)])}
+            footer={["Total", "", "", "", M(d.totalPaise)]}
           />
         </div>
       );
@@ -157,7 +157,7 @@ export function renderReport(kind: string, d: any, orgId: string): ReactNode {
       );
     case "income-expense":
       return (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Simple headers={["Income", ">Amount"]} rows={d.income.map((x: any) => [x.name, M(x.amountPaise)])} footer={["Total income", M(d.totalIncomePaise)]} />
           <Simple headers={["Expenditure", ">Amount"]} rows={d.expense.map((x: any) => [x.name, M(x.amountPaise)])} footer={["Total expenditure", M(d.totalExpensePaise)]} />
           <Card size="sm" className="lg:col-span-2">
@@ -193,7 +193,7 @@ export function renderReport(kind: string, d: any, orgId: string): ReactNode {
       );
     case "balance-sheet":
       return (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Simple headers={["Assets", ">Amount"]} rows={d.assets.map((x: any) => [x.name, M(x.amountPaise)])} footer={["Total assets", M(d.totalAssetsPaise)]} />
           <Simple
             headers={["Liabilities & funds", ">Amount"]}

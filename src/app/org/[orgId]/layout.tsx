@@ -65,10 +65,18 @@ export default function OrgLayout({ children, params }: LayoutProps<"/org/[orgId
 
 type P = { params: Promise<{ orgId: string }> };
 
-/** Every amount on the page is shown in the Mandal's currency. */
-async function WithCurrency({ params, children }: P & { children: React.ReactNode }) {
-  const org = await getOrg((await params).orgId);
-  return <CurrencyProvider currency={org.settings.currency}>{children}</CurrencyProvider>;
+/**
+ * Every amount on the page is shown in the Mandal's currency. Not async on purpose:
+ * awaiting the org here would hold back {children}, so the page's own API calls
+ * would only start after this one finished. The promise goes to the client instead.
+ * Errors (401/404/423) are left to the page, which calls the same cached getOrg.
+ */
+function WithCurrency({ params, children }: P & { children: React.ReactNode }) {
+  const currency = params.then(({ orgId }) => getOrg(orgId)).then(
+    (org) => org.settings.currency ?? null,
+    () => null,
+  );
+  return <CurrencyProvider currency={currency}>{children}</CurrencyProvider>;
 }
 
 /** Request-scoped: all shell pieces share one set of API calls. */

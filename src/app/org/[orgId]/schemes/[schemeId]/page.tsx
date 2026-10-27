@@ -21,8 +21,9 @@ import type { Tone } from "@/lib/tones";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function SchemePage({ params }: PageProps<"/org/[orgId]/schemes/[schemeId]">) {
   const { orgId, schemeId } = await params;
-  const money = await getMoney(orgId);
   const [org, data] = await Promise.all([getOrg(orgId), api<{ scheme: Scheme; enrollments: any[]; plannedSchedule: any[] }>(`/orgs/${orgId}/schemes/${schemeId}`)]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   const s = data.scheme;
   const manage = can(org, "schemes.manage");
   const enrolledIds = new Set(data.enrollments.map((e) => e.member._id));
@@ -208,7 +209,7 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
           </TableWrap>
         </TabsContent>
         <TabsContent value="history">
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card size="sm">
               <CardHeader>
                 <CardTitle>Amount revisions</CardTitle>

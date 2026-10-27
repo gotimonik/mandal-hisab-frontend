@@ -11,6 +11,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { REPORTS } from "@/features/reports-meta";
 import { renderReport } from "@/features/reports/renderers";
+import { reportLook } from "@/features/reports/look";
+import { IconChip } from "@/components/app/bits";
+import Link from "next/link";
 
 export default async function ReportPage({ params, searchParams }: PageProps<"/org/[orgId]/reports/[kind]">) {
   const { orgId, kind } = await params;
@@ -26,10 +29,16 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
     meta.filters.includes("scheme") ? getSchemes(orgId) : Promise.resolve([]),
     meta.filters.includes("account") ? getAccounts(orgId) : Promise.resolve([]),
   ]);
+  const lk = reportLook(kind);
   const period = data.from && data.to ? `${formatDate(data.from as string)} – ${formatDate(data.to as string)}` : data.asOf ? `As of ${formatDate(data.asOf as string)}` : "";
   return (
     <>
       <PageHeader
+        eyebrow={
+          <Link href={`/org/${orgId}/reports`} className="hover:underline">
+            Reports
+          </Link>
+        }
         title={meta.title}
         description={`${org.name} · ${period}`}
         actions={
@@ -41,6 +50,13 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
           </>
         }
       />
+      <section className="no-print mb-4 flex items-start gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
+        <IconChip tone={lk.tone}>{lk.icon}</IconChip>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-muted-foreground">{meta.description}</p>
+          {period && <p className="mt-1.5 inline-flex rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:text-violet-300">{period}</p>}
+        </div>
+      </section>
       {meta.filters.length > 0 && (
         <FilterBar resetHref={`/org/${orgId}/reports/${kind}`}>
           {meta.filters.includes("range") && (

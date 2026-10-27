@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, KeyRound } from "lucide-react";
+import { SubmitButton } from "@/components/app/form-bits";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { useApiSubmit } from "@/components/app/use-api-form";
@@ -26,11 +26,11 @@ export function ProfileForm({ name, phone }: { name: string; phone: string }) {
         <Input id="p-name" {...form.register("name")} />
       </Field>
       <Field label="Mobile" htmlFor="p-phone" error={form.formState.errors.phone?.message}>
-        <Input id="p-phone" type="tel" {...form.register("phone")} />
+        <Input id="p-phone" type="tel" inputMode="tel" {...form.register("phone")} />
       </Field>
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending && <Loader2 className="animate-spin" />} Save
-      </Button>
+      <SubmitButton page pending={pending} icon={<Check />}>
+        Save
+      </SubmitButton>
     </form>
   );
 }
@@ -66,9 +66,9 @@ export function PasswordForm() {
       <Field label="Confirm new password" htmlFor="pw-conf" error={e.confirm?.message}>
         <Input id="pw-conf" type="password" autoComplete="new-password" {...form.register("confirm")} />
       </Field>
-      <Button type="submit" disabled={pending} className="self-start">
-        {pending && <Loader2 className="animate-spin" />} Change password
-      </Button>
+      <SubmitButton page pending={pending} icon={<KeyRound />}>
+        Change password
+      </SubmitButton>
     </form>
   );
 }

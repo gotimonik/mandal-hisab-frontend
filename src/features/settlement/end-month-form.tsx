@@ -33,7 +33,7 @@ export function EndMonthForm({ orgId, endMonth, startMonth, thisMonth }: { orgId
   return (
     <div className="flex flex-col gap-3">
       <FormError message={error} />
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Runs for" htmlFor="end-duration" hint={`Counted from the first hapta month (${monthLabelYM(startMonth)}).`}>
           <NativeSelect id="end-duration" value={duration} onChange={(e) => setDuration(e.target.value)}>
             {DURATIONS.map(([k, l]) => (

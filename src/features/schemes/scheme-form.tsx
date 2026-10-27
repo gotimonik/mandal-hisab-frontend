@@ -4,15 +4,14 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlarmClock, CalendarDays, CheckCircle2, FileText, SlidersHorizontal, UserCog, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
+import { AmountInput, ChoicePills, FormSection, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 import { FREQUENCY_LABEL, todayISO } from "@/lib/format";
 import { optionalRupees, rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
@@ -81,7 +80,7 @@ export function SchemeForm({ orgId }: { orgId: string }) {
     },
   });
   const { submit, pending, error } = useApiSubmit(form);
-  const [frequency, limitBy, lateFeeEnabled, lateFeeType, customUnit] = useWatch({ control: form.control, name: ["frequency", "limitBy", "lateFeeEnabled", "lateFeeType", "customUnit"] });
+  const [frequency, limitBy, lateFeeEnabled, lateFeeType, customUnit, amountMode, status] = useWatch({ control: form.control, name: ["frequency", "limitBy", "lateFeeEnabled", "lateFeeType", "customUnit", "amountMode", "status"] });
   const monthBased = MONTH_BASED.includes(frequency) || (frequency === "custom" && customUnit === "month");
   const e = form.formState.errors;
 
@@ -111,33 +110,32 @@ export function SchemeForm({ orgId }: { orgId: string }) {
   return (
     <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
       <FormError message={error} />
-      <Card>
-        <CardHeader>
-          <CardTitle>Basics</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+      <FormSection icon={<FileText />} tone="indigo" title="Basics" description="What the scheme is called and how much each installment is.">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Scheme name" htmlFor="s-name" error={e.name?.message} className="sm:col-span-2">
             <Input id="s-name" placeholder="e.g. Monthly hapta 2026-27" {...form.register("name")} />
+          </Field>
+          <Field label={`Amount per installment (${money.symbol})`} htmlFor="s-amt" error={e.amount?.message} className="sm:col-span-2">
+            <AmountInput id="s-amt" placeholder="1000" {...form.register("amount")} />
+          </Field>
+          <Field label="Amount type" hint="Member-specific lets you set a different amount per member when enrolling." className="sm:col-span-2">
+            <ChoicePills
+              label="Amount type"
+              value={amountMode}
+              onChange={(v) => form.setValue("amountMode", v, { shouldDirty: true })}
+              options={[
+                { value: "fixed" as const, label: "Same for every member", icon: <Users /> },
+                { value: "member_specific" as const, label: "Member-specific", icon: <UserCog /> },
+              ]}
+            />
           </Field>
           <Field label="Description" htmlFor="s-desc" className="sm:col-span-2">
             <Textarea id="s-desc" rows={2} {...form.register("description")} />
           </Field>
-          <Field label={`Amount per installment (${money.symbol})`} htmlFor="s-amt" error={e.amount?.message}>
-            <Input id="s-amt" inputMode="decimal" placeholder="1000" {...form.register("amount")} />
-          </Field>
-          <Field label="Amount type" htmlFor="s-mode" hint="Member-specific lets you set a different amount per member when enrolling.">
-            <NativeSelect id="s-mode" {...form.register("amountMode")}>
-              <option value="fixed">Same for every member</option>
-              <option value="member_specific">Member-specific</option>
-            </NativeSelect>
-          </Field>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Schedule</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+        </div>
+      </FormSection>
+      <FormSection icon={<CalendarDays />} tone="sky" title="Schedule" description="When installments fall due and how long the scheme runs.">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Frequency" htmlFor="s-freq">
             <NativeSelect id="s-freq" {...form.register("frequency")}>
               {Object.entries(FREQUENCY_LABEL).map(([k, v]) => (
@@ -196,53 +194,56 @@ export function SchemeForm({ orgId }: { orgId: string }) {
               )}
             </>
           )}
-          <Field label="Grace days before overdue" htmlFor="s-grace">
-            <Input id="s-grace" type="number" min={0} max={90} {...form.register("graceDays")} />
-          </Field>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Late fee</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <label className="flex items-center gap-2 text-sm sm:col-span-3">
-            <Checkbox checked={!!lateFeeEnabled} onCheckedChange={(c) => form.setValue("lateFeeEnabled", !!c)} /> Charge a one-time late fee on overdue installments
-          </label>
-          {lateFeeEnabled && (
-            <>
-              <Field label="Type" htmlFor="s-lftype">
-                <NativeSelect id="s-lftype" {...form.register("lateFeeType")}>
-                  <option value="fixed">Fixed amount ({money.symbol})</option>
-                  <option value="percent">% of installment</option>
-                </NativeSelect>
-              </Field>
-              <Field label={lateFeeType === "fixed" ? `Fee (${money.symbol})` : "Percent (%)"} htmlFor="s-lfval" error={e.lateFeeValue?.message}>
-                <Input id="s-lfval" inputMode="decimal" {...form.register("lateFeeValue")} />
-              </Field>
-              <Field label="Days after due date" htmlFor="s-lfgrace">
-                <Input id="s-lfgrace" type="number" min={0} {...form.register("lateFeeGrace")} />
-              </Field>
-            </>
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          <Field label="Status" htmlFor="s-status" hint="Draft schemes don't generate installments until activated.">
-            <NativeSelect id="s-status" {...form.register("status")}>
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-            </NativeSelect>
-          </Field>
-          <Field label="Notes" htmlFor="s-notes">
-            <Textarea id="s-notes" rows={2} {...form.register("notes")} />
-          </Field>
-        </CardContent>
-      </Card>
-      <Button type="submit" disabled={pending} size="lg" className="self-start">
-        {pending && <Loader2 className="animate-spin" />} Create scheme
-      </Button>
+        </div>
+      </FormSection>
+      <FormSection icon={<AlarmClock />} tone="rose" title="Late fee" description="Optional one-time fee when an installment goes overdue.">
+        <label className="flex items-center gap-2 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm">
+          <Checkbox checked={!!lateFeeEnabled} onCheckedChange={(c) => form.setValue("lateFeeEnabled", !!c)} /> Charge a one-time late fee on overdue installments
+        </label>
+        {lateFeeEnabled && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field label="Type" className="sm:col-span-3">
+              <ChoicePills
+                label="Late fee type"
+                value={lateFeeType}
+                onChange={(v) => form.setValue("lateFeeType", v, { shouldDirty: true })}
+                options={[
+                  { value: "fixed" as const, label: `Fixed amount (${money.symbol})` },
+                  { value: "percent" as const, label: "% of installment" },
+                ]}
+              />
+            </Field>
+            <Field label={lateFeeType === "fixed" ? `Fee (${money.symbol})` : "Percent (%)"} htmlFor="s-lfval" error={e.lateFeeValue?.message}>
+              <Input id="s-lfval" inputMode="decimal" {...form.register("lateFeeValue")} />
+            </Field>
+            <Field label="Days after due date" htmlFor="s-lfgrace">
+              <Input id="s-lfgrace" type="number" min={0} {...form.register("lateFeeGrace")} />
+            </Field>
+          </div>
+        )}
+      </FormSection>
+      <MoreOptions icon={<SlidersHorizontal />} title="More options" description="Grace days, draft status and notes — the defaults suit most schemes." defaultOpen={!!(e.graceDays || e.notes)}>
+        <Field label="Grace days before overdue" htmlFor="s-grace" error={e.graceDays?.message}>
+          <Input id="s-grace" type="number" min={0} max={90} {...form.register("graceDays")} />
+        </Field>
+        <Field label="Status" hint="Draft schemes don't generate installments until activated.">
+          <ChoicePills
+            label="Status"
+            value={status}
+            onChange={(v) => form.setValue("status", v, { shouldDirty: true })}
+            options={[
+              { value: "active" as const, label: "Active" },
+              { value: "draft" as const, label: "Draft" },
+            ]}
+          />
+        </Field>
+        <Field label="Notes" htmlFor="s-notes" className="sm:col-span-2">
+          <Textarea id="s-notes" rows={2} {...form.register("notes")} />
+        </Field>
+      </MoreOptions>
+      <SubmitButton page pending={pending} icon={<CheckCircle2 />}>
+        Create scheme
+      </SubmitButton>
     </form>
   );
 }
