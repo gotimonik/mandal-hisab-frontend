@@ -147,7 +147,7 @@ export function CreateOrgForm() {
           </span>
           <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
         </summary>
-        <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 px-4 pb-4 sm:grid-cols-2">
           <Field label={t("onb.city")} htmlFor="org-city">
             <Input id="org-city" autoComplete="address-level2" {...form.register("city")} />
           </Field>

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calculator, Check, HandCoins, Loader2, Percent, Send } from "lucide-react";
+import { Calculator, Check, CheckCircle2, HandCoins, Loader2, Percent, Send, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,9 +15,10 @@ import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiMutate, apiRead } from "@/app/actions/api";
-import { METHOD_LABEL, formatDate, label, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
+import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
+import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
 
 type Acc = { _id: string; name: string };
 
@@ -31,6 +32,7 @@ function ApproveForm({ loanId, requestedPaise, canChangeRate, tenure, rate }: { 
   const form = useForm<z.input<typeof ApproveSchema>, unknown, z.output<typeof ApproveSchema>>({ resolver: zodResolver(ApproveSchema), defaultValues: { approvedAmount: paiseToRupeeInput(requestedPaise), rate: "", tenure, notes: "" } });
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
+  const approvedAmount = useWatch({ control: form.control, name: "approvedAmount" });
   return (
     <form
       noValidate
@@ -39,29 +41,34 @@ function ApproveForm({ loanId, requestedPaise, canChangeRate, tenure, rate }: { 
     >
       <FormError message={error} />
       <Field label={`Approved amount (${money.symbol})`} htmlFor="ap-amt" error={e.approvedAmount?.message}>
-        <Input id="ap-amt" inputMode="decimal" {...form.register("approvedAmount")} />
+        <AmountInput id="ap-amt" {...form.register("approvedAmount")} />
       </Field>
-      {canChangeRate && (
-        <Field label={`Annual rate % (leave blank to keep ${rate}%)`} htmlFor="ap-rate" error={e.rate?.message}>
-          <Input id="ap-rate" inputMode="decimal" {...form.register("rate")} />
+      <ChoicePills label="Amount shortcuts" value={approvedAmount} onChange={(v) => form.setValue("approvedAmount", v, { shouldValidate: true })} options={[{ value: paiseToRupeeInput(requestedPaise), label: `Requested · ${money.short(requestedPaise)}` }]} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {canChangeRate && (
+          <Field label={`Annual rate % (leave blank to keep ${rate}%)`} htmlFor="ap-rate" error={e.rate?.message}>
+            <Input id="ap-rate" inputMode="decimal" placeholder={rate} {...form.register("rate")} />
+          </Field>
+        )}
+        <Field label="Installments" htmlFor="ap-ten">
+          <Input id="ap-ten" type="number" min={1} {...form.register("tenure")} />
         </Field>
-      )}
-      <Field label="Installments" htmlFor="ap-ten">
-        <Input id="ap-ten" type="number" min={1} {...form.register("tenure")} />
-      </Field>
-      <Field label="Notes" htmlFor="ap-notes">
-        <Input id="ap-notes" {...form.register("notes")} />
-      </Field>
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Approve
-      </Button>
+      </div>
+      <MoreOptions bare icon={<SlidersHorizontal />} title="Notes" description="Optional — kept with the approval" defaultOpen={!!e.notes}>
+        <Field label="Notes" htmlFor="ap-notes" error={e.notes?.message} className="sm:col-span-2">
+          <Input id="ap-notes" {...form.register("notes")} />
+        </Field>
+      </MoreOptions>
+      <SubmitButton pending={pending} icon={<Check />}>
+        Approve
+      </SubmitButton>
     </form>
   );
 }
 
 export function ApproveLoanDialog(props: { loanId: string; requestedPaise: number; canChangeRate: boolean; tenure: number; rate: string }) {
   return (
-    <FormDialog trigger={<><Check /> Approve</>} title="Approve loan">
+    <FormDialog trigger={<><Check /> Approve</>} title="Approve loan" icon={<Check />} tone="indigo">
       <ApproveForm {...props} />
     </FormDialog>
   );
@@ -82,10 +89,11 @@ function DisburseForm({ loanId, accounts, amountPaise }: { loanId: string; accou
   const { submit, pending, error } = useApiSubmit(form);
   return (
     <form className="flex flex-col gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/loans/${loanId}/disburse`, body: v }, { success: "Loan disbursed — schedule generated", onSuccess: close }))}>
-      <p className="text-sm">
-        Pay out <Money paise={amountPaise} className="font-semibold" /> from:
-      </p>
       <FormError message={error} />
+      <div className="bg-hero rounded-2xl p-4 text-white">
+        <p className="text-xs font-medium text-white/85">Pay out</p>
+        <Money paise={amountPaise} className="text-2xl font-extrabold tracking-tight tabular-nums" />
+      </div>
       <Field label="Account" htmlFor="db-acc">
         <NativeSelect id="db-acc" {...form.register("accountId")}>
           {accounts.map((a) => (
@@ -103,19 +111,19 @@ function DisburseForm({ loanId, accounts, amountPaise }: { loanId: string; accou
           <Input id="db-first" type="date" {...form.register("firstDueDate")} />
         </Field>
       </div>
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm ring-1 ring-foreground/10">
         <Checkbox checked={form.watch("roundEmiToRupee")} onCheckedChange={(c) => form.setValue("roundEmiToRupee", !!c)} /> Round EMI up to a whole amount (no paise or cents)
       </label>
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Disburse
-      </Button>
+      <SubmitButton pending={pending} icon={<Send />}>
+        Disburse
+      </SubmitButton>
     </form>
   );
 }
 
 export function DisburseLoanDialog(props: { loanId: string; accounts: Acc[]; amountPaise: number }) {
   return (
-    <FormDialog trigger={<><Send /> Disburse</>} title="Disburse loan">
+    <FormDialog trigger={<><Send /> Disburse</>} title="Disburse loan" description="The repayment schedule is generated from these dates." icon={<Send />} tone="indigo">
       <DisburseForm {...props} />
     </FormDialog>
   );
@@ -149,7 +157,7 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
   const [preview, setPreview] = useState<PreviewRes["preview"] | null>(null);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [calc, startCalc] = useTransition();
-  const [closeLoan, prepayment] = useWatch({ control: form.control, name: ["closeLoan", "prepayment"] });
+  const [closeLoan, prepayment, amount] = useWatch({ control: form.control, name: ["closeLoan", "prepayment", "amount"] });
 
   const doPreview = form.handleSubmit((v) =>
     startCalc(async () => {
@@ -177,7 +185,7 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
       )}
     >
       <FormError message={error} />
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm ring-1 ring-foreground/10">
         <Checkbox
           checked={closeLoan}
           onCheckedChange={(c) => {
@@ -191,32 +199,36 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
         Close the loan early (full settlement)
       </label>
       {quote && closeLoan && (
-        <div className="rounded-lg bg-muted/50 p-3 text-sm">
-          <p className="mb-1 font-medium">Closure amount</p>
+        <FormNote className="text-sm [&>div]:flex-1">
+          <p className="mb-1 font-semibold">Closure amount</p>
           <Row k="Outstanding principal" v={quote.outstandingPrincipalPaise} />
           <Row k="Unpaid interest on due installments" v={quote.unpaidDueInterestPaise} />
           <Row k={`Interest accrued ${formatDate(quote.accruedFrom)} → today (${quote.accruedDays} days @ ${quote.annualRate}%)`} v={quote.accruedInterestPaise} />
           {quote.penaltyPaise > 0 && <Row k="Late fees" v={quote.penaltyPaise} />}
           <Row k="Total to pay" v={quote.totalPaise} bold />
-          {quote.waivedFutureInterestPaise > 0 && <p className="mt-1 text-xs text-muted-foreground">Future scheduled interest of {paiseToRupeeInput(quote.waivedFutureInterestPaise)} is not charged.</p>}
-        </div>
+          {quote.waivedFutureInterestPaise > 0 && <p className="mt-1 text-xs opacity-80">Future scheduled interest of {paiseToRupeeInput(quote.waivedFutureInterestPaise)} is not charged.</p>}
+        </FormNote>
+      )}
+      <Field label={`Amount (${money.symbol})`} htmlFor="rp-amt" error={form.formState.errors.amount?.message}>
+        <AmountInput id="rp-amt" readOnly={closeLoan} {...form.register("amount", { onChange: () => setPreview(null) })} />
+      </Field>
+      {!closeLoan && nextDuePaise > 0 && (
+        <ChoicePills
+          label="Amount shortcuts"
+          value={amount}
+          onChange={(v) => {
+            form.setValue("amount", v, { shouldValidate: true });
+            setPreview(null);
+          }}
+          options={[{ value: paiseToRupeeInput(nextDuePaise), label: `Next installment · ${money.short(nextDuePaise)}` }]}
+        />
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label={`Amount (${money.symbol})`} htmlFor="rp-amt" error={form.formState.errors.amount?.message}>
-          <Input id="rp-amt" inputMode="decimal" readOnly={closeLoan} {...form.register("amount", { onChange: () => setPreview(null) })} />
-        </Field>
         <Field label="Date" htmlFor="rp-date">
           <Input id="rp-date" type="date" {...form.register("date", { onChange: (ev) => (closeLoan ? fetchQuote(ev.target.value) : setPreview(null)) })} />
         </Field>
-        <Field label="Method" htmlFor="rp-method">
-          <NativeSelect id="rp-method" {...form.register("method")}>
-            {methods.map((m) => (
-              <option key={m} value={m}>
-                {label(METHOD_LABEL, m)}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
+        <input type="hidden" {...form.register("method")} />
+        <PaidInCash />
         <Field label="Into account" htmlFor="rp-acc">
           <NativeSelect id="rp-acc" {...form.register("accountId")}>
             {accounts.map((a) => (
@@ -227,11 +239,13 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
           </NativeSelect>
         </Field>
       </div>
-      <Field label="Reference" htmlFor="rp-ref">
-        <Input id="rp-ref" {...form.register("reference")} />
-      </Field>
+      <MoreOptions bare icon={<SlidersHorizontal />} title="Reference" description="Cheque, UPI or bank reference — optional" defaultOpen={!!form.formState.errors.reference}>
+        <Field label="Reference" htmlFor="rp-ref" error={form.formState.errors.reference?.message} className="sm:col-span-2">
+          <Input id="rp-ref" {...form.register("reference")} />
+        </Field>
+      </MoreOptions>
       {!closeLoan && allowPrepay && (
-        <label className="flex items-start gap-2 text-sm">
+        <label className="flex items-start gap-2.5 rounded-2xl px-3 py-2.5 text-sm ring-1 ring-foreground/10">
           <Checkbox checked={prepayment} onCheckedChange={(c) => { form.setValue("prepayment", !!c); setPreview(null); }} />
           <span>Treat any amount beyond current dues as a principal prepayment (reschedules future installments). Otherwise it pays the next installments in advance.</span>
         </label>
@@ -240,26 +254,28 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
         {calc ? <Loader2 className="animate-spin" /> : <Calculator />} Preview allocation
       </Button>
       {preview && (
-        <div className="rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
+        <FormNote tone="good" className="text-sm [&>div]:flex-1">
+          <div aria-live="polite">
           <Row k="Late fees" v={preview.penaltyPaise} />
           <Row k="Interest" v={preview.interestPaise} />
           <Row k="Principal (installments)" v={preview.principalPaise - preview.prepaymentPaise} />
           {preview.prepaymentPaise > 0 && <Row k="Principal prepayment" v={preview.prepaymentPaise} />}
-          {preview.advancePaise > 0 && <p className="text-xs text-muted-foreground">Includes advance payment of upcoming installments.</p>}
+          {preview.advancePaise > 0 && <p className="text-xs opacity-80">Includes advance payment of upcoming installments.</p>}
           <Row k="Principal outstanding after" v={preview.outstandingPrincipalAfterPaise} bold />
-          {preview.closed && <p className="mt-1 font-medium text-success">This payment closes the loan.</p>}
-        </div>
+          {preview.closed && <p className="mt-1 font-semibold">This payment closes the loan.</p>}
+          </div>
+        </FormNote>
       )}
-      <Button type="submit" disabled={pending || !preview}>
-        {pending && <Loader2 className="animate-spin" />} Confirm {closeLoan ? "closure" : "repayment"}
-      </Button>
+      <SubmitButton pending={pending} disabled={pending || !preview} icon={<CheckCircle2 />}>
+        Confirm {closeLoan ? "closure" : "repayment"}
+      </SubmitButton>
     </form>
   );
 }
 
 function Row({ k, v, bold }: { k: string; v: number; bold?: boolean }) {
   return (
-    <div className={`flex justify-between gap-3 ${bold ? "mt-1 border-t pt-1 font-semibold" : ""}`}>
+    <div className={`flex justify-between gap-3 ${bold ? "mt-1 border-t border-current/15 pt-1 font-semibold" : ""}`}>
       <span>{k}</span>
       <Money paise={v} />
     </div>
@@ -268,7 +284,7 @@ function Row({ k, v, bold }: { k: string; v: number; bold?: boolean }) {
 
 export function RepayLoanDialog(props: { loanId: string; accounts: Acc[]; methods: string[]; nextDuePaise: number; allowPrepay: boolean }) {
   return (
-    <FormDialog trigger={<><HandCoins /> Record repayment</>} title="Record loan repayment" description="Preview how the amount is split before saving. Allocation order: late fee → interest → principal (as configured).">
+    <FormDialog trigger={<><HandCoins /> Record repayment</>} title="Record loan repayment" icon={<HandCoins />} tone="emerald" description="Preview how the amount is split before saving. Allocation order: late fee → interest → principal (as configured).">
       <RepayForm {...props} />
     </FormDialog>
   );
@@ -285,8 +301,8 @@ function RateForm({ loanId }: { loanId: string }) {
   const e = form.formState.errors;
   return (
     <form noValidate className="flex flex-col gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/loans/${loanId}/rate`, body: v }, { success: "Rate changed for future installments", onSuccess: close }))}>
-      <p className="text-sm text-muted-foreground">Only unpaid installments due on or after the effective date are recalculated. Past interest keeps the rate that applied.</p>
       <FormError message={error} />
+      <FormNote>Only unpaid installments due on or after the effective date are recalculated. Past interest keeps the rate that applied.</FormNote>
       <div className="grid grid-cols-2 gap-3">
         <Field label="New rate (%)" htmlFor="rc-rate" error={e.rate?.message}>
           <Input id="rc-rate" inputMode="decimal" {...form.register("rate")} />
@@ -304,16 +320,16 @@ function RateForm({ loanId }: { loanId: string }) {
       <Field label="Reason" htmlFor="rc-reason" error={e.reason?.message}>
         <Input id="rc-reason" {...form.register("reason")} />
       </Field>
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} Change rate
-      </Button>
+      <SubmitButton pending={pending} icon={<Percent />}>
+        Change rate
+      </SubmitButton>
     </form>
   );
 }
 
 export function RateChangeDialog({ loanId }: { loanId: string }) {
   return (
-    <FormDialog trigger={<><Percent /> Change rate</>} triggerVariant="outline" title="Change interest rate">
+    <FormDialog trigger={<><Percent /> Change rate</>} triggerVariant="outline" title="Change interest rate" icon={<Percent />} tone="violet">
       <RateForm loanId={loanId} />
     </FormDialog>
   );

@@ -85,7 +85,7 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
           hint={data.nextInstallment ? tr("mdash.nextDue", { period: data.nextInstallment.periodLabel, date: formatDate(data.nextInstallment.dueDate) }) : tr("mdash.nothingScheduled")}
         />
       </section>
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>{tr("mdash.recentReceipts")}</CardTitle>

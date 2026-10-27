@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Loader2, Mail, Send } from "lucide-react";
+import { Check, Copy, Mail, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog } from "@/components/app/form-dialog";
+import { FormNote, SubmitButton } from "@/components/app/form-bits";
 import { apiMutate } from "@/app/actions/api";
 import { useT } from "@/i18n/client";
 
@@ -24,12 +25,11 @@ function InviteForm({ orgId, memberId, defaultEmail }: { orgId: string; memberId
   if (result) {
     return (
       <div className="flex flex-col gap-3 text-sm">
-        <p className="flex items-start gap-2 rounded-xl bg-emerald-500/10 p-3 text-emerald-800 dark:text-emerald-200">
-          <Check className="mt-0.5 size-4 shrink-0" />
+        <FormNote tone="good" className="text-sm">
           {result.emailed ? t("members.invEmailed", { email }) : t("members.invCreated")}{" "}
           {result.existingUser ? t("members.invExisting") : t("members.invNew")}
-        </p>
-        <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-2 text-xs">
+        </FormNote>
+        <div className="flex items-center gap-2 rounded-2xl bg-muted/60 p-2 pl-3 text-xs ring-1 ring-foreground/[0.06]">
           <span className="min-w-0 flex-1 truncate">{result.inviteLink}</span>
           <Button
             type="button"
@@ -43,8 +43,8 @@ function InviteForm({ orgId, memberId, defaultEmail }: { orgId: string; memberId
             {copied ? <Check /> : <Copy />} {copied ? t("members.copied") : t("members.copy")}
           </Button>
         </div>
-        <a className="text-center text-xs font-medium text-primary hover:underline" href={`https://wa.me/?text=${encodeURIComponent(t("members.waText", { link: result.inviteLink }))}`} target="_blank" rel="noreferrer">
-          {t("members.shareWa")}
+        <a className="flex items-center justify-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300" href={`https://wa.me/?text=${encodeURIComponent(t("members.waText", { link: result.inviteLink }))}`} target="_blank" rel="noreferrer">
+          <MessageCircle className="size-4" /> {t("members.shareWa")}
         </a>
       </div>
     );
@@ -69,9 +69,9 @@ function InviteForm({ orgId, memberId, defaultEmail }: { orgId: string; memberId
       <Field label={t("members.theirEmail")} htmlFor="inv-m-email" hint={t("members.theirEmailHint")}>
         <Input id="inv-m-email" type="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       </Field>
-      <Button type="submit" size="lg" disabled={pending}>
-        {pending ? <Loader2 className="animate-spin" /> : <Send />} {t("members.sendInvite")}
-      </Button>
+      <SubmitButton pending={pending} icon={<Send />}>
+        {t("members.sendInvite")}
+      </SubmitButton>
     </form>
   );
 }
@@ -90,6 +90,8 @@ export function InviteMemberButton({ orgId, memberId, memberName, email, again =
       triggerSize="sm"
       title={t("members.inviteTitle", { name: memberName })}
       description={t("members.inviteDesc")}
+      icon={<Mail />}
+      tone="sky"
     >
       <InviteForm orgId={orgId} memberId={memberId} defaultEmail={email ?? ""} />
     </FormDialog>

@@ -3,8 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { HandCoins, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { HandCoins, NotebookPen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -16,6 +15,7 @@ import { rupees } from "@/lib/schemas";
 import { useLang, useT } from "@/i18n/client";
 import { monthName } from "@/i18n/core";
 import { useMoney } from "@/components/app/currency";
+import { AmountInput, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 
 interface Props {
   members: { _id: string; name: string; membershipNumber: string }[];
@@ -72,7 +72,7 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
   return (
     <form
       noValidate
-      className="grid gap-3"
+      className="grid grid-cols-1 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         save();
@@ -89,17 +89,17 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
           ))}
         </NativeSelect>
       </Field>
+      <Field label={t("common.amountRs")} htmlFor="fl-amt" hint={account ? <>{t("upad.fundCash")} <Money paise={account.balancePaise} /></> : undefined}>
+        <AmountInput id="fl-amt" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label={t("common.amountRs")} htmlFor="fl-amt" hint={account ? <>{t("upad.fundCash")} <Money paise={account.balancePaise} /></> : undefined}>
-          <Input id="fl-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </Field>
         <Field label={t("upad.ratePerMonth")} htmlFor="fl-rate">
           <Input id="fl-rate" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
         </Field>
+        <Field label={t("upad.dateGiven")} htmlFor="fl-date">
+          <Input id="fl-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
+        </Field>
       </div>
-      <Field label={t("upad.dateGiven")} htmlFor="fl-date">
-        <Input id="fl-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
-      </Field>
       {accounts.length > 1 && (
         <Field label={t("upad.paidFrom")} htmlFor="fl-acc">
           <NativeSelect id="fl-acc" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
@@ -111,17 +111,15 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
           </NativeSelect>
         </Field>
       )}
-      <Field label={t("common.noteOptional")} htmlFor="fl-note">
-        <Input id="fl-note" maxLength={300} placeholder={t("upad.notePh")} value={note} onChange={(e) => setNote(e.target.value)} />
-      </Field>
-      {monthly > 0 && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-          {t("upad.willBeDue", { amount: money.fmt(monthly), month: nextMonthName })}
-        </p>
-      )}
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} {t("upad.give")}
-      </Button>
+      <MoreOptions bare icon={<NotebookPen />} title={t("common.noteOptional")}>
+        <Field label={t("common.noteOptional")} htmlFor="fl-note" className="sm:col-span-2">
+          <Input id="fl-note" maxLength={300} placeholder={t("upad.notePh")} value={note} onChange={(e) => setNote(e.target.value)} />
+        </Field>
+      </MoreOptions>
+      {monthly > 0 && <FormNote>{t("upad.willBeDue", { amount: money.fmt(monthly), month: nextMonthName })}</FormNote>}
+      <SubmitButton pending={pending} icon={<HandCoins />}>
+        {t("upad.give")}
+      </SubmitButton>
     </form>
   );
 }
@@ -129,7 +127,7 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
 export function GiveLoanDialog(props: Props & { defaultOpen?: boolean }) {
   const t = useT();
   return (
-    <FormDialog defaultOpen={props.defaultOpen} trigger={<><HandCoins /> {t("upad.give")}</>} title={t("upad.giveTitle")} description={t("upad.giveDesc")}>
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><HandCoins /> {t("upad.give")}</>} title={t("upad.giveTitle")} description={t("upad.giveDesc")} icon={<HandCoins />} tone="orange">
       <Form {...props} />
     </FormDialog>
   );

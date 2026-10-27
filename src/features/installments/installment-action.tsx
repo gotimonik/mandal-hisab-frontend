@@ -4,8 +4,7 @@ import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CalendarClock, CheckCircle2, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -15,6 +14,8 @@ import { formatDate, isoDate } from "@/lib/format";
 import { optionalRupees } from "@/lib/schemas";
 import type { Installment } from "@/lib/types";
 import { useMoney } from "@/components/app/currency";
+import { MemberAvatar } from "@/components/app/bits";
+import { AmountInput, SubmitButton } from "@/components/app/form-bits";
 
 const Schema = z
   .object({
@@ -55,9 +56,17 @@ function ActionForm({ inst }: { inst: Installment }) {
         ),
       )}
     >
-      <p className="text-sm text-muted-foreground">
-        {inst.member?.name} · {inst.schemeName} · {inst.periodLabel} · due {formatDate(inst.dueDate)} · {money.fmt(inst.amountPaise)} (paid {money.fmt(inst.paidPaise)})
-      </p>
+      <div className="flex items-center gap-3 rounded-2xl bg-muted/50 p-3 text-sm">
+        <MemberAvatar name={inst.member?.name ?? "?"} size="sm" />
+        <div className="min-w-0">
+          <p className="truncate font-semibold">
+            {inst.member?.name} · {inst.periodLabel}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {inst.schemeName} · due {formatDate(inst.dueDate)} · {money.fmt(inst.amountPaise)} (paid {money.fmt(inst.paidPaise)})
+          </p>
+        </div>
+      </div>
       <FormError message={error} />
       <Field label="Action" htmlFor="ia-action">
         <NativeSelect id="ia-action" {...form.register("action")}>
@@ -76,22 +85,22 @@ function ActionForm({ inst }: { inst: Installment }) {
       )}
       {action === "set_amount" && (
         <Field label={`New amount (${money.symbol})`} htmlFor="ia-amt" error={e.amount?.message} hint="Cannot be less than what is already paid.">
-          <Input id="ia-amt" inputMode="decimal" {...form.register("amount")} />
+          <AmountInput id="ia-amt" {...form.register("amount")} />
         </Field>
       )}
       <Field label="Reason" htmlFor="ia-reason" error={e.reason?.message}>
         <Input id="ia-reason" {...form.register("reason")} />
       </Field>
-      <Button type="submit" disabled={pending} variant={action === "waive" || action === "cancel" ? "destructive" : "default"}>
-        {pending && <Loader2 className="animate-spin" />} Save
-      </Button>
+      <SubmitButton pending={pending} icon={<CheckCircle2 />} variant={action === "waive" || action === "cancel" ? "destructive" : "default"}>
+        Save
+      </SubmitButton>
     </form>
   );
 }
 
 export function InstallmentActionDialog({ inst }: { inst: Installment }) {
   return (
-    <FormDialog trigger={<SlidersHorizontal />} triggerVariant="ghost" triggerSize="xs" title="Adjust installment" description="Every change is recorded in the installment history and audit log.">
+    <FormDialog trigger={<SlidersHorizontal />} triggerVariant="ghost" triggerSize="xs" title="Adjust installment" icon={<CalendarClock />} tone="indigo" description="Every change is recorded in the installment history and audit log.">
       <ActionForm inst={inst} />
     </FormDialog>
   );

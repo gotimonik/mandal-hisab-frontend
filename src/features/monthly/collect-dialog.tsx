@@ -82,7 +82,7 @@ export function CollectDialog({ installmentId, memberName, period, outstandingPa
           </DialogHeader>
           <form
             noValidate
-            className="grid gap-3"
+            className="grid grid-cols-1 gap-3"
             onSubmit={(e) => {
               e.preventDefault();
               save(false);

@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, HandCoins } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
@@ -12,6 +11,7 @@ import { apiMutate } from "@/app/actions/api";
 import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";
+import { FormNote, SubmitButton } from "@/components/app/form-bits";
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
@@ -29,7 +29,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
   return (
     <form
       noValidate
-      className="grid gap-3"
+      className="grid grid-cols-1 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         if (!RATE.test(rate) || Number(rate) <= 0) return setError(t("upad.vRateShort"));
@@ -44,9 +44,9 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
       }}
     >
       <FormError message={error} />
-      <p className="text-sm">
-        {t("upad.giveX", { amount: money.fmt(amountPaise) })}
-      </p>
+      <div className="bg-hero-warm rounded-2xl p-4 text-white">
+        <p className="text-sm font-semibold">{t("upad.giveX", { amount: money.fmt(amountPaise) })}</p>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t("upad.ratePerMonth")} htmlFor="ar-rate">
           <Input id="ar-rate" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} />
@@ -55,10 +55,10 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
           <Input id="ar-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
       </div>
-      {monthly > 0 && <p className="text-xs text-muted-foreground">{t("upad.perMonthFromNext", { amount: money.fmt(monthly) })}</p>}
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} {t("upad.approveGive")}
-      </Button>
+      {monthly > 0 && <FormNote>{t("upad.perMonthFromNext", { amount: money.fmt(monthly) })}</FormNote>}
+      <SubmitButton pending={pending} icon={<Check />}>
+        {t("upad.approveGive")}
+      </SubmitButton>
     </form>
   );
 }
@@ -66,7 +66,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
 export function ApproveRequestDialog(props: { requestId: string; memberName: string; amountPaise: number; defaultRate: string }) {
   const t = useT();
   return (
-    <FormDialog trigger={t("common.approve")} triggerSize="xs" title={t("upad.approveTitle", { name: props.memberName })}>
+    <FormDialog trigger={t("common.approve")} triggerSize="xs" title={t("upad.approveTitle", { name: props.memberName })} icon={<HandCoins />} tone="orange">
       <Form {...props} />
     </FormDialog>
   );

@@ -24,12 +24,13 @@ export const metadata = { title: "My savings" };
 
 export default async function MyPage({ params, searchParams }: PageProps<"/org/[orgId]/my">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const sp = await searchParams;
   const tab = sp.tab === "upad" ? "fundloans" : "savings";
   const { t } = await getT();
   const methodLabel = (m: string) => (m in METHOD_LABEL ? t(`pay.method.${m}` as Key) : label(METHOD_LABEL, m));
   const [org, me] = await Promise.all([getOrg(orgId), api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`)]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   if (!me.linked) {
     return (
       <>

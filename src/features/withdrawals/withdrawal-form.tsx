@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowUpFromLine, Loader2 } from "lucide-react";
+import { ArrowUpFromLine, Loader2, PiggyBank, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,8 +11,10 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { Money } from "@/components/app/money";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
+import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
+import { IconChip } from "@/components/app/bits";
 import { apiMutate } from "@/app/actions/api";
-import { newIdempotencyKey, todayISO } from "@/lib/format";
+import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
 
@@ -81,7 +83,7 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
   return (
     <form
       noValidate
-      className="grid gap-3"
+      className="grid grid-cols-1 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
         save(false);
@@ -99,57 +101,77 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
         </NativeSelect>
       </Field>
       {member && (
-        <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2 text-sm">
-          <span>Available balance</span>
-          <Money paise={member.balancePaise} className="font-semibold" colored />
+        <div className="flex items-center gap-3 rounded-2xl bg-emerald-500/10 px-3 py-2.5 text-sm">
+          <IconChip tone="emerald" size="sm">
+            <PiggyBank />
+          </IconChip>
+          <span className="min-w-0 flex-1 font-medium">Available balance</span>
+          <Money paise={member.balancePaise} className="text-base font-bold" colored />
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={`Amount (${money.symbol})`} htmlFor="w-amt" error={over ? "More than the available balance" : undefined}>
-          <Input id="w-amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </Field>
+      <Field label={`Amount (${money.symbol})`} htmlFor="w-amt" error={over ? "More than the available balance" : undefined}>
+        <AmountInput id="w-amt" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      </Field>
+      {member && member.balancePaise > 0 && (
+        <ChoicePills
+          label="Amount shortcuts"
+          value={amount}
+          onChange={setAmount}
+          options={[
+            { value: paiseToRupeeInput(member.balancePaise), label: "Full balance" },
+            { value: paiseToRupeeInput(Math.round(member.balancePaise / 200) * 100), label: "Half" },
+          ].filter((o, i, all) => Number(o.value) > 0 && all.findIndex((x) => x.value === o.value) === i)}
+        />
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Date paid" htmlFor="w-date">
           <Input id="w-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
+        {accounts.length > 1 && (
+          <Field label="Paid from" htmlFor="w-acc" hint={account ? <>Holds <Money paise={account.balancePaise} /></> : undefined}>
+            <NativeSelect id="w-acc" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+              {accounts.map((a) => (
+                <option key={a._id} value={a._id}>
+                  {a.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        )}
       </div>
-      {accounts.length > 1 && (
-        <Field label="Paid from" htmlFor="w-acc" hint={account ? <>Holds <Money paise={account.balancePaise} /></> : undefined}>
-          <NativeSelect id="w-acc" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {accounts.map((a) => (
-              <option key={a._id} value={a._id}>
-                {a.name}
-              </option>
-            ))}
-          </NativeSelect>
+      <MoreOptions bare icon={<StickyNote />} title="Note" description={note ? note : "Optional — e.g. medical, school fees."}>
+        <Field label="Note (optional)" htmlFor="w-note" className="sm:col-span-2">
+          <Input id="w-note" maxLength={300} placeholder="e.g. Medical, school fees" value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
-      )}
-      <Field label="Note (optional)" htmlFor="w-note">
-        <Input id="w-note" maxLength={300} placeholder="e.g. Medical, school fees" value={note} onChange={(e) => setNote(e.target.value)} />
-      </Field>
+      </MoreOptions>
       {over && allowException && (
-        <div className="grid gap-2 rounded-lg border border-warning/50 bg-warning/10 p-3 text-sm">
-          <label className="flex items-center gap-2">
-            <Checkbox checked={exceed} onCheckedChange={(c) => setExceed(!!c)} /> Allow this withdrawal above the member&apos;s balance (admin exception)
-          </label>
-          {exceed && <Input placeholder="Reason (required)" value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} maxLength={300} />}
-        </div>
+        <FormNote tone="warn">
+          <div className="grid grid-cols-1 gap-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={exceed} onCheckedChange={(c) => setExceed(!!c)} /> Allow this withdrawal above the member&apos;s balance (admin exception)
+            </label>
+            {exceed && <Input placeholder="Reason (required)" value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} maxLength={300} />}
+          </div>
+        </FormNote>
       )}
       {dup ? (
-        <div role="alert" className="flex flex-col gap-2 rounded-lg border border-warning/50 bg-warning/10 p-3 text-sm">
-          <p>{dup}</p>
-          <div className="flex gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={() => setDup(null)} disabled={pending}>
-              Go back
-            </Button>
-            <Button type="button" size="sm" onClick={() => save(true)} disabled={pending}>
-              {pending && <Loader2 className="animate-spin" />} Yes, it&apos;s a second withdrawal
-            </Button>
+        <FormNote tone="warn">
+          <div role="alert" className="flex flex-col gap-2 text-sm">
+            <p>{dup}</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setDup(null)} disabled={pending}>
+                Go back
+              </Button>
+              <Button type="button" size="sm" onClick={() => save(true)} disabled={pending}>
+                {pending && <Loader2 className="animate-spin" />} Yes, it&apos;s a second withdrawal
+              </Button>
+            </div>
           </div>
-        </div>
+        </FormNote>
       ) : (
-        <Button type="submit" disabled={pending || (over && !exceed) || (exceed && exceptionReason.trim().length < 3)}>
-          {pending && <Loader2 className="animate-spin" />} Record cash paid to member
-        </Button>
+        <SubmitButton pending={pending} disabled={pending || (over && !exceed) || (exceed && exceptionReason.trim().length < 3)} icon={<ArrowUpFromLine />}>
+          Record cash paid to member
+        </SubmitButton>
       )}
     </form>
   );
@@ -157,7 +179,7 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
 
 export function WithdrawalDialog(props: Props & { triggerLabel?: string; triggerSize?: "default" | "sm"; defaultOpen?: boolean }) {
   return (
-    <FormDialog defaultOpen={props.defaultOpen} trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? "Record withdrawal"}</>} triggerSize={props.triggerSize} title="Record a withdrawal" description="Cash paid out to a member from their savings balance. A voucher number is generated.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? "Record withdrawal"}</>} triggerSize={props.triggerSize} title="Record a withdrawal" icon={<ArrowUpFromLine />} tone="rose" description="Cash paid out to a member from their savings balance. A voucher number is generated.">
       <Form {...props} />
     </FormDialog>
   );

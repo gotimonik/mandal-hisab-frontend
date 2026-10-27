@@ -1,27 +1,43 @@
 import Link from "next/link";
-import { CheckCircle2, HandCoins } from "lucide-react";
+import { CalendarDays, CheckCircle2, HandCoins, Landmark, Mail, MapPin, Phone, PiggyBank } from "lucide-react";
 import { InviteMemberButton } from "@/features/members/invite-member";
 import { api, qs } from "@/lib/server/api";
 import { getAccounts, getOrg, can, getMoney } from "@/lib/server/data";
 import type { FundLoanList, Member, MemberLedger } from "@/lib/types";
-import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
 import { Money } from "@/components/app/money";
 import { FilterBar, FilterField } from "@/components/app/filter-bar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SummaryBand } from "@/components/app/summary-band";
+import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
+import type { Tone } from "@/lib/tones";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
 import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
 import { MemberDialog } from "@/features/members/member-form";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
-import { SavingsLedgerTable, SavingsSummary } from "@/features/savings/savings-ledger";
+import { getT } from "@/i18n/server";
+import { SavingsLedgerTable } from "@/features/savings/savings-ledger";
 import { AdjustBalanceDialog, OpeningBalanceDialog } from "@/features/savings/balance-dialogs";
 import { WithdrawalDialog } from "@/features/withdrawals/withdrawal-form";
+
+/** A small card: coloured icon chip + title, then its content. */
+function InfoCard({ tone, icon, title, children }: { tone: Tone; icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06]">
+      <div className="mb-2 flex items-center gap-2.5">
+        <IconChip tone={tone} size="sm">
+          {icon}
+        </IconChip>
+        <h2 className="font-semibold">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function MemberPage({ params, searchParams }: PageProps<"/org/[orgId]/members/[memberId]">) {
   const { orgId, memberId } = await params;
-  const money = await getMoney(orgId);
   const sp = await searchParams;
   const from = typeof sp.from === "string" ? sp.from : "";
   const to = typeof sp.to === "string" ? sp.to : "";
@@ -34,6 +50,9 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
     api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status: "all", memberId })}`),
     orgP.then((o) => (can(o, "memberships.manage") ? api<{ _id: string; email: string; memberId: string | null; createdAt: string }[]>(`/orgs/${orgId}/invitations`) : [])),
   ]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
+  const { t: tr } = await getT();
   const pendingInvite = invitations.find((i) => i.memberId === memberId);
   const canInvite = can(org, "memberships.manage") && org.status !== "archived";
   const memberLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
@@ -43,21 +62,26 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
   const accounts = can(org, "withdrawals.record") && live ? (await getAccounts(orgId)).filter((a) => a.isActive) : [];
   return (
     <>
-      <PageHeader
-        title={m.name}
-        description={
-          <>
-            Member no. {m.membershipNumber} · joined {formatDate(m.joiningDate)}
-            {(m.haptaShares ?? 1) > 1 && org.settings.monthlyHapta && (
-              <>
-                {" "}
-                · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({money.fmt(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
-              </>
-            )}{" "}
-            · <StatusBadge status={m.status} />
-          </>
-        }
-        actions={
+      {/* Same layout as PageHeader, with the member's avatar beside the name */}
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <MemberAvatar name={m.name} className="size-12 text-base" />
+          <div className="min-w-0">
+            <div className="mb-0.5 text-xs font-semibold tracking-wide text-primary uppercase">Member no. {m.membershipNumber}</div>
+            <h1 className="truncate text-2xl font-bold tracking-tight sm:text-[1.7rem]">{m.name}</h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground">
+              Joined {formatDate(m.joiningDate)}
+              {(m.haptaShares ?? 1) > 1 && org.settings.monthlyHapta && (
+                <>
+                  {" "}
+                  · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({money.fmt(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
+                </>
+              )}{" "}
+              · <StatusBadge status={m.status} />
+            </p>
+          </div>
+        </div>
+        <div className="no-print flex flex-wrap items-center gap-2">
           <>
             {can(org, "members.manage") && <MemberDialog orgId={orgId} member={m} />}
             {can(org, "payments.record") && (
@@ -75,19 +99,33 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
               />
             )}
           </>
-        }
-      />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>Contact</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1 text-sm">
-            <span>{m.phone ?? "No phone"}</span>
-            <span>{m.email ?? "No email"}</span>
-            {m.address && <span className="text-muted-foreground">{m.address}</span>}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <InfoCard tone="sky" icon={<Phone />} title="Contact">
+          <div className="flex flex-col gap-1.5 text-sm">
+            <span className="flex items-center gap-2">
+              <Phone className="size-3.5 shrink-0 text-muted-foreground" />
+              {m.phone ? (
+                <a href={`tel:${m.phone}`} className="hover:underline">
+                  {m.phone}
+                </a>
+              ) : (
+                <span className="text-muted-foreground">No phone</span>
+              )}
+            </span>
+            <span className="flex min-w-0 items-center gap-2">
+              <Mail className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className={m.email ? "truncate" : "text-muted-foreground"}>{m.email ?? "No email"}</span>
+            </span>
+            {m.address && (
+              <span className="flex items-start gap-2 text-muted-foreground">
+                <MapPin className="mt-0.5 size-3.5 shrink-0" />
+                {m.address}
+              </span>
+            )}
             {m.notes && <p className="mt-2 text-muted-foreground">{m.notes}</p>}
-            <div className="mt-3 rounded-xl bg-secondary/50 p-3">
+            <div className="mt-2 rounded-xl bg-secondary/50 p-3">
               {m.userId ? (
                 <span className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                   <CheckCircle2 className="size-4" /> Signs in to the app
@@ -107,74 +145,88 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>Hapta schemes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {detail.enrollments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Not enrolled in any scheme.</p>
-            ) : (
-              <ul className="divide-y text-sm">
-                {detail.enrollments.map((e) => (
-                  <li key={e._id} className="flex items-center justify-between gap-2 py-2">
-                    <Link href={`/org/${orgId}/schemes/${e.scheme._id}`} className="min-w-0 hover:underline">
-                      <span className="block truncate font-medium">{e.scheme.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {label(FREQUENCY_LABEL, e.scheme.frequency)} · <Money paise={e.amountPaise ?? e.scheme.amountPaise} />
-                      </span>
-                    </Link>
-                    <StatusBadge status={e.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>Loans</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {detail.loans.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No loans.</p>
-            ) : (
-              <ul className="divide-y text-sm">
-                {detail.loans.map((l) => (
-                  <li key={l._id} className="flex items-center justify-between gap-2 py-2">
-                    <Link href={`/org/${orgId}/loans/${l._id}`} className="hover:underline">
-                      <span className="block font-medium">{l.loanNumber}</span>
-                      <span className="text-xs text-muted-foreground">
-                        Outstanding <Money paise={l.outstandingPrincipalPaise} />
-                      </span>
-                    </Link>
-                    <StatusBadge status={l.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      <div className="mt-8 mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold">Savings</h2>
-        {canAdjust && (
-          <div className="flex gap-2">
-            {ledger.totals.openingCreditsPaise === 0 && <OpeningBalanceDialog memberId={m._id} />}
-            <AdjustBalanceDialog memberId={m._id} />
           </div>
-        )}
+        </InfoCard>
+        <InfoCard tone="indigo" icon={<CalendarDays />} title="Hapta schemes">
+          {detail.enrollments.length === 0 ? (
+            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">Not enrolled in any scheme.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {detail.enrollments.map((e) => (
+                <li key={e._id} className="flex items-center justify-between gap-2 py-2">
+                  <Link href={`/org/${orgId}/schemes/${e.scheme._id}`} className="min-w-0 hover:underline">
+                    <span className="block truncate font-medium">{e.scheme.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {label(FREQUENCY_LABEL, e.scheme.frequency)} · <Money paise={e.amountPaise ?? e.scheme.amountPaise} />
+                    </span>
+                  </Link>
+                  <StatusBadge status={e.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </InfoCard>
+        <InfoCard tone="violet" icon={<Landmark />} title="Loans">
+          {detail.loans.length === 0 ? (
+            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">No loans.</p>
+          ) : (
+            <ul className="divide-y text-sm">
+              {detail.loans.map((l) => (
+                <li key={l._id} className="flex items-center justify-between gap-2 py-2">
+                  <Link href={`/org/${orgId}/loans/${l._id}`} className="hover:underline">
+                    <span className="block font-medium">{l.loanNumber}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Outstanding <Money paise={l.outstandingPrincipalPaise} />
+                    </span>
+                  </Link>
+                  <StatusBadge status={l.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </InfoCard>
       </div>
-      <SavingsSummary l={ledger} currency={money.code} />
+      <SectionTitle
+        className="mt-8"
+        action={
+          canAdjust ? (
+            <div className="flex gap-2">
+              {ledger.totals.openingCreditsPaise === 0 && <OpeningBalanceDialog memberId={m._id} />}
+              <AdjustBalanceDialog memberId={m._id} />
+            </div>
+          ) : undefined
+        }
+      >
+        Savings
+      </SectionTitle>
+      <SummaryBand
+        tone="green"
+        icon={<PiggyBank />}
+        label={tr("savings.balance")}
+        value={<Money paise={ledger.currentBalancePaise} />}
+        sub={
+          [ledger.totals.openingCreditsPaise ? tr("savings.inclOpeningX", { amount: money.fmt(ledger.totals.openingCreditsPaise) }) : "", ledger.totals.adjustmentsPaise ? tr("savings.adjustmentsX", { amount: money.fmt(ledger.totals.adjustmentsPaise) }) : ""]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
+        stats={[
+          { label: tr("savings.haptaPaid"), value: <Money paise={ledger.totals.haptaPaise} /> },
+          { label: tr("savings.interestEarned"), value: <Money paise={ledger.totals.interestPaise} /> },
+          { label: tr("savings.withdrawn"), value: <Money paise={ledger.totals.withdrawalsPaise} /> },
+        ]}
+      />
       {memberLoans.length > 0 && (
-        <div className="mt-3 rounded-xl text-sm ring-1 ring-foreground/10">
-          <p className="border-b px-3 py-2 font-medium">Upad</p>
-          <ul className="divide-y">
+        <div className="mb-4 rounded-2xl bg-card p-2 text-sm shadow-card ring-1 ring-foreground/[0.06]">
+          <div className="flex items-center gap-2.5 px-2 pt-1.5 pb-2">
+            <IconChip tone="orange" size="sm">
+              <HandCoins />
+            </IconChip>
+            <h3 className="font-semibold">Upad</h3>
+          </div>
+          <ul className="flex flex-col">
             {memberLoans.map((l) => (
               <li key={l._id}>
-                <Link href={`/org/${orgId}/fund-loans/${l._id}`} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50">
+                <Link href={`/org/${orgId}/fund-loans/${l._id}`} className="flex items-center justify-between gap-2 rounded-xl px-2 py-2.5 hover:bg-muted/60">
                   <span>
                     <span className="font-mono text-xs">{l.number}</span> · <Money paise={l.principalPaise} /> @ {l.monthlyRate}%
                     <span className="block text-xs text-muted-foreground">
@@ -199,7 +251,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
       <div className="mb-8">
         <SavingsLedgerTable l={ledger} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/members/${memberId}/ledger`, from, to })}`} />
       </div>
-      <h2 className="mb-3 text-lg font-semibold">Dues statement</h2>
+      <SectionTitle>Dues statement</SectionTitle>
       <StatementView s={statement} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/members/${memberId}/statement`, from, to })}`} />
     </>
   );

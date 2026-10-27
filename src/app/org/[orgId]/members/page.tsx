@@ -33,7 +33,6 @@ export default async function MembersPage({
   searchParams,
 }: PageProps<"/org/[orgId]/members">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
   const status = typeof sp.status === "string" ? sp.status : "";
@@ -44,6 +43,8 @@ export default async function MembersPage({
       `/orgs/${orgId}/members${qs({ q, status, page, pageSize: 25 })}`,
     ),
   ]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   const manage = can(org, "members.manage");
   const { t } = await getT();
   return (

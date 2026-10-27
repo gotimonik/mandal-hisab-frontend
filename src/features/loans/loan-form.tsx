@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calculator, ChevronDown, FileText, Landmark, Loader2, Percent, SlidersHorizontal } from "lucide-react";
+import { Calculator, FileText, Landmark, Loader2, Percent, SlidersHorizontal } from "lucide-react";
 import { IconChip } from "@/components/app/bits";
-import type { Tone } from "@/lib/tones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +20,7 @@ import { formatDate, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { METHOD_INFO } from "./constants";
 import { useMoney } from "@/components/app/currency";
+import { FormSection as Section, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 
 
 const Schema = z.object({
@@ -48,21 +48,6 @@ interface Preview {
   emiPaise: number | null;
   rows: { sequence: number; dueDate: string; openingPrincipalPaise: number; principalDuePaise: number; interestDuePaise: number; totalDuePaise: number }[];
   totals: { principalPaise: number; interestPaise: number; totalPaise: number };
-}
-
-/** A titled block of the form: coloured icon, heading, then its fields. */
-function Section({ icon, tone, title, children }: { icon: React.ReactNode; tone: Tone; title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5">
-      <h2 className="flex items-center gap-2.5 text-base font-bold">
-        <IconChip tone={tone} size="sm">
-          {icon}
-        </IconChip>
-        {title}
-      </h2>
-      {children}
-    </section>
-  );
 }
 
 function nextMonth(iso: string) {
@@ -99,7 +84,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
   );
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <form
         noValidate
         className="flex flex-col gap-4"
@@ -110,7 +95,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
       >
         <FormError message={error} />
         <Section icon={<FileText />} tone="indigo" title="Application">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Member" htmlFor="l-member" error={e.memberId?.message} className="sm:col-span-2">
               <NativeSelect id="l-member" {...form.register("memberId")}>
                 <option value="">Select member</option>
@@ -130,7 +115,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
           </div>
         </Section>
         <Section icon={<Percent />} tone="violet" title="Interest & repayment">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Interest method" htmlFor="l-method" hint={METHOD_INFO[method]} className="sm:col-span-2">
               <NativeSelect id="l-method" {...form.register("interestMethod")}>
                 <option value="reducing_balance">Reducing balance (EMI)</option>
@@ -161,18 +146,7 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
             </Field>
           </div>
         </Section>
-        <details className="group rounded-3xl bg-card shadow-card ring-1 ring-foreground/[0.06] [&_summary::-webkit-details-marker]:hidden" open={method === "compound" || method === "simple" ? true : undefined}>
-          <summary className="flex cursor-pointer list-none items-center gap-2.5 p-4 sm:px-5">
-            <IconChip tone="slate" size="sm">
-              <SlidersHorizontal />
-            </IconChip>
-            <span className="min-w-0 flex-1">
-              <span className="block text-base font-bold">More options</span>
-              <span className="block text-xs text-muted-foreground">Grace days, prepayment, compounding and notes — the defaults suit most loans.</span>
-            </span>
-            <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2 sm:px-5 sm:pb-5">
+        <MoreOptions icon={<SlidersHorizontal />} title="More options" description="Grace days, prepayment, compounding and notes — the defaults suit most loans." defaultOpen={method === "compound" || method === "simple"}>
             {method === "compound" && (
               <Field label="Compounding" htmlFor="l-comp">
                 <NativeSelect id="l-comp" {...form.register("compoundingPerYear")}>
@@ -204,11 +178,10 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
             <Field label="Notes" htmlFor="l-notes" className="sm:col-span-2">
               <Textarea id="l-notes" rows={2} {...form.register("notes")} />
             </Field>
-          </div>
-        </details>
-        <Button type="submit" disabled={pending} size="lg" className="h-12 w-full rounded-2xl text-base sm:w-auto sm:self-start">
-          {pending && <Loader2 className="animate-spin" />} Submit application
-        </Button>
+        </MoreOptions>
+        <SubmitButton page pending={pending}>
+          Submit application
+        </SubmitButton>
       </form>
 
       <section className="flex h-fit flex-col gap-3 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5 lg:sticky lg:top-4">

@@ -5,12 +5,12 @@ import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeftRight, Loader2, Plus, Scale } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeftRight, ArrowRight, Landmark, Minus, Plus, Scale } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
+import { AmountInput, ChoicePills, FormNote, SubmitButton } from "@/components/app/form-bits";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees, rupeesOrZero } from "@/lib/schemas";
@@ -20,11 +20,7 @@ type Acc = { _id: string; name: string };
 
 const NewSchema = z.object({
   name: z.string().trim().min(2, "Name the account").max(80),
-  type: z.enum(["cash", "bank", "upi", "other"]),
-  bankName: z.string().max(100).optional(),
-  accountNumberLast4: z.string().regex(/^(\d{4})?$/, "Last 4 digits only").optional(),
-  ifsc: z.string().trim().toUpperCase().regex(/^([A-Z]{4}0[A-Z0-9]{6})?$/, "Invalid IFSC").optional(),
-  upiId: z.string().max(100).optional(),
+  type: z.literal("cash"),
   openingBalance: rupeesOrZero,
   openingDate: z.string().min(10),
 });
@@ -33,60 +29,36 @@ function NewAccountForm() {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
-  const form = useForm<z.input<typeof NewSchema>, unknown, z.output<typeof NewSchema>>({ resolver: zodResolver(NewSchema), defaultValues: { name: "", type: "bank", bankName: "", accountNumberLast4: "", ifsc: "", upiId: "", openingBalance: "0", openingDate: todayISO() } });
+  const form = useForm<z.input<typeof NewSchema>, unknown, z.output<typeof NewSchema>>({ resolver: zodResolver(NewSchema), defaultValues: { name: "", type: "cash", openingBalance: "0", openingDate: todayISO() } });
   const { submit, pending, error } = useApiSubmit(form);
-  const type = useWatch({ control: form.control, name: "type" });
   const e = form.formState.errors;
   return (
-    <form noValidate className="grid gap-3 sm:grid-cols-2" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/accounts`, body: v }, { success: "Account created", onSuccess: close }))}>
-      <div className="sm:col-span-2">
-        <FormError message={error} />
-      </div>
+    <form noValidate className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/accounts`, body: v }, { success: "Account created", onSuccess: close }))}>
+      <FormError message={error} />
+      <input type="hidden" {...form.register("type")} />
+      <FormNote tone="good">Cash only for now — add one account for each place the Mandal keeps cash, e.g. the cash box or the treasurer.</FormNote>
       <Field label="Account name" htmlFor="a-name" error={e.name?.message}>
-        <Input id="a-name" placeholder="e.g. SBI Savings" {...form.register("name")} />
+        <Input id="a-name" placeholder="e.g. Cash box" {...form.register("name")} />
       </Field>
-      <Field label="Type" htmlFor="a-type">
-        <NativeSelect id="a-type" {...form.register("type")}>
-          <option value="bank">Bank account</option>
-          <option value="upi">UPI collection</option>
-          <option value="cash">Cash</option>
-          <option value="other">Other</option>
-        </NativeSelect>
-      </Field>
-      {type === "bank" && (
-        <>
-          <Field label="Bank name" htmlFor="a-bank">
-            <Input id="a-bank" {...form.register("bankName")} />
-          </Field>
-          <Field label="A/c no. (last 4 digits)" htmlFor="a-last4" error={e.accountNumberLast4?.message} hint="Full account numbers are not stored.">
-            <Input id="a-last4" inputMode="numeric" maxLength={4} {...form.register("accountNumberLast4")} />
-          </Field>
-          <Field label="IFSC" htmlFor="a-ifsc" error={e.ifsc?.message}>
-            <Input id="a-ifsc" {...form.register("ifsc")} />
-          </Field>
-        </>
-      )}
-      {type === "upi" && (
-        <Field label="UPI ID" htmlFor="a-upi">
-          <Input id="a-upi" {...form.register("upiId")} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label={`Opening balance (${money.symbol})`} htmlFor="a-open" error={e.openingBalance?.message}>
+          <Input id="a-open" inputMode="decimal" {...form.register("openingBalance")} />
         </Field>
-      )}
-      <Field label={`Opening balance (${money.symbol})`} htmlFor="a-open" error={e.openingBalance?.message} hint="Posted once as an opening entry; balances are always calculated from the ledger.">
-        <Input id="a-open" inputMode="decimal" {...form.register("openingBalance")} />
-      </Field>
-      <Field label="As of" htmlFor="a-opendate">
-        <Input id="a-opendate" type="date" {...form.register("openingDate")} />
-      </Field>
-      <Button type="submit" disabled={pending} className="sm:col-span-2">
-        {pending && <Loader2 className="animate-spin" />} Create account
-      </Button>
+        <Field label="As of" htmlFor="a-opendate">
+          <Input id="a-opendate" type="date" {...form.register("openingDate")} />
+        </Field>
+      </div>
+      <FormNote>Posted once as an opening entry; balances are always calculated from the ledger.</FormNote>
+      <SubmitButton pending={pending} icon={<Plus />}>
+        Create account
+      </SubmitButton>
     </form>
   );
 }
 
 export function NewAccountDialog() {
   return (
-    <FormDialog trigger={<><Plus /> Add account</>} title="Add a financial account" wide>
+    <FormDialog trigger={<><Plus /> Add account</>} title="Add a financial account" icon={<Landmark />} tone="emerald" wide>
       <NewAccountForm />
     </FormDialog>
   );
@@ -103,48 +75,51 @@ function TransferForm({ accounts }: { accounts: Acc[] }) {
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
   return (
-    <form noValidate className="grid gap-3 sm:grid-cols-2" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/transfers`, body: { ...v, idempotencyKey: key } }, { success: "Transfer recorded", onSuccess: close }))}>
-      <p className="text-sm text-muted-foreground sm:col-span-2">e.g. depositing cash into the bank. Transfers are never counted as income or expense.</p>
-      <div className="sm:col-span-2">
-        <FormError message={error} />
+    <form noValidate className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/transfers`, body: { ...v, idempotencyKey: key } }, { success: "Transfer recorded", onSuccess: close }))}>
+      <FormNote>e.g. depositing cash into the bank. Transfers are never counted as income or expense.</FormNote>
+      <FormError message={error} />
+      <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
+        <Field label="From" htmlFor="t-from">
+          <NativeSelect id="t-from" {...form.register("fromAccountId")}>
+            {accounts.map((a) => (
+              <option key={a._id} value={a._id}>
+                {a.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <ArrowRight aria-hidden className="mx-auto hidden size-4 text-muted-foreground sm:mb-2.5 sm:block" />
+        <Field label="To" htmlFor="t-to" error={e.toAccountId?.message}>
+          <NativeSelect id="t-to" {...form.register("toAccountId")}>
+            {accounts.map((a) => (
+              <option key={a._id} value={a._id}>
+                {a.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
       </div>
-      <Field label="From" htmlFor="t-from">
-        <NativeSelect id="t-from" {...form.register("fromAccountId")}>
-          {accounts.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field label="To" htmlFor="t-to" error={e.toAccountId?.message}>
-        <NativeSelect id="t-to" {...form.register("toAccountId")}>
-          {accounts.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
       <Field label={`Amount (${money.symbol})`} htmlFor="t-amt" error={e.amount?.message}>
-        <Input id="t-amt" inputMode="decimal" {...form.register("amount")} />
+        <AmountInput id="t-amt" placeholder="0" {...form.register("amount")} />
       </Field>
-      <Field label="Date" htmlFor="t-date">
-        <Input id="t-date" type="date" {...form.register("date")} />
-      </Field>
-      <Field label="Notes" htmlFor="t-notes" className="sm:col-span-2">
-        <Input id="t-notes" {...form.register("notes")} />
-      </Field>
-      <Button type="submit" disabled={pending} className="sm:col-span-2">
-        {pending && <Loader2 className="animate-spin" />} Transfer
-      </Button>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Date" htmlFor="t-date">
+          <Input id="t-date" type="date" {...form.register("date")} />
+        </Field>
+        <Field label="Notes" htmlFor="t-notes">
+          <Input id="t-notes" {...form.register("notes")} />
+        </Field>
+      </div>
+      <SubmitButton pending={pending} icon={<ArrowLeftRight />}>
+        Transfer
+      </SubmitButton>
     </form>
   );
 }
 
 export function TransferDialog({ accounts }: { accounts: Acc[] }) {
   return (
-    <FormDialog trigger={<><ArrowLeftRight /> Transfer</>} triggerVariant="outline" title="Transfer between accounts" wide>
+    <FormDialog trigger={<><ArrowLeftRight /> Transfer</>} triggerVariant="outline" title="Transfer between accounts" icon={<ArrowLeftRight />} tone="sky" wide>
       <TransferForm accounts={accounts} />
     </FormDialog>
   );
@@ -160,46 +135,56 @@ function AdjustForm({ accounts }: { accounts: Acc[] }) {
   const form = useForm<z.infer<typeof AdjSchema>>({ resolver: zodResolver(AdjSchema), defaultValues: { accountId: accounts[0]?._id ?? "", direction: "decrease", amount: "", date: todayISO(), reason: "" } });
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
+  const direction = useWatch({ control: form.control, name: "direction" });
   return (
-    <form noValidate className="grid gap-3 sm:grid-cols-2" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/adjustments`, body: { ...v, idempotencyKey: key } }, { success: "Adjustment posted", onSuccess: close }))}>
-      <p className="text-sm text-muted-foreground sm:col-span-2">Use only to correct a balance (e.g. unrecorded bank charges). The adjustment is audited and can be reversed.</p>
-      <div className="sm:col-span-2">
-        <FormError message={error} />
+    <form noValidate className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/adjustments`, body: { ...v, idempotencyKey: key } }, { success: "Adjustment posted", onSuccess: close }))}>
+      <FormNote tone="warn">Use only to correct a balance (e.g. unrecorded bank charges). The adjustment is audited and can be reversed.</FormNote>
+      <FormError message={error} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Account" htmlFor="j-acc">
+          <NativeSelect id="j-acc" {...form.register("accountId")}>
+            {accounts.map((a) => (
+              <option key={a._id} value={a._id}>
+                {a.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Direction</span>
+          <input type="hidden" {...form.register("direction")} />
+          <ChoicePills
+            label="Direction"
+            value={direction}
+            onChange={(v) => form.setValue("direction", v, { shouldDirty: true })}
+            options={[
+              { value: "decrease" as const, label: "Decrease balance", icon: <Minus /> },
+              { value: "increase" as const, label: "Increase balance", icon: <Plus /> },
+            ]}
+          />
+        </div>
       </div>
-      <Field label="Account" htmlFor="j-acc">
-        <NativeSelect id="j-acc" {...form.register("accountId")}>
-          {accounts.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field label="Direction" htmlFor="j-dir">
-        <NativeSelect id="j-dir" {...form.register("direction")}>
-          <option value="decrease">Decrease balance</option>
-          <option value="increase">Increase balance</option>
-        </NativeSelect>
-      </Field>
       <Field label={`Amount (${money.symbol})`} htmlFor="j-amt" error={e.amount?.message}>
-        <Input id="j-amt" inputMode="decimal" {...form.register("amount")} />
+        <AmountInput id="j-amt" placeholder="0" {...form.register("amount")} />
       </Field>
-      <Field label="Date" htmlFor="j-date">
-        <Input id="j-date" type="date" {...form.register("date")} />
-      </Field>
-      <Field label="Reason" htmlFor="j-reason" error={e.reason?.message} className="sm:col-span-2">
-        <Input id="j-reason" {...form.register("reason")} />
-      </Field>
-      <Button type="submit" disabled={pending} className="sm:col-span-2" variant="destructive">
-        {pending && <Loader2 className="animate-spin" />} Post adjustment
-      </Button>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Field label="Date" htmlFor="j-date">
+          <Input id="j-date" type="date" {...form.register("date")} />
+        </Field>
+        <Field label="Reason" htmlFor="j-reason" error={e.reason?.message}>
+          <Input id="j-reason" {...form.register("reason")} />
+        </Field>
+      </div>
+      <SubmitButton pending={pending} variant="destructive" icon={<Scale />}>
+        Post adjustment
+      </SubmitButton>
     </form>
   );
 }
 
 export function AdjustDialog({ accounts }: { accounts: Acc[] }) {
   return (
-    <FormDialog trigger={<><Scale /> Adjustment</>} triggerVariant="ghost" title="Balance adjustment" wide>
+    <FormDialog trigger={<><Scale /> Adjustment</>} triggerVariant="ghost" title="Balance adjustment" icon={<Scale />} tone="violet" wide>
       <AdjustForm accounts={accounts} />
     </FormDialog>
   );

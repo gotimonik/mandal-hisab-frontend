@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { HandCoins, Loader2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, HandCoins, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,9 +14,11 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiRead } from "@/app/actions/api";
-import { METHOD_LABEL, formatDate, label, newIdempotencyKey, todayISO } from "@/lib/format";
+import { formatDate, newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
+import { IconChip } from "@/components/app/bits";
+import { AmountInput, ChoicePills, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
 
 interface Opt {
   _id: string;
@@ -82,9 +84,14 @@ export function RecordPaymentDialog({
         }}
       >
         <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Record a collection</DialogTitle>
-            <DialogDescription>Hapta payments are applied to the member&apos;s oldest dues first (late fee, then amount).</DialogDescription>
+          <DialogHeader className="flex-row items-start gap-3">
+            <IconChip tone="emerald" className="mt-0.5">
+              <HandCoins />
+            </IconChip>
+            <div className="flex min-w-0 flex-col gap-1">
+              <DialogTitle>Record a collection</DialogTitle>
+              <DialogDescription>Hapta payments are applied to the member&apos;s oldest dues first (late fee, then amount).</DialogDescription>
+            </div>
           </DialogHeader>
           {open && <RecordForm members={members} accounts={accounts} schemes={schemes} methods={methods} defaultMemberId={defaultMemberId} onDone={() => setOpen(false)} />}
         </DialogContent>
@@ -105,7 +112,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
     defaultValues: { kind: "hapta", memberId: defaultMemberId ?? "", payerName: "", amount: "", date: todayISO(), method: methods[0], reference: "", accountId: accounts[0]?._id ?? "", schemeId: "", eventName: "", notes: "" },
   });
   const { submit, pending, error } = useApiSubmit(form);
-  const [kind, memberId, amount, schemeId] = useWatch({ control: form.control, name: ["kind", "memberId", "amount", "schemeId"] });
+  const [kind, memberId, amount, schemeId, accountId] = useWatch({ control: form.control, name: ["kind", "memberId", "amount", "schemeId", "accountId"] });
   const shown = useMemo(() => members.filter((m) => !search || `${m.name} ${m.membershipNumber}`.toLowerCase().includes(search.toLowerCase())).slice(0, 200), [members, search]);
   const e = form.formState.errors;
 
@@ -128,7 +135,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
   return (
     <form
       noValidate
-      className="grid gap-3 sm:grid-cols-2"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) =>
         submit<{ duplicate: boolean }>(
           {
@@ -148,16 +155,19 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
       <div className="sm:col-span-2">
         <FormError message={error} />
       </div>
-      <Field label="Type" htmlFor="rp-kind">
-        <NativeSelect id="rp-kind" {...form.register("kind")}>
-          <option value="hapta">Hapta / installment</option>
-          <option value="membership_fee">Membership fee</option>
-          <option value="event">Event collection</option>
-          <option value="other_income">Other income</option>
-        </NativeSelect>
-      </Field>
-      <Field label={`Amount (${money.symbol})`} htmlFor="rp-amount" error={e.amount?.message}>
-        <Input id="rp-amount" inputMode="decimal" autoFocus {...form.register("amount")} />
+      <Field label="Type" className="sm:col-span-2">
+        <input type="hidden" id="rp-kind" {...form.register("kind")} />
+        <ChoicePills
+          label="Type"
+          value={kind}
+          onChange={(v) => form.setValue("kind", v, { shouldValidate: form.formState.isSubmitted })}
+          options={[
+            { value: "hapta", label: "Hapta", icon: <CalendarDays /> },
+            { value: "membership_fee", label: "Membership fee" },
+            { value: "event", label: "Event" },
+            { value: "other_income", label: "Other income" },
+          ]}
+        />
       </Field>
       <Field label={kind === "hapta" ? "Member" : "Member (optional)"} htmlFor="rp-member" error={e.memberId?.message} className="sm:col-span-2">
         <div className="flex flex-col gap-1.5 sm:flex-row">
@@ -177,8 +187,20 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
           <Input id="rp-payer" {...form.register("payerName")} />
         </Field>
       )}
+      <Field label={`Amount (${money.symbol})`} htmlFor="rp-amount" error={e.amount?.message} className="sm:col-span-2">
+        <AmountInput id="rp-amount" autoFocus {...form.register("amount")} />
+      </Field>
+      {kind === "hapta" && previewKey && (
+        <div className="rounded-2xl bg-emerald-500/10 p-3 text-sm sm:col-span-2" aria-live="polite">
+          <p className="mb-1 font-semibold text-emerald-800 dark:text-emerald-200">Will be applied to</p>
+          {previewing && <p className="text-muted-foreground">Calculating…</p>}
+          {shownPreview && "error" in shownPreview && <p className="text-destructive">{shownPreview.error}</p>}
+          {shownPreview && "allocs" in shownPreview && shownPreview.allocs.length === 0 && <p className="text-muted-foreground">No open installments for this member.</p>}
+          {shownPreview && "allocs" in shownPreview && <AllocList allocs={shownPreview.allocs} />}
+        </div>
+      )}
       {kind === "hapta" && schemes.length > 1 && (
-        <Field label="Scheme (optional)" htmlFor="rp-scheme" hint="Limit allocation to one scheme.">
+        <Field label="Scheme (optional)" htmlFor="rp-scheme" hint="Limit allocation to one scheme." className="sm:col-span-2">
           <NativeSelect id="rp-scheme" {...form.register("schemeId")}>
             <option value="">Any scheme</option>
             {schemes.map((s) => (
@@ -190,51 +212,42 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
         </Field>
       )}
       {kind === "event" && (
-        <Field label="Event" htmlFor="rp-event">
+        <Field label="Event" htmlFor="rp-event" className="sm:col-span-2">
           <Input id="rp-event" placeholder="e.g. Ganeshotsav 2026" {...form.register("eventName")} />
         </Field>
       )}
       <Field label="Date" htmlFor="rp-date" error={e.date?.message}>
         <Input id="rp-date" type="date" {...form.register("date")} />
       </Field>
-      <Field label="Method" htmlFor="rp-method">
-        <NativeSelect id="rp-method" {...form.register("method")}>
-          {methods.map((m) => (
-            <option key={m} value={m}>
-              {label(METHOD_LABEL, m)}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field label="Received into" htmlFor="rp-account" error={e.accountId?.message}>
-        <NativeSelect id="rp-account" {...form.register("accountId")}>
-          {accounts.map((a) => (
-            <option key={a._id} value={a._id}>
-              {a.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-      <Field label="Reference (UPI / cheque no.)" htmlFor="rp-ref">
-        <Input id="rp-ref" {...form.register("reference")} />
-      </Field>
-      <Field label="Notes" htmlFor="rp-notes" className="sm:col-span-2">
-        <Textarea id="rp-notes" rows={2} {...form.register("notes")} />
-      </Field>
-      {kind === "hapta" && previewKey && (
-        <div className="rounded-lg bg-muted/50 p-3 text-sm sm:col-span-2" aria-live="polite">
-          <p className="mb-1 font-medium">Will be applied to</p>
-          {previewing && <p className="text-muted-foreground">Calculating…</p>}
-          {shownPreview && "error" in shownPreview && <p className="text-destructive">{shownPreview.error}</p>}
-          {shownPreview && "allocs" in shownPreview && shownPreview.allocs.length === 0 && <p className="text-muted-foreground">No open installments for this member.</p>}
-          {shownPreview && "allocs" in shownPreview && <AllocList allocs={shownPreview.allocs} />}
-        </div>
-      )}
-      <Button type="submit" disabled={pending} className="sm:col-span-2" size="lg">
-        {pending && <Loader2 className="animate-spin" />} Save collection
-      </Button>
+      <input type="hidden" {...form.register("method")} />
+      <PaidInCash />
+      <MoreOptions bare icon={<SlidersHorizontal />} title="Account, reference & notes" description={accountName(accounts, accountId)} defaultOpen={!!e.accountId} className="sm:col-span-2">
+        <Field label="Received into" htmlFor="rp-account" error={e.accountId?.message}>
+          <NativeSelect id="rp-account" {...form.register("accountId")}>
+            {accounts.map((a) => (
+              <option key={a._id} value={a._id}>
+                {a.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field label="Reference (UPI / cheque no.)" htmlFor="rp-ref">
+          <Input id="rp-ref" {...form.register("reference")} />
+        </Field>
+        <Field label="Notes" htmlFor="rp-notes" className="sm:col-span-2">
+          <Textarea id="rp-notes" rows={2} {...form.register("notes")} />
+        </Field>
+      </MoreOptions>
+      <SubmitButton pending={pending} icon={<CheckCircle2 />} className="sm:col-span-2">
+        Save collection
+      </SubmitButton>
     </form>
   );
+}
+
+function accountName(accounts: Opt[], id: string | undefined) {
+  const a = accounts.find((x) => x._id === id);
+  return a ? `Into ${a.name}` : undefined;
 }
 
 function AllocList({ allocs }: { allocs: Alloc[] }) {

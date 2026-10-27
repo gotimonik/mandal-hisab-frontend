@@ -4,13 +4,13 @@ import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Pencil } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CalendarCheck2, CalendarDays, Pencil, Rocket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FormError } from "@/components/app/field";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
+import { AmountInput, FormNote, SubmitButton } from "@/components/app/form-bits";
 import { rupees } from "@/lib/schemas";
 import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
@@ -38,14 +38,14 @@ export function HaptaSetupForm({ inline = false }: { inline?: boolean }) {
   return (
     <form
       noValidate
-      className="grid gap-3 sm:grid-cols-3"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
       onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/monthly-hapta`, body: v }, { success: t("hs.setUpDone"), onSuccess: inline ? undefined : close }))}
     >
-      <div className="sm:col-span-3">
+      <div className="empty:hidden sm:col-span-2">
         <FormError message={error} />
       </div>
-      <Field label={t("hs.perMember")} htmlFor="hs-amt" error={e.amount?.message}>
-        <Input id="hs-amt" inputMode="decimal" placeholder="500" {...form.register("amount")} />
+      <Field label={t("hs.perMember")} htmlFor="hs-amt" error={e.amount?.message} className="sm:col-span-2">
+        <AmountInput id="hs-amt" placeholder="500" {...form.register("amount")} />
       </Field>
       <Field label={t("hs.startMonth")} htmlFor="hs-start" error={e.startMonth?.message}>
         <Input id="hs-start" type="month" {...form.register("startMonth")} />
@@ -53,13 +53,13 @@ export function HaptaSetupForm({ inline = false }: { inline?: boolean }) {
       <Field label={t("hs.dueDay")} htmlFor="hs-due" error={e.dueDay?.message} hint={t("hs.dueDayHint")}>
         <Input id="hs-due" type="number" min={1} max={28} {...form.register("dueDay")} />
       </Field>
-      <label className="flex items-center gap-2 text-sm sm:col-span-3">
+      <label className="flex items-center gap-2 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm sm:col-span-2">
         <Checkbox checked={form.watch("enrollAllActive")} onCheckedChange={(c) => form.setValue("enrollAllActive", !!c)} />
         {t("hs.enrollAll")}
       </label>
-      <Button type="submit" disabled={pending} className="sm:col-span-3 sm:justify-self-start">
-        {pending && <Loader2 className="animate-spin" />} {t("hs.start")}
-      </Button>
+      <SubmitButton pending={pending} icon={<Rocket />} className="sm:col-span-2">
+        {t("hs.start")}
+      </SubmitButton>
     </form>
   );
 }
@@ -76,7 +76,7 @@ function ChangeForm({ currentRupees, nextMonth }: { currentRupees: string; nextM
   return (
     <form
       noValidate
-      className="grid gap-3"
+      className="grid grid-cols-1 gap-3"
       onSubmit={form.handleSubmit((v) =>
         submit<{ effectiveMonth: string; installmentsUpdated: number }>(
           { path: `/orgs/${orgId}/monthly-hapta`, method: "PATCH", body: { ...v, reason: v.reason || undefined } },
@@ -85,21 +85,19 @@ function ChangeForm({ currentRupees, nextMonth }: { currentRupees: string; nextM
       )}
     >
       <FormError message={error} />
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={t("hs.newAmount")} htmlFor="hc-amt" error={e.amount?.message}>
-          <Input id="hc-amt" inputMode="decimal" {...form.register("amount")} />
-        </Field>
-        <Field label={t("hs.appliesFrom")} htmlFor="hc-month" error={e.effectiveMonth?.message}>
-          <Input id="hc-month" type="month" min={todayISO().slice(0, 7)} {...form.register("effectiveMonth")} />
-        </Field>
-      </div>
+      <Field label={t("hs.newAmount")} htmlFor="hc-amt" error={e.amount?.message}>
+        <AmountInput id="hc-amt" {...form.register("amount")} />
+      </Field>
+      <Field label={t("hs.appliesFrom")} htmlFor="hc-month" error={e.effectiveMonth?.message}>
+        <Input id="hc-month" type="month" min={todayISO().slice(0, 7)} {...form.register("effectiveMonth")} />
+      </Field>
       <Field label={t("hs.reason")} htmlFor="hc-reason">
         <Input id="hc-reason" placeholder={t("hs.reasonPh")} {...form.register("reason")} />
       </Field>
-      <p className="text-xs text-muted-foreground">{t("hs.keepNote")}</p>
-      <Button type="submit" disabled={pending}>
-        {pending && <Loader2 className="animate-spin" />} {t("hs.change")}
-      </Button>
+      <FormNote>{t("hs.keepNote")}</FormNote>
+      <SubmitButton pending={pending} icon={<CalendarCheck2 />}>
+        {t("hs.change")}
+      </SubmitButton>
     </form>
   );
 }
@@ -107,7 +105,7 @@ function ChangeForm({ currentRupees, nextMonth }: { currentRupees: string; nextM
 export function ChangeHaptaDialog({ currentRupees, nextMonth }: { currentRupees: string; nextMonth: string }) {
   const t = useT();
   return (
-    <FormDialog trigger={<><Pencil /> {t("hs.change")}</>} triggerVariant="outline" triggerSize="sm" title={t("hs.changeTitle")} description={t("hs.changeDesc")}>
+    <FormDialog trigger={<><Pencil /> {t("hs.change")}</>} triggerVariant="outline" triggerSize="sm" title={t("hs.changeTitle")} description={t("hs.changeDesc")} icon={<Pencil />} tone="indigo">
       <ChangeForm currentRupees={currentRupees} nextMonth={nextMonth} />
     </FormDialog>
   );
@@ -116,7 +114,7 @@ export function ChangeHaptaDialog({ currentRupees, nextMonth }: { currentRupees:
 export function SetupHaptaDialog() {
   const t = useT();
   return (
-    <FormDialog trigger={t("hs.setUp")} title={t("hs.setUpTitle")} wide>
+    <FormDialog trigger={t("hs.setUp")} title={t("hs.setUpTitle")} wide icon={<CalendarDays />} tone="indigo">
       <HaptaSetupForm />
     </FormDialog>
   );

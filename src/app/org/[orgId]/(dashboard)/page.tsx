@@ -47,8 +47,9 @@ const monthLabel = (lang: Lang, iso: string) => new Intl.DateTimeFormat(intlLoca
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default async function DashboardPage({ params }: PageProps<"/org/[orgId]">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const [org, d, me] = await Promise.all([getOrg(orgId), api<any>(`/orgs/${orgId}/dashboard`), getMe()]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   if (d.role === "member") return <MemberDashboard orgId={orgId} data={d} org={org} />;
   const t = d.totals;
   const { t: tr, lang } = await getT();
@@ -102,7 +103,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         </Link>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
         {/* ---- this month's hapta: the hero */}
         <section aria-label="This month's hapta" className="bg-hero relative overflow-hidden rounded-3xl p-5 shadow-lg shadow-primary/20 sm:p-6">
           <div className="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-white/10" />
@@ -213,7 +214,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         </Card>
       )}
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="font-bold">{tr("dash.upcoming")}</CardTitle>

@@ -28,10 +28,11 @@ const TABS = [
 
 export default async function FundLoansPage({ params, searchParams }: PageProps<"/org/[orgId]/fund-loans">) {
   const { orgId } = await params;
-  const money = await getMoney(orgId);
   const sp = await searchParams;
   const status = typeof sp.status === "string" && ["active", "closed", "all"].includes(sp.status) ? sp.status : "active";
   const [org, data] = await Promise.all([getOrg(orgId), api<FundLoanList>(`/orgs/${orgId}/fund-loans${qs({ status })}`)]);
+  // getOrg is already in flight above (and cached), so this resolves without a second wait
+  const money = await getMoney(orgId);
   const live = org.status === "active";
   const canGive = can(org, "withdrawals.record") && live;
   const canCollect = can(org, "payments.record") && live;
