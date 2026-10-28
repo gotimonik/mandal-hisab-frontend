@@ -11,7 +11,7 @@ import { BrandMark } from "./brand";
 import { PUBLIC_NAV } from "./nav-links";
 
 /** Sticky top bar. `actions` is the sign-in / open-app area (rendered on the server). */
-export function PublicHeader({ actions, mobileActions }: { actions: ReactNode; mobileActions: ReactNode }) {
+export function PublicHeader({ actions, mobileActions, language }: { actions: ReactNode; mobileActions: ReactNode; language?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   const active = (href: string) => !href.includes("#") && (href === "/" ? path === "/" : path.startsWith(href));
@@ -26,8 +26,10 @@ export function PublicHeader({ actions, mobileActions }: { actions: ReactNode; m
             </Link>
           ))}
         </nav>
-        <div className="ml-auto hidden items-center gap-2 sm:flex [.native-app_&]:!hidden">{actions}</div>
-        <Button variant="ghost" size="icon" className="ml-auto sm:ml-0 lg:hidden [.native-app_&]:!hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
+        {/* the language picker shows everywhere, also inside the app */}
+        <div className="ml-auto flex items-center">{language}</div>
+        <div className="hidden items-center gap-2 sm:flex [.native-app_&]:!hidden">{actions}</div>
+        <Button variant="ghost" size="icon" className="lg:hidden [.native-app_&]:!hidden" aria-label="Open menu" onClick={() => setOpen(true)}>
           <Menu />
         </Button>
       </div>

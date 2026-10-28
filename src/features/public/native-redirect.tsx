@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { APP_START, NATIVE_APP_UA } from "@/lib/native";
+import { InlineScript } from "@/components/app/inline-script";
 
 /**
  * Backup for website-only pages inside the iOS / Android app (src/proxy.ts normally redirects
@@ -17,5 +18,5 @@ export function NativeRedirect() {
     }
   }, []);
   const js = `try{var C=window.Capacitor;if(navigator.userAgent.indexOf(${JSON.stringify(NATIVE_APP_UA)})>-1||(C&&C.isNativePlatform&&C.isNativePlatform())){document.documentElement.style.visibility="hidden";location.replace(${JSON.stringify(APP_START)})}}catch(e){}`;
-  return <script dangerouslySetInnerHTML={{ __html: js }} suppressHydrationWarning />;
+  return <InlineScript html={js} />;
 }

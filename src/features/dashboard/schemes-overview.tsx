@@ -40,7 +40,7 @@ export async function SchemesOverview({ schemes, orgId, money }: { schemes: Sche
       >
         {t("dash.schemes")}
       </SectionTitle>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {schemes.slice(0, MAX).map((s) => {
           const pct = s.monthDuePaise > 0 ? Math.round((s.monthPaidPaise / s.monthDuePaise) * 100) : 0;
           return (

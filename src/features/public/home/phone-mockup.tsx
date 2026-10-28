@@ -65,7 +65,7 @@ export function PhoneMockup({ className }: { className?: string }) {
                 ["Jayesh Desai", "₹1,000", "emerald"],
               ].map(([n, a, tone]) => (
                 <div key={n} className="flex items-center gap-2 py-1">
-                  <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold", tone === "sky" ? "bg-sky-500/15 text-sky-600" : tone === "violet" ? "bg-violet-500/15 text-violet-600" : "bg-emerald-500/15 text-emerald-600")}>
+                  <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold", tone === "sky" ? "bg-sky-500/15 text-sky-800" : tone === "violet" ? "bg-violet-500/15 text-violet-800" : "bg-emerald-500/15 text-emerald-800")}>
                     {n
                       .split(" ")
                       .map((p) => p[0])

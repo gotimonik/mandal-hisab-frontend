@@ -1,5 +1,9 @@
+import { NO_INDEX } from "@/lib/seo";
 import { LangBoundary } from "@/i18n/boundary";
 import { SimpleHeader } from "@/features/auth/simple-header";
+
+/** The signed-in app is private: keep it out of search results. */
+export const metadata = { robots: NO_INDEX };
 
 export default function SimpleLayout({ children }: LayoutProps<"/">) {
   return (

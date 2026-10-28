@@ -79,7 +79,7 @@ export function LoginForm() {
         <Button type="submit" disabled={pending} size="lg">
           {pending && <Loader2 className="animate-spin" />} {t("auth.signIn")}
         </Button>
-        <Link href="/forgot-password" className="text-center text-sm text-muted-foreground hover:underline">
+        <Link href="/forgot-password" className="mx-auto inline-flex min-h-8 items-center px-2 text-center text-sm text-muted-foreground hover:underline">
           {t("auth.forgot")}
         </Link>
       </form>

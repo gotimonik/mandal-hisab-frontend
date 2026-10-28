@@ -10,7 +10,7 @@ export function AuthCard({ title, description, children, footer }: { title: stri
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {children}
-        {footer && <div className="text-center text-sm text-muted-foreground">{footer}</div>}
+        {footer && <div className="text-center text-sm text-muted-foreground [&_a]:inline-flex [&_a]:min-h-8 [&_a]:items-center [&_a]:px-1">{footer}</div>}
       </CardContent>
     </Card>
   );

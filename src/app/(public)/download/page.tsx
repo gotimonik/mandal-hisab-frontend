@@ -7,11 +7,10 @@ import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/publi
 import { StoreBadges } from "@/features/public/store-badges";
 import { site } from "@/config/site";
 import { NativeRedirect } from "@/features/public/native-redirect";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Download the app",
-  description: "MandalHisab for Android and iPhone is coming soon. Use it today in any phone browser and add it to your home screen.",
-};
+export const metadata = pageMeta({ title: "Download the app", description: "MandalHisab for Android and iPhone is coming soon. Use it today in any phone browser and add it to your home screen.", path: "/download" });
 
 const comingSoon = !site.stores.android || !site.stores.ios;
 
@@ -37,6 +36,7 @@ function Steps({ tone, icon, title, steps }: { tone: "emerald" | "sky"; icon: Re
 export default function DownloadPage() {
   return (
     <>
+      <Breadcrumb name="Download the app" path="/download" />
       <NativeRedirect />
       <PageHero
         eyebrow="Download"

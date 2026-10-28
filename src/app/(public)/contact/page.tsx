@@ -5,11 +5,10 @@ import { Container, PageHero, PlaceholderTag } from "@/features/public/blocks";
 import { IconChip } from "@/components/app/bits";
 import type { Tone } from "@/lib/tones";
 import { ContactForm } from "@/features/public/contact/contact-form";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Contact us",
-  description: "Questions about setting up your Mandal, support, feedback or partnerships — email, call or WhatsApp the MandalHisab team.",
-};
+export const metadata = pageMeta({ title: "Contact us", description: "Questions about setting up your Mandal, support, feedback or partnerships — email, call or WhatsApp the MandalHisab team.", path: "/contact" });
 
 function ContactCard({ icon, tone, title, value, href, note, external }: { icon: React.ReactNode; tone: Tone; title: string; value: string; href?: string; note?: string; external?: boolean }) {
   const inner = (
@@ -39,6 +38,7 @@ export default function ContactPage() {
   const c = site.contact;
   return (
     <>
+      <Breadcrumb name="Contact us" path="/contact" />
       <PageHero tone="green" eyebrow="Contact us" title="We'd love to hear from you" description={`Setting up your Mandal, a question about a feature, or an idea to make MandalHisab better — get in touch. ${c.responseTime}`} />
       <Container className="py-12 sm:py-16">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.4fr]">

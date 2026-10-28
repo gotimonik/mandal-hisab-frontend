@@ -3,12 +3,6 @@
 import Link from "next/link";
 import { HandCoins } from "lucide-react";
 import { useT } from "@/i18n/client";
-import { LanguageSwitcher } from "@/i18n/switcher";
-
-/** Language switch for the sign-in pages — sits in the top-right corner of the page. */
-export function AuthLanguage() {
-  return <LanguageSwitcher compact className="bg-white/15 text-white ring-1 ring-white/20 backdrop-blur [&_button[aria-pressed=false]]:text-white/85" />;
-}
 
 /** Logo and tagline above the sign-in / sign-up card. */
 export function AuthBrand() {

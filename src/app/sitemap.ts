@@ -14,6 +14,15 @@ const ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.S
   { path: "/register", priority: 0.7, changeFrequency: "yearly" },
 ];
 
+// Bump when the public pages change meaningfully (legal pages use their own "last updated" date).
+const CONTENT_UPDATED = new Date("2026-10-28");
+const LEGAL_UPDATED = new Date(site.legal.lastUpdated);
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return ROUTES.map((r) => ({ url: `${site.url}${r.path === "/" ? "" : r.path}`, changeFrequency: r.changeFrequency, priority: r.priority }));
+  return ROUTES.map((r) => ({
+    url: `${site.url}${r.path === "/" ? "" : r.path}`,
+    lastModified: r.path === "/privacy" || r.path === "/terms" ? LEGAL_UPDATED : CONTENT_UPDATED,
+    changeFrequency: r.changeFrequency,
+    priority: r.priority,
+  }));
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { isLang, LANG_COOKIE, makeT, type Lang } from "./core";
+import { isLang, LANG_COOKIE, type Lang } from "./core";
+import { makeT } from "./dicts";
 
 /** The signed-in person's language (cookie), for Server Components and Server Actions. */
 export async function getLang(): Promise<Lang> {

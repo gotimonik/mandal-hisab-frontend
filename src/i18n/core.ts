@@ -4,8 +4,6 @@
  * Money and numbers keep Indian formatting (₹1,00,000) in every language.
  */
 import { en } from "./dict/en";
-import { gu } from "./dict/gu";
-import { hi } from "./dict/hi";
 
 export type Lang = "en" | "gu" | "hi";
 export const LANGS: { code: Lang; label: string; native: string }[] = [
@@ -21,7 +19,6 @@ export type Key = Leaves<typeof en>;
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
 export type Dict = Widen<typeof en>;
 
-const DICTS: Record<Lang, Dict> = { en, gu, hi };
 
 export type Vars = Record<string, string | number>;
 export type T = (key: Key, vars?: Vars) => string;
@@ -32,9 +29,14 @@ function lookup(d: Dict, key: string): string | undefined {
   return typeof cur === "string" ? cur : undefined;
 }
 
-export function makeT(lang: Lang, defaults: Vars = { cur: "₹" }): T {
+/**
+ * Translator over one dictionary, falling back to English. Only English is bundled here;
+ * Gujarati and Hindi are loaded by the server (./dicts) and handed to the browser only
+ * for the language the person picked, so each page doesn't carry all three.
+ */
+export function translator(dict: Dict | undefined, defaults: Vars = { cur: "₹" }): T {
   return (key, vars) => {
-    const raw = lookup(DICTS[lang], key) ?? lookup(DICTS.en, key) ?? key;
+    const raw = (dict ? lookup(dict, key) : undefined) ?? lookup(en, key) ?? key;
     const all = { ...defaults, ...vars };
     return raw.replace(/\{(\w+)\}/g, (_, k) => (all[k] !== undefined ? String(all[k]) : `{${k}}`));
   };

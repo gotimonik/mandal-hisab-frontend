@@ -26,7 +26,7 @@ function Badge({ href, glyph, top, bottom, dark }: { href: string | null; glyph:
     <>
       {glyph}
       <span className="flex flex-col text-left leading-tight">
-        <span className="text-[10px] opacity-80">{href ? top : "Coming soon on"}</span>
+        <span className="text-[11px] opacity-85">{href ? top : "Coming soon on"}</span>
         <span className="text-sm font-semibold sm:text-base">{bottom}</span>
       </span>
     </>
@@ -53,7 +53,7 @@ export function StoreBadges({ dark = true, showWeb = true, className }: { dark?:
         <Link href="/register" className={cn("col-span-2 inline-flex h-12 items-center justify-center gap-2 rounded-xl px-3 ring-1 transition-opacity hover:opacity-90 sm:h-14 sm:justify-start sm:gap-2.5 sm:rounded-2xl sm:px-4", dark ? "bg-white/15 text-white ring-white/25 backdrop-blur" : "bg-primary text-primary-foreground ring-primary")}>
           <Globe className="size-6" />
           <span className="flex flex-col text-left leading-tight">
-            <span className="text-[10px] opacity-80">Works today in</span>
+            <span className="text-[11px] opacity-85">Works today in</span>
             <span className="text-base font-semibold">Your browser</span>
           </span>
         </Link>

@@ -6,11 +6,10 @@ import { site } from "@/config/site";
 import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { IconChip } from "@/components/app/bits";
 import { NativeRedirect } from "@/features/public/native-redirect";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "About us",
-  description: "Why MandalHisab exists, what we believe and who it's for — simple, transparent hisab for Mandals, savings groups and trusts.",
-};
+export const metadata = pageMeta({ title: "About us", description: "Why MandalHisab exists, what we believe and who it's for — simple, transparent hisab for Mandals, savings groups and trusts.", path: "/about" });
 
 const BELIEFS = [
   { icon: <Eye />, tone: "indigo", title: "Every member can see", text: "Members see their own balance, hapta, interest and receipts on their phone — no need to ask the treasurer or wait for the yearly meeting." },
@@ -31,6 +30,7 @@ const AUDIENCE = [
 export default function AboutPage() {
   return (
     <>
+      <Breadcrumb name="About us" path="/about" />
       <NativeRedirect />
       <PageHero eyebrow="About us" title="Hisab everyone can trust — and check." description="MandalHisab helps the people who look after a group's money keep clear, honest records, and lets every member see where things stand." />
 

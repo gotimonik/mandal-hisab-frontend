@@ -190,7 +190,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
         className="mt-8"
         action={
           canAdjust ? (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {ledger.totals.openingCreditsPaise === 0 && <OpeningBalanceDialog memberId={m._id} />}
               <AdjustBalanceDialog memberId={m._id} />
             </div>

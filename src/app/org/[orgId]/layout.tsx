@@ -1,3 +1,4 @@
+import { NO_INDEX } from "@/lib/seo";
 import { Suspense } from "react";
 import { cache } from "react";
 import { getMe, getOrg } from "@/lib/server/data";
@@ -5,6 +6,7 @@ import { api } from "@/lib/server/api";
 import { buildNav, buildQuickActions } from "@/lib/nav";
 import { getT } from "@/i18n/server";
 import { I18nProvider } from "@/i18n/client";
+import { clientDict } from "@/i18n/dicts";
 import { LangBoundary } from "@/i18n/boundary";
 import { BottomNavContent, MobileHeaderContent, ShellFrame, SidebarContent, TopbarContent, type ShellData } from "@/components/app/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +22,9 @@ import { AnalyticsRole } from "@/components/app/analytics-clicks";
  * inside its own <Suspense> boundary, so navigations between pages stay instant and
  * each page streams its data behind its own loading.tsx.
  */
+/** The signed-in app is private: keep it out of search results. */
+export const metadata = { robots: NO_INDEX };
+
 export default function OrgLayout({ children, params }: LayoutProps<"/org/[orgId]">) {
   return (
     <ShellFrame
@@ -97,7 +102,7 @@ const loadShell = cache(async (orgId: string): Promise<ShellData> => {
 async function Sidebar({ params }: P) {
   const data = await loadShell((await params).orgId);
   return (
-    <I18nProvider lang={data.lang}>
+    <I18nProvider lang={data.lang} dict={clientDict(data.lang)}>
       <AnalyticsRole role={data.org.role} />
       <SidebarContent data={data} />
     </I18nProvider>
@@ -106,7 +111,7 @@ async function Sidebar({ params }: P) {
 async function MobileHeader({ params }: P) {
   const data = await loadShell((await params).orgId);
   return (
-    <I18nProvider lang={data.lang}>
+    <I18nProvider lang={data.lang} dict={clientDict(data.lang)}>
       <MobileHeaderContent data={data} />
     </I18nProvider>
   );
@@ -114,7 +119,7 @@ async function MobileHeader({ params }: P) {
 async function Topbar({ params }: P) {
   const data = await loadShell((await params).orgId);
   return (
-    <I18nProvider lang={data.lang}>
+    <I18nProvider lang={data.lang} dict={clientDict(data.lang)}>
       <TopbarContent data={data} />
     </I18nProvider>
   );
@@ -122,7 +127,7 @@ async function Topbar({ params }: P) {
 async function BottomNav({ params }: P) {
   const data = await loadShell((await params).orgId);
   return (
-    <I18nProvider lang={data.lang}>
+    <I18nProvider lang={data.lang} dict={clientDict(data.lang)}>
       <BottomNavContent data={data} />
     </I18nProvider>
   );

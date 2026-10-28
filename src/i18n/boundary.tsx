@@ -1,9 +1,15 @@
 import { Suspense, type ReactNode } from "react";
 import { I18nProvider } from "./client";
 import { getLang } from "./server";
+import { clientDict } from "./dicts";
 
 async function WithLang({ children }: { children: ReactNode }) {
-  return <I18nProvider lang={await getLang()}>{children}</I18nProvider>;
+  const lang = await getLang();
+  return (
+    <I18nProvider lang={lang} dict={clientDict(lang)}>
+      {children}
+    </I18nProvider>
+  );
 }
 
 /** Wrap a subtree so its client components get the person's language. */

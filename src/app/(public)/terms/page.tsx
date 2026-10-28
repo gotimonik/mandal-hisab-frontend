@@ -2,16 +2,16 @@ import Link from "next/link";
 import { site } from "@/config/site";
 import { Container, PageHero, Prose } from "@/features/public/blocks";
 import { L, LegalUpdated } from "@/features/public/legal-draft-note";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Terms of use",
-  description: "The rules for using MandalHisab: who can use it, your responsibilities, what MandalHisab is and isn't, and our limits of liability.",
-};
+export const metadata = pageMeta({ title: "Terms of use", description: "The rules for using MandalHisab: who can use it, your responsibilities, what MandalHisab is and isn't, and our limits of liability.", path: "/terms" });
 
 export default function TermsPage() {
   const g = site.legal;
   return (
     <>
+      <Breadcrumb name="Terms of use" path="/terms" />
       <PageHero eyebrow="Legal" title="Terms of use" description="The agreement between you and us when you use MandalHisab. Please read it — it's written to be understood." />
       <Container className="py-12 sm:py-16">
         <LegalUpdated />

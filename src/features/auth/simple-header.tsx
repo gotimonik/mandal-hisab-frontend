@@ -4,7 +4,7 @@ import Link from "next/link";
 import { HandCoins } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
-import { LanguageSwitcher } from "@/i18n/switcher";
+import { LanguageMenu } from "@/i18n/switcher";
 import { LogoutButton } from "@/components/app/logout-button";
 
 export function SimpleHeader() {
@@ -17,7 +17,7 @@ export function SimpleHeader() {
         MandalHisab
       </Link>
       <div className="flex items-center gap-2">
-        <LanguageSwitcher compact />
+        <LanguageMenu />
         <form action={logoutAction} data-track="logout">
           <LogoutButton showLabelFrom="sm" />
         </form>

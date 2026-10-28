@@ -36,19 +36,15 @@ import { Container, Section, SectionHeading } from "@/features/public/blocks";
 import { StoreBadges } from "@/features/public/store-badges";
 import { PhoneMockup } from "@/features/public/home/phone-mockup";
 import { RoleTabs, type RoleInfo } from "@/features/public/home/role-tabs";
+import { organizationLd, pageMeta, softwareAppLd, websiteLd } from "@/lib/seo";
+import { JsonLd } from "@/features/public/json-ld";
 
-export const metadata: Metadata = {
-  title: { absolute: "MandalHisab — Transparent hisab for your Mandal" },
+export const metadata: Metadata = pageMeta({
+  title: "MandalHisab — Hapta, savings & upad app for Mandals",
   description: site.description,
-  openGraph: {
-    title: "MandalHisab — Transparent hisab for your Mandal",
-    description: site.description,
-    url: site.url,
-    siteName: site.name,
-    type: "website",
-    locale: "en_IN",
-  },
-};
+  path: "/",
+  absoluteTitle: true,
+});
 
 const PROBLEMS: { icon: React.ReactNode; tone: Tone; title: string; problem: string; fix: string }[] = [
   {
@@ -137,6 +133,7 @@ const FAQ_TEASER = [
 export default function HomePage() {
   return (
     <>
+      <JsonLd nodes={[organizationLd(), websiteLd(), softwareAppLd()]} />
 
       {/* 1. Hero */}
       <section className="bg-hero relative overflow-hidden text-white">
@@ -299,7 +296,7 @@ export default function HomePage() {
               </h2>
               <p className="mt-2 max-w-lg text-sm text-white/85 sm:text-base">MandalHisab works fully in any phone browser right now. Apps for Android and iPhone are on the way.</p>
               <StoreBadges className="mt-4 sm:mt-6" />
-              <Link href="/download" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white">
+              <Link href="/download" className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white">
                 More about the apps <ArrowRight className="size-4" />
               </Link>
             </div>
@@ -334,7 +331,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="mt-4 text-center sm:mt-6">
-          <Link href="/faq" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline [.native-app_&]:hidden">
+          <Link href="/faq" className="inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-primary hover:underline [.native-app_&]:hidden">
             Read all questions <ArrowRight className="size-4" />
           </Link>
         </div>

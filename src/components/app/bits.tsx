@@ -57,7 +57,7 @@ export function ActionRow({ href, tone, icon, title, subtitle, trailing }: { hre
 
 export function SectionTitle({ children, action, className }: { children: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className={cn("mb-2 flex items-center justify-between gap-2 px-0.5", className)}>
+    <div className={cn("mb-2 flex flex-wrap items-center justify-between gap-2 px-0.5", className)}>
       <h2 className="text-base font-bold tracking-tight">{children}</h2>
       {action}
     </div>

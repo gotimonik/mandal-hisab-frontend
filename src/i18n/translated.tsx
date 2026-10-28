@@ -1,8 +1,7 @@
 "use client";
 
-import { useLang } from "./client";
-import { gu } from "./dict/gu";
-import { hi } from "./dict/hi";
+import { useMemo } from "react";
+import { useDict, useLang } from "./client";
 import { en } from "./dict/en";
 
 /** English validation / form messages that aren't dictionary entries. */
@@ -54,12 +53,18 @@ function buildMap(target: Record<string, unknown>, extra: Record<string, string>
   return Object.assign(out, extra);
 }
 
-const MAPS: Record<string, Record<string, string>> = {
-  gu: buildMap(gu as unknown as Record<string, unknown>, EXTRA_GU),
-  hi: buildMap(hi as unknown as Record<string, unknown>, EXTRA_HI),
-};
+const EXTRA: Record<string, Record<string, string>> = { gu: EXTRA_GU, hi: EXTRA_HI };
+// one English → language map per dictionary, built the first time it's needed
+const cache = new WeakMap<object, Record<string, string>>();
 
 export function Translated({ text }: { text: string }) {
   const lang = useLang();
-  return <>{MAPS[lang]?.[text] ?? text}</>;
+  const dict = useDict();
+  const map = useMemo(() => {
+    if (!dict) return null;
+    let m = cache.get(dict);
+    if (!m) cache.set(dict, (m = buildMap(dict as unknown as Record<string, unknown>, EXTRA[lang] ?? {})));
+    return m;
+  }, [dict, lang]);
+  return <>{map?.[text] ?? text}</>;
 }

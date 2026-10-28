@@ -24,11 +24,10 @@ import type { Tone } from "@/lib/tones";
 import { Container, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { site } from "@/config/site";
 import { NativeRedirect } from "@/features/public/native-redirect";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Features",
-  description: "Everything MandalHisab does: hapta, savings, upad and interest, loans, collections, expenses, withdrawals, cash book, reports, roles, member self-service and more.",
-};
+export const metadata = pageMeta({ title: "Features", description: "Everything MandalHisab does: hapta, savings, upad and interest, loans, collections, expenses, withdrawals, cash book, reports, roles, member self-service and more.", path: "/features" });
 
 type Group = { id: string; tone: Tone; icon: React.ReactNode; title: string; intro: string; points: string[] };
 
@@ -220,6 +219,7 @@ const SECURITY = [
 export default function FeaturesPage() {
   return (
     <>
+      <Breadcrumb name="Features" path="/features" />
       <NativeRedirect />
       <PageHero eyebrow="Features" title="Everything your Mandal's hisab needs, in one place" description="From the first hapta to closing and settling the Mandal — members, savings, upad, interest, loans, expenses, withdrawals, cash book and reports, accurate to the paisa.">
         <div className="flex flex-wrap gap-2">

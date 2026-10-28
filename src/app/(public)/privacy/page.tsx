@@ -2,17 +2,17 @@ import Link from "next/link";
 import { site } from "@/config/site";
 import { Container, PageHero, Prose } from "@/features/public/blocks";
 import { L, LegalUpdated } from "@/features/public/legal-draft-note";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Privacy policy",
-  description: "What information MandalHisab collects, why, who can see it, where it is stored and the choices you have.",
-};
+export const metadata = pageMeta({ title: "Privacy policy", description: "What information MandalHisab collects, why, who can see it, where it is stored and the choices you have.", path: "/privacy" });
 
 export default function PrivacyPage() {
   const g = site.legal;
   const c = site.contact;
   return (
     <>
+      <Breadcrumb name="Privacy policy" path="/privacy" />
       <PageHero eyebrow="Legal" title="Privacy policy" description="What we collect, why we collect it, who can see it, and the choices you have — in plain English." />
       <Container className="py-12 sm:py-16">
         <LegalUpdated />

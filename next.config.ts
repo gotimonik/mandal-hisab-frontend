@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Expense bills/invoices (max 5 MB) are uploaded through a Server Action.
     serverActions: { bodySizeLimit: "6mb" },
+    // Put the (small, ~25 KB) stylesheet inside the HTML so phones paint without waiting for it.
+    inlineCss: true,
   },
   turbopack: {
     rules: {
@@ -15,6 +17,10 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  // One address for search engines: www.mandalhisab.com → mandalhisab.com (same path and query).
+  async redirects() {
+    return [{ source: "/:path*", has: [{ type: "host", value: "www.mandalhisab.com" }], destination: "https://mandalhisab.com/:path*", permanent: true }];
   },
   async headers() {
     return [

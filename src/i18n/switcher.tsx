@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Languages, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { setLanguage } from "@/app/actions/lang";
-import { LANGS } from "./core";
+import { LANGS, type Lang } from "./core";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useLang, useT } from "./client";
 import { track } from "@/lib/analytics";
 
@@ -37,5 +39,50 @@ export function LanguageSwitcher({ className, compact = false }: { className?: s
         </button>
       ))}
     </div>
+  );
+}
+
+/** Language icon in a header; tap it to pick English, ગુજરાતી or हिन्दी. */
+export function LanguageMenu({ className }: { className?: string }) {
+  const lang = useLang();
+  const t = useT();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const current = LANGS.find((l) => l.code === lang);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon" className={cn("rounded-full", className)} />}
+        aria-label={`${t("lang.title")}: ${current?.native ?? ""}`}
+        title={t("lang.title")}
+        disabled={pending}
+      >
+        {pending ? <Loader2 className="animate-spin" /> : <Languages />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("lang.title")}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={lang}
+            onValueChange={(v) => {
+              const code = v as Lang;
+              if (code === lang) return;
+              start(async () => {
+                await setLanguage(code);
+                track("language_change", { language: code });
+                router.refresh();
+              });
+            }}
+          >
+            {LANGS.map((l) => (
+              <DropdownMenuRadioItem key={l.code} value={l.code} closeOnClick className="py-2">
+                <span className="font-medium">{l.native}</span>
+                {l.native !== l.label && <span className="text-xs text-muted-foreground">{l.label}</span>}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

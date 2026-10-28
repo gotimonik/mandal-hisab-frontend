@@ -67,7 +67,7 @@ export function VerifyEmail() {
       <Link href="/check-email" className={cn(buttonVariants({ size: "lg" }), "w-full")}>
         {t("auth.sendNewLink")}
       </Link>
-      <Link href="/login" className="text-center text-sm text-muted-foreground hover:underline">
+      <Link href="/login" className="mx-auto inline-flex min-h-8 items-center px-2 text-center text-sm text-muted-foreground hover:underline">
         {t("auth.signIn")}
       </Link>
     </AuthCard>

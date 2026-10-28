@@ -4,12 +4,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
 import { Container, PageHero } from "@/features/public/blocks";
 import { FAQ_GROUPS } from "@/features/public/features/faq-data";
+import { InlineScript } from "@/components/app/inline-script";
 import { NativeRedirect } from "@/features/public/native-redirect";
+import { pageMeta } from "@/lib/seo";
+import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = {
-  title: "Frequently asked questions",
-  description: "Answers about starting a Mandal, members, hapta, upad and interest, accuracy, privacy, pricing, the phone app and languages.",
-};
+export const metadata = pageMeta({ title: "Frequently asked questions", description: "Answers about starting a Mandal, members, hapta, upad and interest, accuracy, privacy, pricing, the phone app and languages.", path: "/faq" });
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -20,8 +20,9 @@ const jsonLd = {
 export default function FaqPage() {
   return (
     <>
+      <Breadcrumb name="FAQ" path="/faq" />
       <NativeRedirect />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <InlineScript type="application/ld+json" html={JSON.stringify(jsonLd).replace(/</g, "\\u003c")} />
       <PageHero eyebrow="FAQ" title="Questions, answered" description="Everything people usually ask before moving their Mandal's hisab to MandalHisab." />
 
       <Container className="grid grid-cols-1 gap-8 py-10 sm:py-14 lg:grid-cols-[14rem_1fr]">

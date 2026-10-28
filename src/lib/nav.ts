@@ -22,7 +22,7 @@ export type NavIcon =
   | "fundloans";
 
 import type { Tone } from "./tones";
-import { makeT, type T } from "@/i18n/core";
+import { translator, type T } from "@/i18n/core";
 
 export interface NavItem {
   href: string;
@@ -35,7 +35,7 @@ export interface NavItem {
 }
 
 /** Navigation filtered by the caller's permissions (the API still enforces every rule). */
-export function buildNav(orgId: string, perms: string[], role: string, t: T = makeT("en")): NavItem[] {
+export function buildNav(orgId: string, perms: string[], role: string, t: T = translator(undefined)): NavItem[] {
   const can = (p: string) => perms.includes(p);
   const base = `/org/${orgId}`;
   const staff = role !== "member";
@@ -81,7 +81,7 @@ export interface QuickAction {
  * The "+" button in the phone bottom bar and the dashboard shortcut tiles. Each one deep-links
  * to the screen that does it, opening its form straight away where there is one (?new=1).
  */
-export function buildQuickActions(orgId: string, perms: string[], role: string, opts: { live: boolean; memberRequests?: boolean } = { live: true }, t: T = makeT("en")): QuickAction[] {
+export function buildQuickActions(orgId: string, perms: string[], role: string, opts: { live: boolean; memberRequests?: boolean } = { live: true }, t: T = translator(undefined)): QuickAction[] {
   const can = (p: string) => perms.includes(p);
   const base = `/org/${orgId}`;
   const live = opts.live;
