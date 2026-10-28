@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import Capacitor
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -20,5 +21,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         SceneDelegateProxy.shared.scene(scene, continue: userActivity)
+    }
+
+    // Opening the app clears the red number on its icon (the bell inside the app still shows
+    // what's unread). iOS never clears it by itself; the next push sets it again.
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        if #available(iOS 16.0, *) {
+            UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+        } else {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
     }
 }

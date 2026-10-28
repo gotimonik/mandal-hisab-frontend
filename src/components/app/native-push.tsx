@@ -21,7 +21,8 @@ async function register(token: string) {
  * - asks once, in context, whether to turn alerts on (a card, then the system prompt),
  * - registers this phone with the server, and again when Firebase rotates the token,
  * - tapping a notification opens the screen it points to and marks it read,
- * - a notification arriving while the app is open refreshes the bell count.
+ * - a notification arriving while the app is open refreshes the bell count,
+ * - opening the app clears its notifications from the tray (and the icon's badge / dot).
  */
 export function NativePush() {
   const router = useRouter();
@@ -32,6 +33,11 @@ export function NativePush() {
     if (!isNativeApp()) return;
     const fm = messaging();
     const handles: Promise<{ remove: () => Promise<void> }>[] = [];
+    // Opening the app clears its notifications from the phone's tray, and with them Android's
+    // dot on the app icon (iOS clears the red number natively, in SceneDelegate.swift).
+    const clearTray = () => void fm.removeAllDeliveredNotifications().catch(() => {});
+    clearTray();
+    const appState = import("@capacitor/app").then(({ App }) => App.addListener("appStateChange", ({ isActive }) => isActive && clearTray()));
     handles.push(fm.addListener("tokenReceived", ({ token }) => void register(token)));
     handles.push(fm.addListener("notificationReceived", () => router.refresh()));
     handles.push(
@@ -54,7 +60,7 @@ export function NativePush() {
         if (Date.now() - dismissed > 30 * 86_400_000) setAsk(true);
       }
     })().catch(() => {});
-    return () => handles.forEach((h) => void h.then((x) => x.remove()));
+    return () => [...handles, appState].forEach((h) => void h.then((x) => x.remove()));
   }, [router]);
 
   if (!ask) return null;
