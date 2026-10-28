@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api } from "@/lib/server/api";
-import { getOrg, getActiveMembers, can, getMoney } from "@/lib/server/data";
+import { getOrg, getActiveMembers, getAccounts, can, getMoney } from "@/lib/server/data";
 import type { Scheme } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
@@ -15,7 +15,9 @@ import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
 import { EnrollDialog, OverrideDialog, RevisionDialog } from "@/features/schemes/scheme-dialogs";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, MemberAvatar } from "@/components/app/bits";
-import { AlarmClock, CalendarRange, Coins, Repeat } from "lucide-react";
+import { AlarmClock, CalendarRange, Coins, HandCoins, Repeat } from "lucide-react";
+import { MemberProgress } from "@/features/schemes/member-progress";
+import { RecordPaymentDialog } from "@/features/collections/record-payment";
 import type { Tone } from "@/lib/tones";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -29,7 +31,30 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
   const enrolledIds = new Set(data.enrollments.map((e) => e.member._id));
   const candidates = manage ? (await getActiveMembers(orgId)).filter((m) => !enrolledIds.has(m._id)).map((m) => ({ _id: m._id, name: m.name, membershipNumber: m.membershipNumber })) : [];
   const path = `/orgs/${orgId}/schemes/${schemeId}/status`;
-  const totals = data.enrollments.reduce((t, e) => ({ due: t.due + (e.duePaise ?? 0), paid: t.paid + (e.paidPaise ?? 0) }), { due: 0, paid: 0 });
+  // due/paid: installments due up to today; ahead: paid towards future months
+  const totals = data.enrollments.reduce((t, e) => ({ due: t.due + (e.duePaise ?? 0), paid: t.paid + (e.paidPaise ?? 0), ahead: t.ahead + (e.paidAheadPaise ?? 0) }), { due: 0, paid: 0, ahead: 0 });
+  // "Collect" on each member: record a payment for this scheme, amount pre-filled.
+  const canCollect = can(org, "payments.record") && org.status === "active" && s.status === "active";
+  const accounts = canCollect ? (await getAccounts(orgId)).filter((a) => a.isActive).map((a) => ({ _id: a._id, name: a.name })) : [];
+  const enrolledMembers = data.enrollments.map((e) => ({ _id: e.member._id, name: e.member.name, membershipNumber: e.member.membershipNumber ?? "" }));
+  const collectBtn = (e: any) => {
+    if (!canCollect || e.status !== "active") return null;
+    const owed = Math.max(0, e.duePaise - e.paidPaise);
+    // what they owe now; if they're up to date, the next month's installment
+    const amount = owed > 0 ? owed : (e.nextDue?.outstandingPaise ?? 0);
+    return (
+      <RecordPaymentDialog
+        members={enrolledMembers}
+        accounts={accounts}
+        schemes={[{ _id: s._id, name: s.name }]}
+        methods={org.settings.paymentMethods}
+        defaultMemberId={e.member._id}
+        defaultSchemeId={s._id}
+        defaultAmountPaise={amount || undefined}
+        trigger={{ label: <><HandCoins /> Collect</>, size: "xs", variant: owed > 0 ? "default" : "outline", ariaLabel: `Collect from ${e.member.name}` }}
+      />
+    );
+  };
   const removeBtn = (e: any) =>
     e.status === "active" && manage ? (
       <ActionButton path={`/orgs/${orgId}/schemes/${schemeId}/exit`} body={{ memberId: e.member._id }} variant="ghost" size="xs" successMessage="Member removed from scheme" confirm={{ title: `Remove ${e.member.name}?`, description: "Their future unpaid installments are cancelled; history stays.", reason: "required", destructive: true, confirmLabel: "Remove" }}>
@@ -79,12 +104,12 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
       <SummaryBand
         icon={<Coins />}
         label="Collected so far"
-        value={<Money paise={totals.paid} />}
-        sub={`${data.enrollments.length} member${data.enrollments.length === 1 ? "" : "s"} enrolled`}
+        value={<Money paise={totals.paid + totals.ahead} />}
+        sub={`${data.enrollments.length} member${data.enrollments.length === 1 ? "" : "s"} enrolled${totals.ahead > 0 ? " · includes advance payments" : ""}`}
         stats={[
           { label: "Due so far", value: <Money paise={totals.due} short /> },
           { label: "Still to collect", value: <Money paise={Math.max(0, totals.due - totals.paid)} short /> },
-          { label: "Collected", value: `${totals.due ? Math.round((totals.paid / totals.due) * 100) : 100}%` },
+          { label: "Paid ahead", value: <Money paise={totals.ahead} short /> },
         ]}
       />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -109,7 +134,8 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
               {data.enrollments.map((e) => {
                 const bal = e.duePaise - e.paidPaise;
                 return (
-                  <li key={e._id} className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
+                  <li key={e._id} className="rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
+                    <div className="flex items-start gap-3">
                     <MemberAvatar name={e.member.name} />
                     <div className="min-w-0 flex-1">
                       <Link href={`/org/${orgId}/members/${e.member._id}`} className="block truncate font-semibold hover:underline">
@@ -117,12 +143,24 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                       </Link>
                       <p className="text-xs text-muted-foreground">
                         <Money paise={e.amountPaise ?? s.amountPaise} /> · paid <Money paise={e.paidPaise} /> of <Money paise={e.duePaise} />
+                        {e.paidAheadPaise > 0 && (
+                          <>
+                            {" "}
+                            · <span className="font-semibold text-emerald-700 dark:text-emerald-300">+<Money paise={e.paidAheadPaise} /> ahead</span>
+                          </>
+                        )}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       {bal > 0 ? <Money paise={bal} className="text-sm font-bold text-destructive" /> : <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">Paid up</span>}
-                      {removeBtn(e)}
+                      <div className="flex items-center gap-1">
+                        {collectBtn(e)}
+                        {removeBtn(e)}
+                      </div>
                     </div>
+                    </div>
+                    {/* full card width, so the month chips have room */}
+                    <MemberProgress e={e} />
                   </li>
                 );
               })}
@@ -135,7 +173,8 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                     <TableHead>Member</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Due so far</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Paid so far</TableHead>
+                    <TableHead className="text-right">Paid ahead</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
                     <TableHead />
                   </TableRow>
@@ -144,7 +183,7 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                   {data.enrollments.map((e) => (
                     <TableRow key={e._id}>
                       <TableCell>
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-start gap-2.5">
                           <MemberAvatar name={e.member.name} size="sm" />
                           <div className="min-w-0">
                             <Link href={`/org/${orgId}/members/${e.member._id}`} className="font-semibold hover:underline">
@@ -153,6 +192,7 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                             <div className="text-xs text-muted-foreground">
                               {e.member.membershipNumber} · from {formatDate(e.startDate)}
                             </div>
+                            <MemberProgress e={e} />
                           </div>
                         </div>
                       </TableCell>
@@ -166,9 +206,17 @@ export default async function SchemePage({ params }: PageProps<"/org/[orgId]/sch
                         <Money paise={e.paidPaise} />
                       </TableCell>
                       <TableCell className="text-right">
+                        {e.paidAheadPaise > 0 ? <Money paise={e.paidAheadPaise} className="font-semibold text-emerald-700 dark:text-emerald-300" /> : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-right">
                         <Money paise={e.duePaise - e.paidPaise} className={e.duePaise - e.paidPaise > 0 ? "text-destructive" : ""} />
                       </TableCell>
-                      <TableCell className="text-right">{removeBtn(e)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {collectBtn(e)}
+                          {removeBtn(e)}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

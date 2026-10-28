@@ -8,40 +8,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, use, useState, type ReactNode } from "react";
-import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Bell,
-  BarChart3,
-  BookOpenCheck,
-  BookText,
-  CalendarDays,
-  Building2,
-  CalendarClock,
-  Check,
-  ChevronsUpDown,
-  ClipboardList,
-  FileBarChart,
-  HandCoins,
-  Heart,
-  Landmark,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Percent,
-  PiggyBank,
-  Banknote,
-  Plus,
-  Receipt,
-  Send,
-  UserPlus,
-  X,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Bell, BarChart3, BookOpenCheck, BookText, CalendarDays, Building2, CalendarClock, Check, ChevronsUpDown, ClipboardList, FileBarChart, HandCoins, Heart, Landmark, LayoutDashboard, Menu, Percent, PiggyBank, Banknote, Plus, Receipt, Send, UserPlus, X, Settings, ShieldCheck, UserRound, Users, Wallet } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -53,6 +20,8 @@ import { LanguageSwitcher } from "@/i18n/switcher";
 import type { Lang } from "@/i18n/core";
 import { logoutAction } from "@/app/actions/auth";
 import { selectOrg } from "@/app/actions/api";
+import { LogoutButton } from "@/components/app/logout-button";
+import { startNavigationProgress } from "@/components/app/navigation-progress";
 
 const ICONS: Record<NavIcon, typeof Bell> = {
   dashboard: LayoutDashboard,
@@ -207,6 +176,8 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
             <DropdownMenuItem
               key={o.id}
               onClick={async () => {
+                if (o.id === current.id) return;
+                startNavigationProgress();
                 await selectOrg(o.id);
                 router.push(`/org/${o.id}`);
               }}
@@ -222,7 +193,12 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
           <Plus /> {t("shell.createOrJoin")}
         </DropdownMenuItem>
         {isPlatformAdmin && (
-          <DropdownMenuItem onClick={() => router.push("/platform")}>
+          <DropdownMenuItem
+            onClick={() => {
+              startNavigationProgress();
+              router.push("/platform");
+            }}
+          >
             <ShieldCheck /> {t("shell.platformAdmin")}
           </DropdownMenuItem>
         )}
@@ -236,7 +212,6 @@ function OrgAvatar({ name, className }: { name: string; className?: string }) {
 }
 
 function UserMenu({ user }: { user: { name: string; email: string } }) {
-  const t = useT();
   return (
     <div className="flex flex-col gap-2 border-t pt-3">
       <LanguageSwitcher className="self-start" />
@@ -246,9 +221,7 @@ function UserMenu({ user }: { user: { name: string; email: string } }) {
         <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
       </Link>
       <form action={logoutAction} data-track="logout">
-        <Button type="submit" variant="ghost" size="icon-sm" aria-label={t("shell.signOut")}>
-          <LogOut />
-        </Button>
+        <LogoutButton size="icon-sm" iconOnly />
       </form>
     </div>
     </div>

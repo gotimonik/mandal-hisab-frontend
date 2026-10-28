@@ -3,14 +3,14 @@ import { HandCoins } from "lucide-react";
 import { IconChip } from "@/components/app/bits";
 import { api, qs } from "@/lib/server/api";
 import { getOrg, getMoney } from "@/lib/server/data";
-import type { FundLoanList, MyUpadRequests, UpadPaymentClaim, Installment, Loan, MemberLedger, Paged, Payment, Receipt, Withdrawal } from "@/lib/types";
+import type { FundLoanList, MyUpadRequests, UpadPaymentClaim, Loan, MemberLedger, Paged, Payment, Receipt, Withdrawal } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { Money } from "@/components/app/money";
 import { StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
-import { TableWrap } from "@/components/app/table-wrap";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChipLinks } from "@/components/app/chip-links";
+import { Pagination } from "@/components/app/pagination";
+import { MySchemes, type MySchemeRow } from "@/features/my/my-schemes";
 import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
@@ -25,7 +25,12 @@ export const metadata = { title: "My savings" };
 export default async function MyPage({ params, searchParams }: PageProps<"/org/[orgId]/my">) {
   const { orgId } = await params;
   const sp = await searchParams;
-  const tab = sp.tab === "upad" ? "fundloans" : "savings";
+  const TABS = ["schemes", "savings", "withdrawals", "fundloans", "payments", "receipts", "statement", "loans"] as const;
+  type Tab = (typeof TABS)[number];
+  const rawTab = sp.tab === "upad" ? "fundloans" : String(sp.tab ?? "schemes");
+  const tab: Tab = (TABS as readonly string[]).includes(rawTab) ? (rawTab as Tab) : "schemes";
+  const page = Math.max(1, Number(sp.page) || 1);
+  const PAGE_SIZE = 20;
   const { t } = await getT();
   const methodLabel = (m: string) => (m in METHOD_LABEL ? t(`pay.method.${m}` as Key) : label(METHOD_LABEL, m));
   const [org, me] = await Promise.all([getOrg(orgId), api<{ linked: boolean; member: { name: string; membershipNumber: string } | null }>(`/orgs/${orgId}/me`)]);
@@ -39,21 +44,37 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
       </>
     );
   }
-  const [insts, payments, receipts, loans, statement, ledger, withdrawals, fundLoans, upadReqs, upadClaims] = await Promise.all([
-    api<Paged<Installment>>(`/orgs/${orgId}/me/installments${qs({ pageSize: 200 })}`),
-    api<Paged<Payment>>(`/orgs/${orgId}/me/payments${qs({ pageSize: 50 })}`),
-    api<Receipt[]>(`/orgs/${orgId}/me/receipts`),
-    api<Loan[]>(`/orgs/${orgId}/me/loans`),
-    api<Statement>(`/orgs/${orgId}/me/statement`),
-    api<MemberLedger>(`/orgs/${orgId}/me/ledger`),
-    api<Paged<Withdrawal>>(`/orgs/${orgId}/me/withdrawals${qs({ pageSize: 50 })}`),
-    api<FundLoanList>(`/orgs/${orgId}/me/fund-loans`),
-    api<MyUpadRequests>(`/orgs/${orgId}/me/upad-requests`),
-    api<UpadPaymentClaim[]>(`/orgs/${orgId}/me/upad-payments`),
+  // Only what the header needs plus the active tab's own data is fetched, so each tab loads fast.
+  const base = `/orgs/${orgId}/me`;
+  const paged = qs({ page, pageSize: PAGE_SIZE });
+  const [ledger, fundLoans, upadReqs, loans, schemes, withdrawals, payments, receipts, statement, upadClaims] = await Promise.all([
+    api<MemberLedger>(`${base}/ledger`),
+    api<FundLoanList>(`${base}/fund-loans`),
+    api<MyUpadRequests>(`${base}/upad-requests`),
+    api<Loan[]>(`${base}/loans`),
+    tab === "schemes" ? api<MySchemeRow[]>(`${base}/schemes`) : null,
+    tab === "withdrawals" ? api<Paged<Withdrawal>>(`${base}/withdrawals${paged}`) : null,
+    tab === "payments" ? api<Paged<Payment>>(`${base}/payments${paged}`) : null,
+    tab === "receipts" ? api<Paged<Receipt>>(`${base}/receipts${paged}`) : null,
+    tab === "statement" ? api<Statement>(`${base}/statement`) : null,
+    tab === "fundloans" ? api<UpadPaymentClaim[]>(`${base}/upad-payments`) : null,
   ]);
   const openRequest = upadReqs.items.find((r) => r.status === "pending");
   const canRequest = upadReqs.allowRequests && org.status === "active" && !openRequest;
   const myLoans = fundLoans.items.filter((l) => l.status !== "cancelled");
+  const showUpad = myLoans.length > 0 || upadReqs.items.length > 0 || canRequest;
+  const tabHref = (k: string) => `/org/${orgId}/my?tab=${k}`;
+  const tabs = [
+    { key: "schemes", label: t("my.tabSchemes") },
+    { key: "savings", label: t("my.tabSavings") },
+    { key: "withdrawals", label: t("my.tabWithdrawals") },
+    ...(showUpad ? [{ key: "fundloans", label: t("my.tabUpad") }] : []),
+    { key: "payments", label: t("my.tabPayments") },
+    { key: "receipts", label: t("my.tabReceipts") },
+    { key: "statement", label: t("my.tabStatement") },
+    ...(loans.length > 0 ? [{ key: "loans", label: t("my.tabLoans") }] : []),
+  ].map((x) => ({ ...x, href: tabHref(x.key) }));
+  const pager = (total: number) => <Pagination page={page} pageSize={PAGE_SIZE} total={total} baseHref={`/org/${orgId}/my`} params={{ tab }} />;
   return (
     <>
       <PageHeader title={me.member!.name} description={t("my.memberNo", { no: me.member!.membershipNumber })} actions={<PaymentRequestDialog methods={org.settings.paymentMethods} defaultOpen={sp.pay === "1"} />} />
@@ -77,27 +98,18 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
           </span>
         </div>
       )}
-      <Tabs defaultValue={tab}>
-        <TabsList className="w-full max-w-full justify-start overflow-x-auto [scrollbar-width:none] sm:w-fit">
-          <TabsTrigger value="savings">{t("my.tabSavings")}</TabsTrigger>
-          <TabsTrigger value="dues">{t("my.tabDues")}</TabsTrigger>
-          <TabsTrigger value="withdrawals">{t("my.tabWithdrawals")}</TabsTrigger>
-          {(myLoans.length > 0 || upadReqs.items.length > 0 || canRequest) && <TabsTrigger value="fundloans">{t("my.tabUpad")}</TabsTrigger>}
-          <TabsTrigger value="payments">{t("my.tabPayments")}</TabsTrigger>
-          <TabsTrigger value="receipts">{t("my.tabReceipts")}</TabsTrigger>
-          <TabsTrigger value="statement">{t("my.tabStatement")}</TabsTrigger>
-          {loans.length > 0 && <TabsTrigger value="loans">{t("my.tabLoans")}</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="savings">
+      <ChipLinks items={tabs} current={tab} label={t("my.title")} />
+      {tab === "schemes" && <MySchemes rows={schemes!} orgId={orgId} />}
+      {tab === "savings" && (<>
           <SavingsLedgerTable l={ledger} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/me/ledger` })}`} />
-        </TabsContent>
-        {(myLoans.length > 0 || upadReqs.items.length > 0 || canRequest) && (
-          <TabsContent value="fundloans" className="flex flex-col gap-3">
+        </>)}
+      {tab === "fundloans" && showUpad && (<div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ring-1 ring-foreground/10">
               <span>
                 {t("my.available")} <Money paise={upadReqs.availablePaise} className="font-semibold" />
+                {(upadReqs.upadOutPaise ?? 0) > 0 && <span className="block text-xs text-muted-foreground">{t("upad.availableWhy", { fund: money.fmt(upadReqs.availablePaise + upadReqs.upadOutPaise!), out: money.fmt(upadReqs.upadOutPaise!) })}</span>}
               </span>
-              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">{t("my.waitingApproval")}</span> : null}
+              {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} upadOutPaise={upadReqs.upadOutPaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">{t("my.waitingApproval")}</span> : null}
             </div>
             {upadReqs.items.length > 0 && (
               <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
@@ -120,9 +132,9 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 ))}
               </ul>
             )}
-            {upadClaims.length > 0 && (
+            {upadClaims!.length > 0 && (
               <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10" aria-label={t("my.reportedLabel")}>
-                {upadClaims.map((x) => (
+                {upadClaims!.map((x) => (
                   <li key={x._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
                       {t("my.paidOn", { amount: money.fmt(x.interestPaise + x.principalPaise), number: x.loanNumber })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
@@ -155,14 +167,13 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               ))}
             </ul>
             )}
-          </TabsContent>
-        )}
-        <TabsContent value="withdrawals">
-          {withdrawals.items.length === 0 ? (
+          </div>)}
+      {tab === "withdrawals" && (<>
+          {withdrawals!.items.length === 0 ? (
             <EmptyState title={t("my.noWithdrawals")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
-              {withdrawals.items.map((w) => (
+              {withdrawals!.items.map((w) => (
                 <li key={w._id}>
                   <Link href={`/org/${orgId}/withdrawals/${w._id}`} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50">
                     <span>
@@ -178,52 +189,13 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               ))}
             </ul>
           )}
-        </TabsContent>
-        <TabsContent value="dues">
-          <TableWrap>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("my.colScheme")}</TableHead>
-                  <TableHead>{t("my.colDue")}</TableHead>
-                  <TableHead className="text-right">{t("my.colAmount")}</TableHead>
-                  <TableHead className="text-right">{t("my.colPaid")}</TableHead>
-                  <TableHead className="text-right">{t("my.colBalance")}</TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {insts.items.map((i) => (
-                  <TableRow key={i._id}>
-                    <TableCell>
-                      {i.schemeName}
-                      <div className="text-xs text-muted-foreground">{i.periodLabel}</div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(i.dueDate)}</TableCell>
-                    <TableCell className="text-right">
-                      <Money paise={i.amountPaise + i.penaltyPaise} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Money paise={i.paidPaise + i.penaltyPaidPaise} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Money paise={i.outstandingPaise} />
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={i.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableWrap>
-        </TabsContent>
-        <TabsContent value="payments">
-          {payments.items.length === 0 ? (
+        {pager(withdrawals!.total)}</>)}
+      {tab === "payments" && (<>
+          {payments!.items.length === 0 ? (
             <EmptyState title={t("my.noPayments")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
-              {payments.items.map((p) => (
+              {payments!.items.map((p) => (
                 <li key={p._id} className="flex items-center justify-between gap-2 px-3 py-2">
                   <span>
                     {formatDate(p.date)} · {methodLabel(p.method)}
@@ -238,13 +210,13 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               ))}
             </ul>
           )}
-        </TabsContent>
-        <TabsContent value="receipts">
-          {receipts.length === 0 ? (
+        {pager(payments!.total)}</>)}
+      {tab === "receipts" && (<>
+          {receipts!.items.length === 0 ? (
             <EmptyState title={t("my.noReceipts")} />
           ) : (
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
-              {receipts.map((r) => (
+              {receipts!.items.map((r) => (
                 <li key={r._id}>
                   <Link href={`/org/${orgId}/receipts/${r._id}`} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/50">
                     <span>
@@ -259,12 +231,11 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               ))}
             </ul>
           )}
-        </TabsContent>
-        <TabsContent value="statement">
-          <StatementView s={statement} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/me/statement` })}`} />
-        </TabsContent>
-        {loans.length > 0 && (
-          <TabsContent value="loans">
+        {pager(receipts!.total)}</>)}
+      {tab === "statement" && (<>
+          <StatementView s={statement!} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/me/statement` })}`} />
+        </>)}
+      {tab === "loans" && (<>
             <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
               {loans.map((l) => (
                 <li key={l._id}>
@@ -280,9 +251,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 </li>
               ))}
             </ul>
-          </TabsContent>
-        )}
-      </Tabs>
+          </>)}
     </>
   );
 }

@@ -7,13 +7,14 @@ import { FilterBar, FilterField } from "@/components/app/filter-bar";
 import { NativeSelect } from "@/components/app/native-select";
 import { PrintButton } from "@/components/app/print-button";
 import { Input } from "@/components/ui/input";
-import { buttonVariants } from "@/components/ui/button";
+
 import { METHOD_LABEL, formatDate, label } from "@/lib/format";
 import { REPORTS } from "@/features/reports-meta";
 import { renderReport } from "@/features/reports/renderers";
 import { reportLook } from "@/features/reports/look";
 import { IconChip } from "@/components/app/bits";
 import Link from "next/link";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 export default async function ReportPage({ params, searchParams }: PageProps<"/org/[orgId]/reports/[kind]">) {
   const { orgId, kind } = await params;
@@ -43,9 +44,9 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
         description={`${org.name} · ${period}`}
         actions={
           <>
-            <a href={`/api/export${qs({ path: `/orgs/${orgId}/reports/${kind}`, ...f })}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <ExportCsvButton href={`/api/export${qs({ path: `/orgs/${orgId}/reports/${kind}`, ...f })}`}>
               <Download /> CSV
-            </a>
+            </ExportCsvButton>
             <PrintButton />
           </>
         }

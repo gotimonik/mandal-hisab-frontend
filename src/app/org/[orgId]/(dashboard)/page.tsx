@@ -36,6 +36,7 @@ import type { Tone } from "@/lib/tones";
 import { MonthlyChart } from "@/features/dashboard/monthly-chart";
 import { monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
+import { SchemesOverview } from "@/features/dashboard/schemes-overview";
 import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
@@ -170,6 +171,8 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <QuickGrid actions={quick} row />
         </section>
       )}
+
+      <SchemesOverview schemes={d.schemes} orgId={orgId} money={money} />
 
       <section className="mt-5" aria-label="Mandal fund">
         <SectionTitle>{tr("dash.glance")}</SectionTitle>

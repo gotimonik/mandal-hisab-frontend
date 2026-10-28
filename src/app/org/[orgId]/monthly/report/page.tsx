@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requestMonth } from "@/lib/server/today";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 export const metadata = { title: "Monthly summary" };
 
@@ -101,9 +102,7 @@ export default async function MonthlyReportPage({ params, searchParams }: PagePr
             >
               <ChevronRight />
             </Link>
-            <a href={`/api/export${qs({ path: `/orgs/${orgId}/monthly-report`, month: m })}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              Download CSV
-            </a>
+            <ExportCsvButton href={`/api/export${qs({ path: `/orgs/${orgId}/monthly-report`, month: m })}`}>Download CSV</ExportCsvButton>
             <PrintButton label="Print" />
           </>
         }

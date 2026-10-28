@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Phone, Search, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Phone, Users } from "lucide-react";
+import { SearchBox } from "@/components/app/filter-bar";
 import { MemberAvatar } from "@/components/app/bits";
 import { SharesChip } from "@/features/monthly/month-list";
 import { api, qs } from "@/lib/server/api";
@@ -12,7 +12,6 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
-import { Input } from "@/components/ui/input";
 
 import {
   Table,
@@ -61,16 +60,7 @@ export default async function MembersPage({
           ) : null
         }
       />
-      <form method="get" role="search" className="no-print mb-3 flex gap-2">
-        {status && <input type="hidden" name="status" value={status} />}
-        <div className="relative flex-1 sm:max-w-sm">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input name="q" defaultValue={q} placeholder={t("members.searchPh")} aria-label={t("common.search")} className="pl-9" />
-        </div>
-        <Button type="submit" variant="secondary">
-          {t("common.search")}
-        </Button>
-      </form>
+      <SearchBox className="mb-3" defaultValue={q} placeholder={t("members.searchPh")} label={t("common.search")} buttonLabel={t("common.search")} hidden={{ status }} />
       <div className="no-print scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" aria-label={t("common.status")}>
         {[
           ["", t("common.all")],

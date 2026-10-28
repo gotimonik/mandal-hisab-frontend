@@ -14,6 +14,9 @@ import { IconChip } from "@/components/app/bits";
 import { PaymentRequestDialog } from "@/features/my/payment-request";
 import { getT } from "@/i18n/server";
 import { moneyFmt } from "@/lib/currency";
+import { MySchemes } from "@/features/my/my-schemes";
+import { SectionTitle } from "@/components/app/bits";
+import { ArrowRight } from "lucide-react";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function MemberDashboard({ orgId, data, org }: { orgId: string; data: any; org: Org }) {
@@ -85,6 +88,20 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
           hint={data.nextInstallment ? tr("mdash.nextDue", { period: data.nextInstallment.periodLabel, date: formatDate(data.nextInstallment.dueDate) }) : tr("mdash.nothingScheduled")}
         />
       </section>
+      {data.schemes?.length > 0 && (
+        <section className="mt-5" aria-label={tr("mdash.mySchemes")}>
+          <SectionTitle
+            action={
+              <Link href={`/org/${orgId}/my?tab=schemes`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-primary")}>
+                {tr("common.all")} <ArrowRight />
+              </Link>
+            }
+          >
+            {tr("mdash.mySchemes")}
+          </SectionTitle>
+          <MySchemes rows={data.schemes} orgId={orgId} openFirst={false} />
+        </section>
+      )}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>

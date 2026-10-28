@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,7 @@ import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiRead } from "@/app/actions/api";
-import { formatDate, newIdempotencyKey, todayISO } from "@/lib/format";
+import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
 import { IconChip } from "@/components/app/bits";
@@ -61,6 +61,9 @@ export function RecordPaymentDialog({
   methods,
   defaultOpen,
   defaultMemberId,
+  defaultSchemeId,
+  defaultAmountPaise,
+  trigger,
 }: {
   members: (Opt & { membershipNumber: string })[];
   accounts: Opt[];
@@ -68,13 +71,25 @@ export function RecordPaymentDialog({
   methods: string[];
   defaultOpen?: boolean;
   defaultMemberId?: string;
+  /** Apply the payment to this scheme's installments only (e.g. "Collect" on a scheme page). */
+  defaultSchemeId?: string;
+  /** Pre-filled amount, e.g. what the member owes right now. */
+  defaultAmountPaise?: number;
+  /** Custom trigger button (default: "Record collection"). */
+  trigger?: { label: ReactNode; size?: "xs" | "sm" | "default"; variant?: "default" | "outline" | "ghost"; className?: string; ariaLabel?: string };
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
   const router = useRouter();
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <HandCoins /> Record collection
+      <Button onClick={() => setOpen(true)} size={trigger?.size} variant={trigger?.variant} className={trigger?.className} aria-label={trigger?.ariaLabel}>
+        {trigger ? (
+          trigger.label
+        ) : (
+          <>
+            <HandCoins /> Record collection
+          </>
+        )}
       </Button>
       <Dialog
         open={open}
@@ -93,14 +108,14 @@ export function RecordPaymentDialog({
               <DialogDescription>Hapta payments are applied to the member&apos;s oldest dues first (late fee, then amount).</DialogDescription>
             </div>
           </DialogHeader>
-          {open && <RecordForm members={members} accounts={accounts} schemes={schemes} methods={methods} defaultMemberId={defaultMemberId} onDone={() => setOpen(false)} />}
+          {open && <RecordForm members={members} accounts={accounts} schemes={schemes} methods={methods} defaultMemberId={defaultMemberId} defaultSchemeId={defaultSchemeId} defaultAmountPaise={defaultAmountPaise} onDone={() => setOpen(false)} />}
         </DialogContent>
       </Dialog>
     </>
   );
 }
 
-function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDone }: { members: (Opt & { membershipNumber: string })[]; accounts: Opt[]; schemes: Opt[]; methods: string[]; defaultMemberId?: string; onDone: () => void }) {
+function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defaultSchemeId, defaultAmountPaise, onDone }: { members: (Opt & { membershipNumber: string })[]; accounts: Opt[]; schemes: Opt[]; methods: string[]; defaultMemberId?: string; defaultSchemeId?: string; defaultAmountPaise?: number; onDone: () => void }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const [key, setKey] = useState(() => newIdempotencyKey("pay"));
@@ -109,7 +124,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, onDo
   const [previewing, startPreview] = useTransition();
   const form = useForm<V>({
     resolver: zodResolver(Schema),
-    defaultValues: { kind: "hapta", memberId: defaultMemberId ?? "", payerName: "", amount: "", date: todayISO(), method: methods[0], reference: "", accountId: accounts[0]?._id ?? "", schemeId: "", eventName: "", notes: "" },
+    defaultValues: { kind: "hapta", memberId: defaultMemberId ?? "", payerName: "", amount: defaultAmountPaise ? paiseToRupeeInput(defaultAmountPaise) : "", date: todayISO(), method: methods[0], reference: "", accountId: accounts[0]?._id ?? "", schemeId: defaultSchemeId ?? "", eventName: "", notes: "" },
   });
   const { submit, pending, error } = useApiSubmit(form);
   const [kind, memberId, amount, schemeId, accountId] = useWatch({ control: form.control, name: ["kind", "memberId", "amount", "schemeId", "accountId"] });

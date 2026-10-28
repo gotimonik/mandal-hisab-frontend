@@ -464,6 +464,9 @@ export interface UpadRequest {
 export interface MyUpadRequests {
   items: UpadRequest[];
   availablePaise: number;
+  /** upad already given out (part of the fund, but not cash in hand) */
+  upadOutPaise?: number;
+  fundPaise?: number;
   allowRequests: boolean;
   linked: boolean;
 }

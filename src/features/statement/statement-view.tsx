@@ -2,9 +2,10 @@ import { Download } from "lucide-react";
 import { Money } from "@/components/app/money";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { buttonVariants } from "@/components/ui/button";
+
 import { formatDate } from "@/lib/format";
 import { PrintButton } from "@/components/app/print-button";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 export interface Statement {
   from: string;
@@ -26,9 +27,9 @@ export function StatementView({ s, csvHref }: { s: Statement; csvHref: string })
           {formatDate(s.from)} – {formatDate(s.to)} · {s.note}
         </p>
         <div className="flex gap-2">
-          <a href={csvHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <ExportCsvButton href={csvHref}>
             <Download /> CSV
-          </a>
+          </ExportCsvButton>
           <PrintButton />
         </div>
       </div>

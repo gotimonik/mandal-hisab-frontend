@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { TableWrap } from "@/components/app/table-wrap";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, SectionTitle } from "@/components/app/bits";
-import { buttonVariants } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 import { requestToday } from "@/lib/server/today";
 import { CashEntryDialog } from "@/features/cashbook/cash-entry-dialog";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 export const metadata = { title: "Cash book" };
 
@@ -102,9 +103,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
         description="Every amount in and out, from recorded transactions only."
         actions={
           <>
-            <a href={`/api/export${qs({ path: `/orgs/${orgId}/cashbook`, ...f })}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-              Download CSV
-            </a>
+            <ExportCsvButton href={`/api/export${qs({ path: `/orgs/${orgId}/cashbook`, ...f })}`}>Download CSV</ExportCsvButton>
             {can(org, "accounts.manage") && org.status === "active" && (
               <CashEntryDialog
                 defaultOpen={sp.new === "1"}

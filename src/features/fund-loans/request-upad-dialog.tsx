@@ -7,6 +7,7 @@ import { HandCoins, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { Money } from "@/components/app/money";
+import { useMoney } from "@/components/app/currency";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/lib/api-client";
 import { newIdempotencyKey } from "@/lib/format";
@@ -15,7 +16,8 @@ import { useT } from "@/i18n/client";
 import { AmountInput, FormNote, SubmitButton } from "@/components/app/form-bits";
 
 /** Member asks for upad. Can't be more than the cash the Mandal has available. */
-function Form({ availablePaise }: { availablePaise: number }) {
+function Form({ availablePaise, upadOutPaise = 0 }: { availablePaise: number; upadOutPaise?: number }) {
+  const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -51,9 +53,12 @@ function Form({ availablePaise }: { availablePaise: number }) {
       }}
     >
       <FormError message={error} />
-      <div className="bg-hero-warm flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-white">
-        <span className="text-sm font-medium text-white/90">{t("upad.available")}</span>
-        <Money paise={availablePaise} className="text-lg font-extrabold tabular-nums" />
+      <div className="bg-hero-warm rounded-2xl px-4 py-3 text-white">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-medium text-white/90">{t("upad.available")}</span>
+          <Money paise={availablePaise} className="text-lg font-extrabold tabular-nums" />
+        </div>
+        {upadOutPaise > 0 && <p className="mt-1 text-xs text-white/85">{t("upad.availableWhy", { fund: money.fmt(availablePaise + upadOutPaise), out: money.fmt(upadOutPaise) })}</p>}
       </div>
       <Field label={t("upad.amountNeeded")} htmlFor="ur-amt" error={over ? t("upad.moreThanAvailable") : undefined}>
         <AmountInput id="ur-amt" autoFocus aria-invalid={over || undefined} value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -69,11 +74,11 @@ function Form({ availablePaise }: { availablePaise: number }) {
   );
 }
 
-export function RequestUpadDialog({ availablePaise, size = "default", variant = "default", defaultOpen }: { availablePaise: number; size?: "default" | "sm"; variant?: "default" | "outline"; defaultOpen?: boolean }) {
+export function RequestUpadDialog({ availablePaise, upadOutPaise, size = "default", variant = "default", defaultOpen }: { availablePaise: number; upadOutPaise?: number; size?: "default" | "sm"; variant?: "default" | "outline"; defaultOpen?: boolean }) {
   const t = useT();
   return (
     <FormDialog defaultOpen={defaultOpen} trigger={<><HandCoins /> {t("upad.request")}</>} triggerSize={size} triggerVariant={variant} title={t("upad.request")} description={t("upad.requestDesc")} icon={<HandCoins />} tone="orange">
-      <Form availablePaise={availablePaise} />
+      <Form availablePaise={availablePaise} upadOutPaise={upadOutPaise} />
     </FormDialog>
   );
 }

@@ -8,6 +8,7 @@ import { CountPill, IconChip } from "@/components/app/bits";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { OpenNotificationLink } from "@/features/notifications/open-link";
+import { Pagination } from "@/components/app/pagination";
 import type { Tone } from "@/lib/tones";
 
 export const metadata = { title: "Notifications" };
@@ -26,9 +27,10 @@ const LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
 };
 const look = (type: string) => LOOK[type.split(".")[0]] ?? { tone: "slate" as Tone, icon: <Bell /> };
 
-export default async function NotificationsPage({ params }: PageProps<"/org/[orgId]/notifications">) {
+export default async function NotificationsPage({ params, searchParams }: PageProps<"/org/[orgId]/notifications">) {
   const { orgId } = await params;
-  const data = await api<{ items: Notification[]; unread: number }>(`/notifications${qs({ orgId })}`);
+  const page = Math.max(1, Number((await searchParams).page) || 1);
+  const data = await api<{ items: Notification[]; unread: number; total: number; page: number; pageSize: number }>(`/notifications${qs({ orgId, page, pageSize: 30 })}`);
   return (
     <>
       <PageHeader
@@ -87,6 +89,7 @@ export default async function NotificationsPage({ params }: PageProps<"/org/[org
           })}
         </ul>
       )}
+      {data.total > 0 && <Pagination page={page} pageSize={30} total={data.total} baseHref={`/org/${orgId}/notifications`} params={{}} />}
     </>
   );
 }

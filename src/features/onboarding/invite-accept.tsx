@@ -3,13 +3,14 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, HandCoins, Loader2, LogOut, UserRound } from "lucide-react";
+import { CheckCircle2, HandCoins, Loader2, UserRound } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormError } from "@/components/app/field";
 import { apiMutate } from "@/lib/api-client";
 import { logoutAction } from "@/app/actions/auth";
 import { useT } from "@/i18n/client";
+import { LogoutButton } from "@/components/app/logout-button";
 
 export interface InvitePreview {
   organization: { _id: string; name: string; city: string | null } | null;
@@ -59,9 +60,7 @@ export function InviteAccept({ token, preview, error: initialError }: { token: s
           <div className="flex flex-col gap-3 rounded-xl bg-amber-500/10 p-3 text-sm">
             <p>{t("invite.wrongEmail", { email: preview.email, me: preview.signedInAs })}</p>
             <form action={logoutAction} data-track="logout">
-              <Button type="submit" variant="outline" className="w-full">
-                <LogOut /> {t("shell.signOut")}
-              </Button>
+              <LogoutButton variant="outline" size="default" className="w-full" />
             </form>
           </div>
         ) : preview ? (

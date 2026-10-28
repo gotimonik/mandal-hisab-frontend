@@ -7,6 +7,7 @@ import { NativeShell } from "@/components/app/native-shell";
 import { GoogleTag } from "@/components/app/google-tag";
 import { AnalyticsClicks } from "@/components/app/analytics-clicks";
 import "./globals.css";
+import { NavigationProgress } from "@/components/app/navigation-progress";
 
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 // Gujarati letters (Geist has none). Only downloaded when Gujarati text is on the page.
@@ -43,6 +44,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {/* usePathname() inside: Suspense keeps pages prerenderable (cacheComponents) */}
           <Suspense fallback={null}>
             <AnalyticsClicks />
+          </Suspense>
+          <Suspense fallback={null}>
+            <NavigationProgress />
           </Suspense>
         </ThemeProvider>
       </body>

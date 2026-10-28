@@ -2,13 +2,14 @@ import { Money } from "@/components/app/money";
 import { StatCard } from "@/components/app/stat-card";
 import { TableWrap } from "@/components/app/table-wrap";
 import { EmptyState } from "@/components/app/empty-state";
-import { buttonVariants } from "@/components/ui/button";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import type { MemberLedger } from "@/lib/types";
 import { getT } from "@/i18n/server";
 import type { Key } from "@/i18n/core";
 import { moneyFmt } from "@/lib/currency";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 const KIND_LABEL: Record<string, string> = {
   opening: "Opening balance",
@@ -45,9 +46,7 @@ export async function SavingsLedgerTable({ l, csvHref }: { l: MemberLedger; csvH
     <div className="flex flex-col gap-2">
       {csvHref && (
         <div className="flex justify-end">
-          <a href={csvHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
-            {t("common.downloadCsv")}
-          </a>
+          <ExportCsvButton href={csvHref}>{t("common.downloadCsv")}</ExportCsvButton>
         </div>
       )}
       <TableWrap>

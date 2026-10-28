@@ -16,15 +16,31 @@ export async function loginAction(input: { email: string; password: string }): P
   return { ok: true, data: null };
 }
 
-export async function registerAction(input: { name: string; email: string; phone?: string; password: string }): Promise<ActionResult<null>> {
+/**
+ * Create the account. New accounts must verify their email before they can sign in, so the
+ * user is only signed in straight away when the API says the email is already verified
+ * (they registered from an invitation sent to that address).
+ */
+export async function registerAction(input: { name: string; email: string; phone?: string; password: string; inviteToken?: string }): Promise<ActionResult<{ verified: boolean }>> {
   try {
-    await apiCall("/auth/register", { method: "POST", body: input, token: null });
+    const user = await apiCall<{ emailVerified: boolean }>("/auth/register", { method: "POST", body: input, token: null });
+    if (!user.emailVerified) return { ok: true, data: { verified: false } };
     const r = await apiCall<{ token: string; expiresAt: string }>("/auth/login", { method: "POST", body: { email: input.email, password: input.password }, token: null });
     await setSession(r.token, r.expiresAt);
+    return { ok: true, data: { verified: true } };
   } catch (e) {
     return toActionError(e);
   }
-  return { ok: true, data: null };
+}
+
+/** Resend the verification link to someone who can't sign in yet. */
+export async function resendVerificationEmailAction(email: string): Promise<ActionResult<null>> {
+  try {
+    await apiCall("/auth/resend-verification-email", { method: "POST", body: { email }, token: null });
+    return { ok: true, data: null };
+  } catch (e) {
+    return toActionError(e);
+  }
 }
 
 export async function logoutAction() {
@@ -56,10 +72,10 @@ export async function resetPasswordAction(input: { token: string; password: stri
   }
 }
 
-export async function verifyEmailAction(token: string): Promise<ActionResult<null>> {
+export async function verifyEmailAction(token: string): Promise<ActionResult<{ email: string | null }>> {
   try {
-    await apiCall("/auth/verify-email", { method: "POST", body: { token }, token: null });
-    return { ok: true, data: null };
+    const r = await apiCall<{ email?: string | null }>("/auth/verify-email", { method: "POST", body: { token }, token: null });
+    return { ok: true, data: { email: r.email ?? null } };
   } catch (e) {
     return toActionError(e);
   }

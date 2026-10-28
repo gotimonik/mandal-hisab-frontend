@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
@@ -22,14 +22,28 @@ export function LoginForm() {
   const sp = useSearchParams();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(sp.get("expired") ? t("auth.expired") : null);
-  const form = useForm<z.infer<typeof LoginSchema>>({ resolver: zodResolver(LoginSchema), defaultValues: { email: "", password: "" } });
+  const justVerified = sp.get("verified") === "1";
+  const form = useForm<z.infer<typeof LoginSchema>>({ resolver: zodResolver(LoginSchema), defaultValues: { email: sp.get("email") ?? "", password: "" } });
   const next = sp.get("next");
+  // the page can be served from a static shell: make sure ?email= lands in the field
+  const emailParam = sp.get("email");
+  useEffect(() => {
+    if (emailParam && !form.getValues("email")) form.setValue("email", emailParam);
+  }, [emailParam, form]);
 
   const onSubmit = form.handleSubmit((values) =>
     start(async () => {
       setError(null);
       const res = await loginAction(values);
-      if (!res.ok) return setError(res.error);
+      if (!res.ok) {
+        // Account exists but the email isn't verified yet: show the "check your email" screen.
+        if (res.code === "EMAIL_NOT_VERIFIED") {
+          const q = new URLSearchParams({ email: values.email, from: "login" });
+          if (next) q.set("next", next);
+          return router.push(`/check-email?${q}`);
+        }
+        return setError(res.error);
+      }
       track("login", { method: "email" });
       router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/onboarding?auto=1");
       router.refresh();
@@ -50,6 +64,11 @@ export function LoginForm() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+        {justVerified && !error && (
+          <p role="status" className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
+            <CheckCircle2 className="size-4 shrink-0" /> {t("auth.verifiedBanner")}
+          </p>
+        )}
         <FormError message={error} />
         <Field label={t("auth.email")} htmlFor="email" error={form.formState.errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" inputMode="email" aria-invalid={!!form.formState.errors.email} {...form.register("email")} />

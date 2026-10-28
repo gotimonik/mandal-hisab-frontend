@@ -39,12 +39,19 @@ export function RegisterForm() {
   const onSubmit = form.handleSubmit(({ confirm: _c, phone, ...values }) =>
     start(async () => {
       setError(null);
-      const res = await registerAction({ ...values, phone: phone || undefined });
+      // Registering from an invitation link: its token proves the email, so no verification step.
+      const inviteToken = next?.startsWith("/invite") ? (new URLSearchParams(next.split("?")[1] ?? "").get("token") ?? undefined) : undefined;
+      const res = await registerAction({ ...values, phone: phone || undefined, inviteToken });
       if (!res.ok) {
         if (res.fieldErrors) for (const [k, v] of Object.entries(res.fieldErrors)) form.setError(k as "email", { message: v });
         return setError(res.error);
       }
       track("sign_up", { method: "email" });
+      if (!res.data.verified) {
+        const q = new URLSearchParams({ email: values.email });
+        if (next) q.set("next", next);
+        return router.replace(`/check-email?${q}`);
+      }
       router.replace(next ?? "/onboarding?auto=1");
       router.refresh();
     }),

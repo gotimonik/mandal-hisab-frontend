@@ -40,7 +40,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
   const [members, accounts, requests, claims] = await Promise.all([
     canGive ? getActiveMembers(orgId) : Promise.resolve([]),
     canGive ? getAccounts(orgId) : Promise.resolve([]),
-    canGive ? api<{ items: UpadRequest[]; availablePaise: number }>(`/orgs/${orgId}/upad-requests`) : Promise.resolve({ items: [] as UpadRequest[], availablePaise: 0 }),
+    canGive ? api<{ items: UpadRequest[]; availablePaise: number; upadOutPaise?: number }>(`/orgs/${orgId}/upad-requests`) : Promise.resolve({ items: [] as UpadRequest[], availablePaise: 0, upadOutPaise: 0 }),
     can(org, "payments.view") ? api<UpadPaymentClaim[]>(`/orgs/${orgId}/upad-payments`) : Promise.resolve([] as UpadPaymentClaim[]),
   ]);
   const canVerify = can(org, "payments.verify") && live;
@@ -143,6 +143,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
           <h2 className="mb-1 text-base font-bold">{tr("upad.requests", { n: requests.items.length })}</h2>
           <p className="mb-2 text-sm text-muted-foreground">
             {tr("upad.availableNow")} <Money paise={requests.availablePaise} className="font-medium text-foreground" />
+            {(requests.upadOutPaise ?? 0) > 0 && <> · {tr("upad.availableWhy", { fund: money.fmt(requests.availablePaise + requests.upadOutPaise!), out: money.fmt(requests.upadOutPaise!) })}</>}
           </p>
           <Card className="divide-y gap-0 p-0 ring-2 ring-orange-400/40">
             {requests.items.map((r) => (

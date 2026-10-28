@@ -19,6 +19,8 @@ import { SummaryBand } from "@/components/app/summary-band";
 import { ChipLinks } from "@/components/app/chip-links";
 import { MemberAvatar, ProgressBar } from "@/components/app/bits";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { InstallmentGroups, type InstallmentGroup } from "@/features/installments/installment-groups";
 
 export const metadata = { title: "Installments" };
 
@@ -47,14 +49,95 @@ export default async function InstallmentsPage({ params, searchParams }: PagePro
     to: typeof sp.to === "string" ? sp.to : "",
   };
   const page = Number(sp.page ?? 1) || 1;
-  const [org, schemes, data] = await Promise.all([getOrg(orgId), getSchemes(orgId), api<Paged<Installment>>(`/orgs/${orgId}/installments${qs({ ...f, page, pageSize: 50 })}`)]);
+  // "By scheme" / "By member" roll the installments up; drilling into a card opens the plain list.
+  const view: "list" | "scheme" | "member" = sp.view === "scheme" || sp.view === "member" ? sp.view : "list";
+  const grouped = view !== "list";
+  const [org, schemes, data, groups] = await Promise.all([
+    getOrg(orgId),
+    getSchemes(orgId),
+    grouped ? null : api<Paged<Installment>>(`/orgs/${orgId}/installments${qs({ ...f, page, pageSize: 50 })}`),
+    grouped
+      ? api<Paged<InstallmentGroup> & { totals: { outstandingPaise: number; overduePaise: number; paidPaise: number; paidAheadPaise: number } }>(
+          `/orgs/${orgId}/installments/groups${qs({ by: view, schemeId: f.schemeId, memberId: f.memberId, from: f.from, to: f.to, page, pageSize: 30 })}`,
+        )
+      : null,
+  ]);
   const manage = can(org, "installments.manage");
-  const href = (over: Record<string, string>) => `/org/${orgId}/installments${qs({ ...f, ...over })}`;
-  const outstanding = data.items.reduce((s, i) => s + i.outstandingPaise, 0);
-  const overdue = data.items.filter((i) => i.status === "overdue");
+  const href = (over: Record<string, string>) => `/org/${orgId}/installments${qs({ ...f, view: view === "list" ? "" : view, ...over })}`;
+  const VIEWS = [
+    { key: "list", label: "All", href: href({ view: "", page: "" }) },
+    { key: "scheme", label: "By scheme", href: href({ view: "scheme", page: "", status: "" }) },
+    { key: "member", label: "By member", href: href({ view: "member", page: "", status: "" }) },
+  ];
+  const memberName = f.memberId ? (data?.items[0]?.member?.name ?? groups?.items.find((g) => g._id === f.memberId)?.name) : undefined;
   const scheme = schemes.find((x) => x._id === f.schemeId);
   const action = (i: Installment) => (manage && i.status !== "paid" && i.state !== "cancelled" ? <InstallmentActionDialog inst={i} /> : null);
   const reason = (i: Installment) => i.stateReason && <div className="max-w-48 truncate text-xs text-muted-foreground" title={i.stateReason}>{i.stateReason}</div>;
+
+  const header = <PageHeader title="Installments" description="Every hapta due, member by member. Status comes from verified payments — use the adjust button to change a due date, amount, or waive one." />;
+  const viewChips = (
+    <nav aria-label="View" className="mb-3 grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1 text-sm font-semibold sm:inline-grid sm:w-auto">
+      {VIEWS.map((v) => (
+        <Link
+          key={v.key}
+          href={v.href}
+          aria-current={v.key === view ? "page" : undefined}
+          className={cn("rounded-xl px-3 py-2 text-center whitespace-nowrap transition-colors", v.key === view ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+        >
+          {v.label}
+        </Link>
+      ))}
+    </nav>
+  );
+  const scopeChips = (f.schemeId || f.memberId) && (
+    <div className="mb-3 flex flex-wrap gap-2 text-xs">
+      {scheme && (
+        <Link href={href({ schemeId: "", page: "" })} className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2.5 py-1 font-semibold text-violet-700 dark:text-violet-300">
+          {scheme.name} <X className="size-3" />
+        </Link>
+      )}
+      {f.memberId && (
+        <Link href={href({ memberId: "", page: "" })} className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 font-semibold text-sky-700 dark:text-sky-300">
+          {memberName ?? "Member"} <X className="size-3" />
+        </Link>
+      )}
+    </div>
+  );
+
+  if (groups) {
+    return (
+      <>
+        {header}
+        <SummaryBand
+          tone={groups.totals.overduePaise > 0 ? "warm" : "indigo"}
+          icon={<ClipboardList />}
+          label={scheme ? `Due now · ${scheme.name}` : "Due now"}
+          value={<Money paise={groups.totals.outstandingPaise} />}
+          sub={`${groups.total} ${view === "scheme" ? "scheme" : "member"}${groups.total === 1 ? "" : "s"}`}
+          stats={[
+            { label: "Overdue", value: <Money paise={groups.totals.overduePaise} short /> },
+            { label: "Collected", value: <Money paise={groups.totals.paidPaise} short /> },
+            { label: "Paid ahead", value: <Money paise={groups.totals.paidAheadPaise} short /> },
+          ]}
+        />
+        {viewChips}
+        {scopeChips}
+        {groups.items.length === 0 ? (
+          <EmptyState icon={<ClipboardList />} title="No installments yet" description="Enrol members in a hapta scheme to see them here." />
+        ) : (
+          <InstallmentGroups
+            by={view as "scheme" | "member"}
+            items={groups.items}
+            hrefFor={(g) => href(view === "scheme" ? { view: "", schemeId: g._id, page: "" } : { view: "", memberId: g._id, page: "" })}
+          />
+        )}
+        <Pagination page={groups.page} pageSize={groups.pageSize} total={groups.total} baseHref={`/org/${orgId}/installments`} params={{ ...f, view }} />
+      </>
+    );
+  }
+  if (!data) return null;
+  const outstanding = data.items.reduce((s, i) => s + i.outstandingPaise, 0);
+  const overdue = data.items.filter((i) => i.status === "overdue");
 
   return (
     <>
@@ -71,6 +154,8 @@ export default async function InstallmentsPage({ params, searchParams }: PagePro
           { label: "Due", value: data.items.filter((i) => i.outstandingPaise > 0).length },
         ]}
       />
+      {viewChips}
+      {scopeChips}
       <ChipLinks label="Status" current={f.status} items={CHIPS.map(([k, l]) => ({ key: k, label: l, href: href({ status: k, page: "" }) }))} />
       <FilterBar resetHref={`/org/${orgId}/installments`}>
         <FilterField label="Scheme">
