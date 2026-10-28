@@ -5,11 +5,13 @@ import { apiCall } from "@/lib/server/api";
 import { clearSession, setSession } from "@/lib/server/session";
 import type { ActionResult } from "@/lib/action-result";
 import { toActionError } from "./api";
+import { syncLanguageAfterSignIn } from "./lang";
 
 export async function loginAction(input: { email: string; password: string }): Promise<ActionResult<null>> {
   try {
-    const r = await apiCall<{ token: string; expiresAt: string }>("/auth/login", { method: "POST", body: input, token: null });
+    const r = await apiCall<{ token: string; expiresAt: string; user?: { language?: string | null } }>("/auth/login", { method: "POST", body: input, token: null });
     await setSession(r.token, r.expiresAt);
+    await syncLanguageAfterSignIn(r.token, r.user?.language);
   } catch (e) {
     return toActionError(e);
   }
@@ -25,8 +27,9 @@ export async function registerAction(input: { name: string; email: string; phone
   try {
     const user = await apiCall<{ emailVerified: boolean }>("/auth/register", { method: "POST", body: input, token: null });
     if (!user.emailVerified) return { ok: true, data: { verified: false } };
-    const r = await apiCall<{ token: string; expiresAt: string }>("/auth/login", { method: "POST", body: { email: input.email, password: input.password }, token: null });
+    const r = await apiCall<{ token: string; expiresAt: string; user?: { language?: string | null } }>("/auth/login", { method: "POST", body: { email: input.email, password: input.password }, token: null });
     await setSession(r.token, r.expiresAt);
+    await syncLanguageAfterSignIn(r.token, r.user?.language);
     return { ok: true, data: { verified: true } };
   } catch (e) {
     return toActionError(e);

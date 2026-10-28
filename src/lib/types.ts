@@ -3,6 +3,8 @@
 export type Role = "admin" | "manager" | "member";
 
 export interface User {
+  /** language saved on the account (notifications / pushes use it) */
+  language?: "en" | "gu" | "hi" | null;
   id: string;
   name: string;
   email: string;

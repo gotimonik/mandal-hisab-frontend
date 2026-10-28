@@ -13,3 +13,8 @@ export async function getT() {
   const lang = await getLang();
   return { t: makeT(lang), lang };
 }
+
+/** Has this device picked a language (rather than falling back to English)? */
+export async function hasLangCookie() {
+  return isLang((await cookies()).get(LANG_COOKIE)?.value);
+}

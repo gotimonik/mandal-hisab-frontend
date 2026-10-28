@@ -2,9 +2,9 @@ import { NO_INDEX } from "@/lib/seo";
 import { Suspense } from "react";
 import { cache } from "react";
 import { getMe, getOrg } from "@/lib/server/data";
-import { api } from "@/lib/server/api";
+import { api, apiCall } from "@/lib/server/api";
 import { buildNav, buildQuickActions } from "@/lib/nav";
-import { getT } from "@/i18n/server";
+import { getT, hasLangCookie } from "@/i18n/server";
 import { I18nProvider } from "@/i18n/client";
 import { clientDict } from "@/i18n/dicts";
 import { LangBoundary } from "@/i18n/boundary";
@@ -94,6 +94,8 @@ function WithCurrency({ params, children }: P & { children: React.ReactNode }) {
 /** Request-scoped: all shell pieces share one set of API calls. */
 const loadShell = cache(async (orgId: string): Promise<ShellData> => {
   const [org, me, notes, { t, lang }] = await Promise.all([getOrg(orgId), getMe(), api<{ unread: number }>(`/notifications?orgId=${orgId}&unread=true`), getT()]);
+  // Picked a language before it was saved on the account? Save it now (notifications and pushes use it).
+  if (me.user.language !== lang && (await hasLangCookie())) void apiCall("/auth/me", { method: "PATCH", body: { language: lang } }).catch(() => null);
   return {
     org: { id: org.id, name: org.name, role: org.myRole, status: org.status },
     orgs: me.organizations.filter((o) => o.membershipStatus === "active").map((o) => ({ id: o.id, name: o.name, role: o.role, status: o.status })),
