@@ -4,12 +4,14 @@ import { Geist, Geist_Mono, Noto_Sans_Devanagari, Noto_Sans_Gujarati } from "nex
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { NativeShell } from "@/components/app/native-shell";
+import { OfflineBanner } from "@/components/app/offline-banner";
 import { GoogleTag } from "@/components/app/google-tag";
 import { AnalyticsClicks } from "@/components/app/analytics-clicks";
 import "./globals.css";
 import { NATIVE_APP_UA } from "@/lib/native";
 import { site } from "@/config/site";
 import { NavigationProgress } from "@/components/app/navigation-progress";
+import { ScrollToTop } from "@/components/app/scroll-to-top";
 
 const sans = Geist({ variable: "--font-sans", subsets: ["latin"] });
 // Gujarati letters (Geist has none). Only downloaded when Gujarati text is on the page.
@@ -51,15 +53,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning className={`${sans.variable} ${gujarati.variable} ${devanagari.variable} ${mono.variable} h-full antialiased`}>
       <head>
-        {/* Inside the iOS / Android app: mark the page before it paints, so website-only links stay hidden.
+        {/* Inside the iOS / Android app: mark the page before it paints, so website-only links stay hidden,
+            and — when Face ID / fingerprint lock is on — keep the signed-in screens hidden until unlocked (AppLock).
             Lives in the root layout so it is only ever rendered on the server (React won't run scripts it renders on the client). */}
-        <script dangerouslySetInnerHTML={{ __html: `try{var C=window.Capacitor;if(navigator.userAgent.indexOf(${JSON.stringify(NATIVE_APP_UA)})>-1||(C&&C.isNativePlatform&&C.isNativePlatform()))document.documentElement.classList.add("native-app")}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var C=window.Capacitor,h=document.documentElement;if(navigator.userAgent.indexOf(${JSON.stringify(NATIVE_APP_UA)})>-1||(C&&C.isNativePlatform&&C.isNativePlatform())){h.classList.add("native-app");if(localStorage.getItem("mh.appLock")==="1"&&/^[/](org|onboarding|account|platform|invite)([/]|$)/.test(location.pathname)){h.classList.add("app-locking");setTimeout(function(){if(!document.getElementById("app-lock"))h.classList.remove("app-locking")},10000)}}}catch(e){}` }} />
       </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
           <Toaster position="top-center" richColors mobileOffset={{ top: "calc(env(safe-area-inset-top) + 12px)" }} />
           <NativeShell />
+          <OfflineBanner />
           <GoogleTag />
           {/* usePathname() inside: Suspense keeps pages prerenderable (cacheComponents) */}
           <Suspense fallback={null}>
@@ -67,6 +71,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </Suspense>
           <Suspense fallback={null}>
             <NavigationProgress />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ScrollToTop />
           </Suspense>
         </ThemeProvider>
       </body>

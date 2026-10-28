@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { IconChip, MemberAvatar } from "@/components/app/bits";
 import { ProfileForm, PasswordForm } from "@/features/account/account-forms";
 import { ActionButton } from "@/components/app/action-button";
+import { AppLockSetting } from "@/features/account/app-lock-setting";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
@@ -42,6 +43,9 @@ export default async function AccountPage() {
           {me.user.phone && <p className="truncate text-xs text-white/75">{me.user.phone}</p>}
         </div>
       </section>
+
+      {/* app only: Face ID / fingerprint lock on this phone */}
+      <AppLockSetting />
 
       {!me.user.emailVerified && (
         <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-amber-500/10 p-3.5 text-sm ring-1 ring-amber-500/30 sm:flex-row sm:items-center">

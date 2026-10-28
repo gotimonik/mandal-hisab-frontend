@@ -4,8 +4,8 @@ import { APP_START, NATIVE_APP_UA, WEB_ONLY_PATHS } from "@/lib/native";
 const PROTECTED = ["/org", "/onboarding", "/platform", "/account", "/invite"];
 
 /**
- * 1. Inside the iOS / Android app, the website-only pages (features, download, about, FAQ)
- *    are skipped: the app goes straight to the user's Mandal, or to sign in.
+ * 1. Inside the iOS / Android app, the website-only pages (home, features, download, about,
+ *    FAQ) are skipped: the app goes straight to the user's Mandal, or to sign in.
  * 2. Optimistic auth check: visitors without a session cookie are sent to /login from
  *    protected areas. Real authentication and authorization happen in the API on every call.
  */
@@ -26,5 +26,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/features", "/download", "/about", "/faq", "/org/:path*", "/onboarding/:path*", "/platform/:path*", "/account/:path*", "/invite/:path*"],
+  matcher: ["/", "/features", "/download", "/about", "/faq", "/org/:path*", "/onboarding/:path*", "/platform/:path*", "/account/:path*", "/invite/:path*"],
 };

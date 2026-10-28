@@ -35,6 +35,10 @@
         <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
         <!-- Screens are reported by the web app (e.g. "/org/:id/monthly"), not as "MainActivity". -->
         <meta-data android:name="google_analytics_automatic_screen_reporting_enabled" android:value="false" />
+        <!-- Push notifications: small white icon, brand colour, and the channel created by the app -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notify" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_accent" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="default" />
     </application>
 
     <!-- Permissions -->

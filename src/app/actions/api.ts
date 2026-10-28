@@ -10,7 +10,7 @@ import type { ActionResult } from "@/lib/action-result";
  * call. Paths are restricted to the user-facing API surface; authorization is enforced
  * by the API itself for every request.
  */
-const ALLOWED = /^\/(orgs\/[a-f0-9]{24}(\/[A-Za-z0-9_\-/.]*)?|organizations(\/[a-z-]+)?|invitations\/(accept|mine|[a-f0-9]{24}\/(accept|decline))|notifications(\/read)?|auth\/(me|change-password|resend-verification|logout-all)|platform\/[A-Za-z0-9_\-/]+)$/;
+const ALLOWED = /^\/(orgs\/[a-f0-9]{24}(\/[A-Za-z0-9_\-/.]*)?|organizations(\/[a-z-]+)?|invitations\/(accept|mine|[a-f0-9]{24}\/(accept|decline))|notifications(\/read)?|auth\/(me|change-password|resend-verification|logout-all)|me\/push-devices|platform\/[A-Za-z0-9_\-/]+)$/;
 
 export async function apiMutate<T = unknown>(input: { path: string; method?: "POST" | "PATCH" | "DELETE"; body?: unknown }): Promise<ActionResult<T>> {
   const pathOnly = input.path.split("?")[0];

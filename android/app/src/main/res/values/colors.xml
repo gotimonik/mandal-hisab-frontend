@@ -2,4 +2,5 @@
 <resources>
     <!-- Brand purple behind the app icon on the launch screen (matches the icon background). -->
     <color name="splash_background">#5E36D3</color>
+    <color name="notification_accent">#5E36D3</color>
 </resources>

@@ -15,6 +15,9 @@ import { ActionButton } from "@/components/app/action-button";
 import { CurrencyProvider } from "@/components/app/currency";
 import { PageSkeleton } from "@/components/app/page-skeleton";
 import { AnalyticsRole } from "@/components/app/analytics-clicks";
+import { NativePush } from "@/components/app/native-push";
+import { AppLock } from "@/components/app/app-lock";
+import { PullToRefresh } from "@/components/app/pull-to-refresh";
 
 /**
  * The frame and {children} render without waiting for the session. Everything that
@@ -61,6 +64,9 @@ export default function OrgLayout({ children, params }: LayoutProps<"/org/[orgId
         <InvitationsBanner />
       </Suspense>
       <LangBoundary>
+        <NativePush />
+        <AppLock />
+        <PullToRefresh />
         <Suspense fallback={<PageSkeleton />}>
           <WithCurrency params={params}>{children}</WithCurrency>
         </Suspense>

@@ -110,7 +110,8 @@ export function CreateOrgForm() {
         <Field label={t("onb.hapta", { cur: money.symbol })} htmlFor="org-hapta" error={e.monthlyHaptaAmount?.message} hint={t("onb.haptaHint")}>
           <Input id="org-hapta" inputMode="decimal" placeholder="500" {...form.register("monthlyHaptaAmount")} />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        {/* one per row on narrow phones: iPhone's month picker has a fixed natural width */}
+        <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
           <Field label={t("onb.fromMonth")} htmlFor="org-hstart" error={e.haptaStartMonth?.message}>
             <Input id="org-hstart" type="month" {...form.register("haptaStartMonth")} />
           </Field>
@@ -118,8 +119,8 @@ export function CreateOrgForm() {
             <Input id="org-hdue" type="number" inputMode="numeric" min={1} max={28} {...form.register("haptaDueDay")} />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t("onb.howLong")} htmlFor="org-duration" hint={end ? t("onb.lastHapta", { month: monthName(lang, end, "short") }) : t("onb.endLater")} className={custom ? undefined : "col-span-2"}>
+        <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+          <Field label={t("onb.howLong")} htmlFor="org-duration" hint={end ? t("onb.lastHapta", { month: monthName(lang, end, "short") }) : t("onb.endLater")} className={custom ? undefined : "min-[400px]:col-span-2"}>
             <NativeSelect id="org-duration" {...form.register("duration")}>
               {DURATIONS.map(([k]) => (
                 <option key={k} value={k}>

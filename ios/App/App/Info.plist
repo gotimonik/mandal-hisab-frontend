@@ -77,5 +77,13 @@
 	<false/>
 	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS</key>
 	<false/>
+	<!-- App lock (Account → Lock with Face ID) -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>MandalHisab uses Face ID to unlock the app, so only you can see your Mandal's hisab on this phone.</string>
+	<!-- Push notifications: wake the app for payments, approvals and reminders -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

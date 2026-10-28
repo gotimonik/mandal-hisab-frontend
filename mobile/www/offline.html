@@ -13,11 +13,17 @@
   </head>
   <body>
     <div>
+      <div style="font-size:44px;line-height:1">📶</div>
       <h1>You're offline</h1>
       <p>MandalHisab needs the internet to show your Mandal.<br />Check your connection and try again.</p>
-      <button onclick="location.href = window.Capacitor?.getServerUrl?.() || 'https://mandalhisab.com'">Try again</button>
+      <p style="opacity:.85;font-size:14px">તમે ઑફલાઇન છો — ઇન્ટરનેટ ચાલુ કરીને ફરી પ્રયત્ન કરો.<br />आप ऑफ़लाइन हैं — इंटरनेट चालू करके फिर कोशिश करें।</p>
+      <button id="retry" onclick="retry()">Try again</button>
+      <p id="wait" style="opacity:.75;font-size:13px;margin-top:14px">We'll reconnect by ourselves as soon as you're back online.</p>
     </div>
     <script>
+      function retry() { location.href = (window.Capacitor && window.Capacitor.getServerUrl && window.Capacitor.getServerUrl()) || "https://mandalhisab.com/onboarding?auto=1"; }
+      // back online: open MandalHisab again without a tap
+      window.addEventListener("online", function () { setTimeout(retry, 600); });
       // Offline page: take down the launch splash so this message is visible.
       try { window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SplashScreen && window.Capacitor.Plugins.SplashScreen.hide(); } catch (e) {}
     </script>

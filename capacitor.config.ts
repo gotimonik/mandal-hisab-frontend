@@ -38,6 +38,8 @@ const config: CapacitorConfig = {
       splashImmersive: false,
     },
     SystemBars: { insetsHandling: "css", initialViewportFitValueHint: "cover" },
+    // Push notifications (components/app/native-push.tsx): also show them while the app is open.
+    FirebaseMessaging: { presentationOptions: ["alert", "badge", "sound"] },
   },
   ios: { contentInset: "never" },
   android: { allowMixedContent: false },

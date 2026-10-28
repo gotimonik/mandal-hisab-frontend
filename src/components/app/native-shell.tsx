@@ -20,7 +20,7 @@ export function NativeShell() {
     const cleanups: (() => void)[] = [];
 
     // Website-only pages (home, features, download, about, FAQ) never open in the app.
-    // Links to them — like the logo — do nothing on sign-in pages and go to the Mandal elsewhere.
+    // Links to them — like the logo (href="/") — do nothing on sign-in pages and go to the Mandal elsewhere.
     const AUTH = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
     const onClick = (e: MouseEvent) => {
       const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;

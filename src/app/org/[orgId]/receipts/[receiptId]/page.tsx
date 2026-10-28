@@ -2,6 +2,8 @@ import { api } from "@/lib/server/api";
 import type { Receipt } from "@/lib/types";
 import { Money } from "@/components/app/money";
 import { PrintButton } from "@/components/app/print-button";
+import { ShareButton } from "@/components/app/share-button";
+import { getMoney } from "@/lib/server/data";
 import { formatDate, formatDateTime, METHOD_LABEL, label } from "@/lib/format";
 
 export const metadata = { title: "Receipt" };
@@ -15,10 +17,15 @@ interface ReceiptView {
 
 export default async function ReceiptPage({ params }: PageProps<"/org/[orgId]/receipts/[receiptId]">) {
   const { orgId, receiptId } = await params;
-  const { receipt: r, organization: o, member, issuedByName } = await api<ReceiptView>(`/orgs/${orgId}/receipts/${receiptId}`);
+  const [{ receipt: r, organization: o, member, issuedByName }, money] = await Promise.all([api<ReceiptView>(`/orgs/${orgId}/receipts/${receiptId}`), getMoney(orgId)]);
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="no-print mb-4 flex justify-end">
+      <div className="no-print mb-4 flex flex-wrap justify-end gap-2">
+        <ShareButton
+          title={`Receipt ${r.receiptNumber}`}
+          text={`${o.name} — receipt ${r.receiptNumber}: ${money.fmt(r.amountPaise)}${member ? ` from ${member.name}` : ""} on ${formatDate(r.date)}${r.status === "cancelled" ? " (cancelled)" : ""}.`}
+          path={`/org/${orgId}/receipts/${receiptId}`}
+        />
         <PrintButton label="Print / Save as PDF" />
       </div>
       <article className="relative rounded-xl bg-card p-6 ring-1 ring-foreground/10 print:ring-0 sm:p-8">

@@ -38,6 +38,7 @@ import { PhoneMockup } from "@/features/public/home/phone-mockup";
 import { RoleTabs, type RoleInfo } from "@/features/public/home/role-tabs";
 import { organizationLd, pageMeta, softwareAppLd, websiteLd } from "@/lib/seo";
 import { JsonLd } from "@/features/public/json-ld";
+import { NativeRedirect } from "@/features/public/native-redirect";
 
 export const metadata: Metadata = pageMeta({
   title: "MandalHisab — Hapta, savings & upad app for Mandals",
@@ -133,6 +134,8 @@ const FAQ_TEASER = [
 export default function HomePage() {
   return (
     <>
+      {/* never shown inside the iOS / Android app */}
+      <NativeRedirect />
       <JsonLd nodes={[organizationLd(), websiteLd(), softwareAppLd()]} />
 
       {/* 1. Hero */}
