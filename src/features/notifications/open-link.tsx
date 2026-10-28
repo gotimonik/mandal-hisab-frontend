@@ -22,8 +22,10 @@ export function OpenNotificationLink({ id, href, unread }: { id: string; href: s
         if (!unread || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
         e.preventDefault();
         start(async () => {
-          await apiMutate({ path: "/notifications/read", body: { ids: [id] } }).catch(() => null);
+          const res = await apiMutate({ path: "/notifications/read", body: { ids: [id] } }).catch(() => null);
           router.push(href);
+          // the bell count lives in the shared layout, which a plain navigation keeps as-is
+          if (res?.ok) router.refresh();
         });
       }}
       className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/15"
