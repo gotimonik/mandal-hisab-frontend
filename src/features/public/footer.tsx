@@ -19,7 +19,7 @@ const COLUMNS = [
     title: "Get started",
     links: [
       { href: "/register", label: "Create your Mandal" },
-      { href: "/login", label: "Join with a code" },
+      { href: "/onboarding?join=1", label: "Join with a code" },
       { href: "/login", label: "Sign in" },
       { href: "/forgot-password", label: "Forgot password" },
     ],

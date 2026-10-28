@@ -152,7 +152,7 @@ export default function HomePage() {
               <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "h-12 w-full rounded-2xl bg-white px-5 text-base text-primary hover:bg-white/90 sm:w-auto")}>
                 Create your Mandal <ArrowRight />
               </Link>
-              <Link href="/login" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "h-12 w-full rounded-2xl border-white/30 bg-white/10 px-5 text-base text-white hover:bg-white/20 hover:text-white sm:w-auto")}>
+              <Link href="/onboarding?join=1" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "h-12 w-full rounded-2xl border-white/30 bg-white/10 px-5 text-base text-white hover:bg-white/20 hover:text-white sm:w-auto")}>
                 Join with a code
               </Link>
             </div>

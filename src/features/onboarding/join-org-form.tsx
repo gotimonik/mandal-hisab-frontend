@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Search } from "lucide-react";
@@ -28,10 +28,10 @@ interface Hit {
 const STATUS_KEY: Record<string, Key> = { active: "onb.stMember", pending: "onb.stPending", deactivated: "onb.stRemoved" };
 
 /** Find a Mandal by its name or its join code, then request to join (the admin approves). */
-export function JoinOrgForm() {
+export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: string; autoFocus?: boolean }) {
   const router = useRouter();
   const t = useT();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(defaultCode ?? "");
   const [message, setMessage] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,14 @@ export function JoinOrgForm() {
       router.refresh();
     });
 
+  // A link with ?code=… looks the Mandal up straight away.
+  const looked = useRef(false);
+  useEffect(() => {
+    if (!defaultCode || looked.current) return;
+    looked.current = true;
+    search();
+  });
+
   return (
     <div className="flex flex-col gap-3">
       <FormError message={error} />
@@ -75,7 +83,7 @@ export function JoinOrgForm() {
           search();
         }}
       >
-        <Input aria-label={t("onb.searchPh")} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("onb.searchPh")} maxLength={100} className="h-11 rounded-xl" />
+        <Input aria-label={t("onb.searchPh")} autoFocus={autoFocus} autoCapitalize="characters" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("onb.searchPh")} maxLength={100} className="h-11 rounded-xl" />
         <Button type="submit" disabled={pending || q.trim().length < 2} className="h-11 rounded-xl px-4">
           {pending && !joining ? <Loader2 className="animate-spin" /> : <Search />} {t("onb.find")}
         </Button>

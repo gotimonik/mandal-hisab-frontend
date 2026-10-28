@@ -143,6 +143,7 @@ export const en = {
     verifyMissing: "This verification link is incomplete.",
     sendNewLink: "Send a new link",
     verifiedBanner: "Email verified — sign in to continue.",
+    joinHint: "To join your Mandal, sign in or create a free account first — you'll enter the join code from your admin right after.",
   },
   invite: {
     invitedBy: "{who} invited you to join",

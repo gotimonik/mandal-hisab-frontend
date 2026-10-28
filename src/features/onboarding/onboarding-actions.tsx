@@ -10,7 +10,7 @@ import { CreateOrgForm } from "./create-org-form";
 type Tab = "join" | "create";
 
 /** Join an existing Mandal or start a new one — one switch instead of two long cards. Both stay mounted so typed input survives switching. */
-export function OnboardingActions({ defaultTab = "join" }: { defaultTab?: Tab }) {
+export function OnboardingActions({ defaultTab = "join", defaultCode, focusJoin = false }: { defaultTab?: Tab; defaultCode?: string; focusJoin?: boolean }) {
   const t = useT();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -18,7 +18,7 @@ export function OnboardingActions({ defaultTab = "join" }: { defaultTab?: Tab })
     { key: "create", label: t("onb.tabCreate"), icon: <Plus /> },
   ];
   return (
-    <section className="rounded-3xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06] sm:p-4">
+    <section id="join" className={cn("scroll-mt-24 rounded-3xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06] sm:p-4", focusJoin && "ring-2 ring-primary/40")}>
       <div role="tablist" aria-label={t("onb.tabJoin")} className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1">
         {tabs.map((x) => (
           <button
@@ -41,7 +41,7 @@ export function OnboardingActions({ defaultTab = "join" }: { defaultTab?: Tab })
       </div>
       <div id="onb-panel-join" role="tabpanel" aria-labelledby="onb-tab-join" hidden={tab !== "join"} className="px-1 pt-4 pb-1">
         <p className="mb-3 text-sm text-muted-foreground">{t("onb.joinDesc")}</p>
-        <JoinOrgForm />
+        <JoinOrgForm defaultCode={defaultCode} autoFocus={focusJoin} />
       </div>
       <div id="onb-panel-create" role="tabpanel" aria-labelledby="onb-tab-create" hidden={tab !== "create"} className="px-1 pt-4 pb-1">
         <p className="mb-3 text-sm text-muted-foreground">{t("onb.createDesc")}</p>

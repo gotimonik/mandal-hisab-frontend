@@ -136,7 +136,7 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
         )
       )}
 
-      <OnboardingActions defaultTab={sp.new === "1" ? "create" : "join"} />
+      <OnboardingActions defaultTab={sp.new === "1" ? "create" : "join"} defaultCode={typeof sp.code === "string" ? sp.code.slice(0, 12) : undefined} focusJoin={sp.join === "1" || typeof sp.code === "string"} />
     </div>
   );
 }

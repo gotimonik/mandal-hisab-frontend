@@ -6,7 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
@@ -71,6 +71,11 @@ export function RegisterForm() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+        {next?.startsWith("/onboarding?join") && (
+          <p role="note" className="flex items-start gap-2 rounded-xl bg-sky-500/10 px-3 py-2 text-sm text-sky-900 dark:text-sky-100">
+            <KeyRound className="mt-0.5 size-4 shrink-0" /> {t("auth.joinHint")}
+          </p>
+        )}
         <FormError message={error} />
         <Field label={t("auth.fullName")} htmlFor="name" error={e.name?.message}>
           <Input id="name" autoComplete="name" aria-invalid={!!e.name} {...form.register("name")} />

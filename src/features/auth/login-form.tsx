@@ -6,7 +6,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
@@ -25,6 +25,8 @@ export function LoginForm() {
   const justVerified = sp.get("verified") === "1";
   const form = useForm<z.infer<typeof LoginSchema>>({ resolver: zodResolver(LoginSchema), defaultValues: { email: sp.get("email") ?? "", password: "" } });
   const next = sp.get("next");
+  // came from "Join with a code": sign in (or sign up) first, then enter the code
+  const joining = !!next?.startsWith("/onboarding?join");
   // the page can be served from a static shell: make sure ?email= lands in the field
   const emailParam = sp.get("email");
   useEffect(() => {
@@ -64,6 +66,11 @@ export function LoginForm() {
       }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+        {joining && !justVerified && (
+          <p role="note" className="flex items-start gap-2 rounded-xl bg-sky-500/10 px-3 py-2 text-sm text-sky-900 dark:text-sky-100">
+            <KeyRound className="mt-0.5 size-4 shrink-0" /> {t("auth.joinHint")}
+          </p>
+        )}
         {justVerified && !error && (
           <p role="status" className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
             <CheckCircle2 className="size-4 shrink-0" /> {t("auth.verifiedBanner")}

@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Expense bills/invoices (max 5 MB) are uploaded through a Server Action.
     serverActions: { bodySizeLimit: "6mb" },
-    // Put the (small, ~25 KB) stylesheet inside the HTML so phones paint without waiting for it.
-    inlineCss: true,
+    // Note: don't turn on `inlineCss` — it puts ~150 KB of CSS in <head> before the title and
+    // Open Graph tags, and WhatsApp's link preview only reads the start of the page.
   },
   turbopack: {
     rules: {
