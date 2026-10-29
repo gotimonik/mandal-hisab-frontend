@@ -17,6 +17,10 @@ let bio: NativeBiometricPlugin | undefined;
 /** Face ID / Touch ID / fingerprint. Call only inside the app. */
 export const biometric = () => (bio ??= registerPlugin<NativeBiometricPlugin>("NativeBiometric"));
 
+let wp: { print(opts: { title?: string }): Promise<unknown> } | undefined;
+/** Print / Save as PDF of the current page (the app's own native plugin). Call only inside the app. */
+export const webPrint = () => (wp ??= registerPlugin<{ print(opts: { title?: string }): Promise<unknown> }>("WebPrint"));
+
 /** Small app-only settings kept on the phone (lock on/off, prompt dismissed …). */
 export async function getPref(key: string) {
   const { Preferences } = await import("@capacitor/preferences");
