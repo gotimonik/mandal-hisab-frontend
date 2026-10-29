@@ -209,3 +209,16 @@ input[type="month"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value {
   text-align: start;
 }
+
+/*
+ * Closing popups (bottom sheets, dialogs and their backdrop, menus, selects, tooltips) play an
+ * exit animation, and Base UI removes them a frame after it ends. Without `forwards` they snap back
+ * to fully visible for that frame — on phones the sheet and the dark backdrop flash once on close.
+ * Holding the end state removes the flash. (The variable isn't inherited, so only the popup itself
+ * is affected.)
+ */
+@layer base {
+  [data-closed] {
+    --tw-animation-fill-mode: forwards;
+  }
+}
