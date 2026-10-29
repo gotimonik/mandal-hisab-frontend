@@ -3,7 +3,7 @@ import { CalendarDays, CheckCircle2, HandCoins, Landmark, Mail, MapPin, Phone, P
 import { InviteMemberButton } from "@/features/members/invite-member";
 import { api, qs } from "@/lib/server/api";
 import { getAccounts, getOrg, can, getMoney } from "@/lib/server/data";
-import type { FundLoanList, Member, MemberLedger } from "@/lib/types";
+import type { FundLoanList, JoiningQuote, Member, MemberLedger } from "@/lib/types";
 import { StatusBadge } from "@/components/app/status-badge";
 import { Money } from "@/components/app/money";
 import { FilterBar, FilterField } from "@/components/app/filter-bar";
@@ -19,6 +19,7 @@ import { getT } from "@/i18n/server";
 import { SavingsLedgerTable } from "@/features/savings/savings-ledger";
 import { AdjustBalanceDialog, OpeningBalanceDialog } from "@/features/savings/balance-dialogs";
 import { WithdrawalDialog } from "@/features/withdrawals/withdrawal-form";
+import { JoiningDueCard, LeaveMandalDialog } from "@/features/members/membership-dialogs";
 
 /** A small card: coloured icon chip + title, then its content. */
 function InfoCard({ tone, icon, title, children }: { tone: Tone; icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -59,7 +60,14 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
   const m = detail.member;
   const live = org.status === "active";
   const canAdjust = can(org, "members.balanceAdjust") && live;
-  const accounts = can(org, "withdrawals.record") && live ? (await getAccounts(orgId)).filter((a) => a.isActive) : [];
+  const canWithdraw = can(org, "withdrawals.record") && live;
+  const joiningDue = m.joining?.status === "due";
+  const [allAccounts, joiningQuote] = await Promise.all([
+    canWithdraw || canAdjust ? getAccounts(orgId) : Promise.resolve([]),
+    joiningDue ? api<JoiningQuote>(`/orgs/${orgId}/members/${memberId}/joining`) : Promise.resolve(null),
+  ]);
+  const accounts = allAccounts.filter((a) => a.isActive);
+  const accountOptions = accounts.map((a) => ({ _id: a._id, name: a.name, balancePaise: a.balancePaise }));
   return (
     <>
       {/* Same layout as PageHeader, with the member's avatar beside the name */}
@@ -77,6 +85,12 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                   · <b className="text-foreground">{m.haptaShares} haptas a month</b> ({money.fmt(org.settings.monthlyHapta.amountPaise * m.haptaShares!)})
                 </>
               )}{" "}
+              {m.joining?.status === "paid" && (
+                <>
+                  {" "}
+                  · joined partway (paid <Money paise={m.joining.totalPaise} />)
+                </>
+              )}
               · <StatusBadge status={m.status} />
             </p>
           </div>
@@ -89,7 +103,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                 <HandCoins /> Record payment
               </Link>
             )}
-            {accounts.length > 0 && (
+            {canWithdraw && accounts.length > 0 && m.status !== "left" && (
               <WithdrawalDialog
                 members={[{ _id: m._id, name: m.name, membershipNumber: m.membershipNumber, balancePaise: ledger.currentBalancePaise }]}
                 defaultMemberId={m._id}
@@ -98,9 +112,28 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                 triggerLabel="Withdrawal"
               />
             )}
+            {canWithdraw && can(org, "members.manage") && m.status !== "left" && <LeaveMandalDialog memberId={m._id} memberName={m.name} accounts={accountOptions} />}
           </>
         </div>
       </div>
+      {joiningQuote?.due && <JoiningDueCard memberId={m._id} quote={joiningQuote} accounts={accountOptions} canCollect={canAdjust} />}
+      {m.status === "left" && m.leaving?.status === "done" && (
+        <section className="mb-5 rounded-2xl bg-muted/60 p-4 text-sm ring-1 ring-foreground/[0.06]">
+          <h2 className="font-semibold">
+            Left the Mandal on {formatDate(m.leaving.date)} — paid <Money paise={m.leaving.netPaise} />
+          </h2>
+          <p className="text-muted-foreground">
+            Savings <Money paise={m.leaving.savingsPaise} /> + share of the Mandal&apos;s own money <Money paise={m.leaving.mandalSharePaise} />
+            {m.leaving.upadSettledPaise > 0 && (
+              <>
+                {" "}
+                − upad <Money paise={m.leaving.upadSettledPaise} />
+              </>
+            )}
+            {m.leaving.reason ? ` · ${m.leaving.reason}` : ""}
+          </p>
+        </section>
+      )}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         <InfoCard tone="sky" icon={<Phone />} title="Contact">
           <div className="flex flex-col gap-1.5 text-sm">

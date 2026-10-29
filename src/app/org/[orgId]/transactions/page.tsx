@@ -7,10 +7,12 @@ import {
   Heart,
   Landmark,
   Lock,
+  LogOut,
   Percent,
   Receipt,
   RotateCcw,
   Scale,
+  UserPlus,
   Wallet,
 } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
@@ -54,6 +56,8 @@ const TYPES: Record<string, { label: string; tone: Tone; icon: React.ReactNode }
   adjustment: { label: "Adjustment", tone: "slate", icon: <Scale /> },
   reversal: { label: "Reversal", tone: "rose", icon: <RotateCcw /> },
   closing_distribution: { label: "Closing share-out", tone: "violet", icon: <Lock /> },
+  member_joining: { label: "Joining amount", tone: "emerald", icon: <UserPlus /> },
+  member_leaving: { label: "Leaving share-out", tone: "rose", icon: <LogOut /> },
 };
 const typeOf = (t: string) => TYPES[t] ?? { label: t.replace(/_/g, " "), tone: "slate" as Tone, icon: <BookText /> };
 
@@ -67,6 +71,8 @@ const SYSTEM: Record<string, string> = {
   "equity:adjustments": "Adjustments",
   "equity:accumulated_surplus": "Mandal's own money",
   "equity:closing_distribution": "Closing share-out",
+  "equity:member_joining": "Joining amounts (Mandal's part)",
+  "equity:member_leaving": "Leaving share-outs",
   "income:hapta": "Hapta income",
   "income:donation": "Donations",
   "income:interest": "Interest income",

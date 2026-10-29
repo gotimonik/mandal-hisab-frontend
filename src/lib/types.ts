@@ -134,6 +134,66 @@ export interface Member {
   outstandingPaise?: number;
   dueInstallments?: number;
   balancePaise?: number;
+  /** joined partway through: owes (or paid / was let off) the price of their shares */
+  joining?: MemberJoining;
+  /** left partway through: paid out and marked "left" */
+  leaving?: MemberLeaving;
+}
+
+export interface MemberJoining {
+  status: "due" | "paid" | "waived";
+  since: string;
+  at?: string;
+  date?: string;
+  shares?: number;
+  savingsPaise?: number;
+  mandalSharePaise?: number;
+  totalPaise?: number;
+  reason?: string;
+}
+
+export interface MemberLeaving {
+  status: "in_progress" | "done";
+  at?: string;
+  date: string;
+  shares: number;
+  savingsPaise: number;
+  mandalSharePaise: number;
+  upadSettledPaise: number;
+  netPaise: number;
+  withdrawalId?: string | null;
+  reason?: string;
+}
+
+export interface JoiningQuote {
+  due: boolean;
+  joining: MemberJoining | null;
+  shares: number;
+  haptaStart: string | null;
+  haptaFirstMonth: string | null;
+  holderShares: number;
+  perShareSavingsPaise: number;
+  perShareMandalPaise: number;
+  perSharePaise: number;
+  savingsPaise: number;
+  mandalSharePaise: number;
+  totalPaise: number;
+}
+
+export interface LeavingQuote {
+  status: Member["status"];
+  leaving: MemberLeaving | null;
+  joiningDue: boolean;
+  shares: number;
+  holderShares: number;
+  mandalOwnPaise: number;
+  perShareMandalPaise: number;
+  savingsPaise: number;
+  mandalSharePaise: number;
+  upadOwedPaise: number;
+  netPaise: number;
+  blockers: { key: string; label: string; amountPaise?: number; count?: number; link: string }[];
+  canLeave: boolean;
 }
 
 export interface Scheme {

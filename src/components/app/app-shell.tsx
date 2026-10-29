@@ -23,6 +23,7 @@ import { selectOrg } from "@/app/actions/api";
 import { LogoutButton } from "@/components/app/logout-button";
 import { startNavigationProgress } from "@/components/app/navigation-progress";
 import { EdgeSwipeMenu } from "@/components/app/edge-swipe-menu";
+import { AppVersion } from "@/components/app/app-version";
 
 const ICONS: Record<NavIcon, typeof Bell> = {
   dashboard: LayoutDashboard,
@@ -241,6 +242,7 @@ export function SidebarContent({ data }: { data: ShellData }) {
         <NavLinks items={data.nav} base={`/org/${data.org.id}`} />
       </div>
       <UserMenu user={data.user} />
+      <AppVersion />
     </>
   );
 }

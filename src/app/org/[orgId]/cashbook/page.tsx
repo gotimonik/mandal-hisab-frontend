@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, BookOpenCheck, BookText, HandCoins, Heart, Landmark, Lock, Percent, Receipt, RotateCcw, Scale, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, BookOpenCheck, BookText, HandCoins, Heart, Landmark, Lock, LogOut, Percent, Receipt, RotateCcw, Scale, UserPlus, Wallet } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import { can, getAccounts, getOrg } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
@@ -76,6 +76,8 @@ const LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
   adjustment: { tone: "slate", icon: <Scale /> },
   reversal: { tone: "rose", icon: <RotateCcw /> },
   closing_distribution: { tone: "violet", icon: <Lock /> },
+  member_joining: { tone: "emerald", icon: <UserPlus /> },
+  member_leaving: { tone: "rose", icon: <LogOut /> },
 };
 const look = (l: { type: string; isReversal: boolean }) =>
   (l.isReversal ? LOOK.reversal : LOOK[l.type]) ?? {
