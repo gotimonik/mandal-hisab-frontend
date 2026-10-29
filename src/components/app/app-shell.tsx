@@ -22,6 +22,7 @@ import { logoutAction } from "@/app/actions/auth";
 import { selectOrg } from "@/app/actions/api";
 import { LogoutButton } from "@/components/app/logout-button";
 import { startNavigationProgress } from "@/components/app/navigation-progress";
+import { EdgeSwipeMenu } from "@/components/app/edge-swipe-menu";
 
 const ICONS: Record<NavIcon, typeof Bell> = {
   dashboard: LayoutDashboard,
@@ -103,6 +104,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
         >
           <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-end px-1">{bottomNav}</div>
         </nav>
+        <EdgeSwipeMenu open={open} setOpen={setOpen} />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent side="left" className="w-[19rem] bg-sidebar p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <SheetHeader className="p-0">
@@ -350,7 +352,11 @@ export function BottomNavContent({ data }: { data: ShellData }) {
 /** Colourful shortcut tiles — the phone "+" sheet and the dashboard share them. */
 export function QuickGrid({ actions, onPick, className, row = false }: { actions: QuickAction[]; onPick?: () => void; className?: string; row?: boolean }) {
   return (
-    <div className={cn(row ? "scrollbar-none -mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7" : "grid grid-cols-3 gap-2.5", className)}>
+    <div className={cn(
+      // scroll-px-4: snap the first tile to the page padding, not the screen edge.
+      // pt/pb: room for the tiles' ring and shadow, which a horizontal scroller would clip (-mt keeps the spacing).
+      row ? "scrollbar-none -mx-4 -mt-1.5 flex snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 pt-1.5 pb-2 sm:mx-0 sm:mt-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:pt-0 sm:pb-1 lg:grid-cols-7"
+         : "grid grid-cols-3 gap-2.5", className)}>
       {actions.map((a) => {
         const Icon = QUICK_ICONS[a.icon];
         return (

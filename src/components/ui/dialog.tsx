@@ -5,6 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
+import { isTouchDevice, mergeRefs } from "@/lib/touch"
 import { XIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
@@ -43,14 +44,21 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  initialFocus,
+  ref,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  // Phones: focus the sheet itself, not its first input, so the keyboard doesn't pop up on open.
+  const popupRef = React.useRef<HTMLDivElement>(null)
+  const touchSafeFocus = React.useCallback(() => (isTouchDevice() ? popupRef.current : true), [])
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
+        ref={mergeRefs(popupRef, ref)}
+        initialFocus={initialFocus ?? touchSafeFocus}
         data-slot="dialog-content"
         className={cn(
           // phones: a bottom sheet (thumb-reachable, full width); sm+: a centred dialog

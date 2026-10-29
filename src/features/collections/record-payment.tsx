@@ -19,6 +19,7 @@ import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
 import { IconChip } from "@/components/app/bits";
 import { AmountInput, ChoicePills, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { isTouchDevice } from "@/lib/touch";
 
 interface Opt {
   _id: string;
@@ -203,7 +204,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
         </Field>
       )}
       <Field label={`Amount (${money.symbol})`} htmlFor="rp-amount" error={e.amount?.message} className="sm:col-span-2">
-        <AmountInput id="rp-amount" autoFocus {...form.register("amount")} />
+        <AmountInput id="rp-amount" autoFocus={!isTouchDevice()} {...form.register("amount")} />
       </Field>
       {kind === "hapta" && previewKey && (
         <div className="rounded-2xl bg-emerald-500/10 p-3 text-sm sm:col-span-2" aria-live="polite">
