@@ -32,6 +32,7 @@ export const en = {
     downloadCsv: "Download CSV",
     preparing: "Preparing…",
     downloadFailed: "Couldn't download the file. Please try again.",
+    updateAppToDownload: "Update the MandalHisab app to download CSV files.",
     status: "Status",
     loading: "Loading…",
   },

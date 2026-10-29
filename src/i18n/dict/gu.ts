@@ -34,6 +34,7 @@ export const gu: Dict = {
     downloadCsv: "CSV ડાઉનલોડ કરો",
     preparing: "તૈયાર થઈ રહ્યું છે…",
     downloadFailed: "ફાઇલ ડાઉનલોડ ન થઈ. ફરી પ્રયત્ન કરો.",
+    updateAppToDownload: "CSV ફાઇલ ડાઉનલોડ કરવા MandalHisab એપ અપડેટ કરો.",
     status: "સ્થિતિ",
     loading: "લોડ થાય છે…",
   },

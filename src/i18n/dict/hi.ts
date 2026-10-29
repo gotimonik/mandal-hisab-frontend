@@ -34,6 +34,7 @@ export const hi: Dict = {
     downloadCsv: "CSV डाउनलोड करें",
     preparing: "तैयार हो रहा है…",
     downloadFailed: "फ़ाइल डाउनलोड नहीं हो सकी। फिर से कोशिश करें।",
+    updateAppToDownload: "CSV फ़ाइल डाउनलोड करने के लिए MandalHisab ऐप अपडेट करें।",
     status: "स्थिति",
     loading: "लोड हो रहा है…",
   },
