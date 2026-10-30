@@ -99,7 +99,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
             {mobileHeader}
           </header>
           <div className="no-print hidden h-12 items-center justify-end gap-2 border-b border-border/60 bg-background/70 px-6 backdrop-blur lg:flex">{topbar}</div>
-          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 pb-28 sm:px-6 lg:pt-6 lg:pb-10">{children}</main>
+          <main className="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 pb-[calc(8rem+env(safe-area-inset-bottom))] sm:px-6 lg:pt-6 lg:pb-10">{children}</main>
         </div>
         <nav
           className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_oklch(0.3_0.08_278/0.18)] backdrop-blur-md lg:hidden"

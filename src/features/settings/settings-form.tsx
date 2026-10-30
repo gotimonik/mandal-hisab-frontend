@@ -378,7 +378,7 @@ export function SettingsForm({ org }: { org: Org }) {
         </Field>
       </MoreOptions>
 
-      <div className="sticky bottom-20 z-10 lg:bottom-4">
+      <div className="sticky bottom-[calc(6rem+env(safe-area-inset-bottom))] z-10 lg:bottom-4">
         <SubmitButton page pending={pending} icon={<Save />} className="shadow-lg shadow-primary/30">
           Save settings
         </SubmitButton>
