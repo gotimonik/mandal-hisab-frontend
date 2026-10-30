@@ -245,7 +245,8 @@ export function SidebarContent({ data }: { data: ShellData }) {
   return (
     <>
       <OrgSwitcher current={data.org} orgs={data.orgs} isPlatformAdmin={data.user.isPlatformAdmin} />
-      <div className="flex-1 overflow-y-auto">
+      {/* overscroll-contain: scrolling the menu to its end must not carry on and scroll the page behind it (Safari trackpad momentum) */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <NavLinks items={data.nav} base={`/org/${data.org.id}`} />
       </div>
       <UserMenu user={data.user} />
