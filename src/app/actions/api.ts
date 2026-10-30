@@ -71,3 +71,23 @@ export async function uploadAttachment(orgId: string, formData: FormData): Promi
     return { ok: false, error: "Upload failed" };
   }
 }
+
+/** Forward a Mandal logo (PNG / JPEG / WEBP, max 1 MB) to the API, which stores it in Vercel Blob. */
+export async function uploadOrgLogo(orgId: string, formData: FormData): Promise<ActionResult<{ logoUrl: string }>> {
+  if (!/^[a-f0-9]{24}$/.test(orgId)) return { ok: false, error: "Not allowed" };
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Choose an image" };
+  if (file.size > 1024 * 1024) return { ok: false, error: "The logo must be 1 MB or smaller" };
+  const { getSessionToken } = await import("@/lib/server/session");
+  const token = await getSessionToken();
+  const fd = new FormData();
+  fd.set("file", file);
+  try {
+    const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/orgs/${orgId}/logo`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd, cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { data?: { logoUrl: string }; error?: { message: string } };
+    if (!res.ok || !json.data) return { ok: false, error: json.error?.message ?? "Upload failed" };
+    return { ok: true, data: json.data };
+  } catch {
+    return { ok: false, error: "Upload failed" };
+  }
+}

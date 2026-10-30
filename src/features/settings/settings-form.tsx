@@ -13,6 +13,7 @@ import { useApiSubmit } from "@/components/app/use-api-form";
 import { FormSection, MoreOptions, SubmitButton, FormNote } from "@/components/app/form-bits";
 
 import type { ManagerPermissions, Org } from "@/lib/types";
+import { LogoPicker } from "./logo-picker";
 import { paiseToRupeeInput } from "@/lib/format";
 import { useMoney } from "@/components/app/currency";
 import { CURRENCIES, DEFAULT_CURRENCY, moneyFmt } from "@/lib/currency";
@@ -54,7 +55,6 @@ interface V {
   contactEmail: string;
   registrationNumber: string;
   registrationDetails: string;
-  logoUrl: string;
   financialYearStartMonth: number;
   currency: string;
   timezone: string;
@@ -96,7 +96,6 @@ export function SettingsForm({ org }: { org: Org }) {
       contactEmail: org.contactEmail ?? "",
       registrationNumber: org.registrationNumber ?? "",
       registrationDetails: org.registrationDetails ?? "",
-      logoUrl: org.logoUrl ?? "",
       financialYearStartMonth: s.financialYearStartMonth,
       currency: s.currency || DEFAULT_CURRENCY,
       timezone: s.timezone,
@@ -143,7 +142,6 @@ export function SettingsForm({ org }: { org: Org }) {
           contactEmail: v.contactEmail.trim(),
           registrationNumber: opt(v.registrationNumber),
           registrationDetails: opt(v.registrationDetails),
-          logoUrl: v.logoUrl.trim(),
           settings: {
             financialYearStartMonth: Number(v.financialYearStartMonth),
             currency: v.currency,
@@ -204,9 +202,7 @@ export function SettingsForm({ org }: { org: Org }) {
           <Field label="Registration details (e.g. 12A/80G)" htmlFor="o-regd" className="sm:col-span-2">
             <Textarea id="o-regd" rows={2} {...form.register("registrationDetails")} />
           </Field>
-          <Field label="Logo URL" htmlFor="o-logo" className="sm:col-span-2" error={form.formState.errors.logoUrl?.message}>
-            <Input id="o-logo" type="url" {...form.register("logoUrl")} />
-          </Field>
+          <LogoPicker orgId={org.id} initialUrl={org.logoUrl} />
         </div>
       </FormSection>
 
