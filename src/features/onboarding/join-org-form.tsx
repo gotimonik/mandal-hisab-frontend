@@ -38,21 +38,45 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
   const [pending, start] = useTransition();
   const [joining, setJoining] = useState<string | null>(null);
 
-  const search = () =>
-    start(async () => {
-      setError(null);
+  const [searching, setSearching] = useState(false);
+  const seq = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const search = async (raw: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    const id = ++seq.current;
+    const term = raw.trim();
+    setError(null);
+    if (term.length < 2) {
+      setSearching(false);
       setHits(null);
-      const term = q.trim();
-      const looksLikeCode = /^[A-Z0-9]{6,12}$/.test(term.toUpperCase()) && !/\s/.test(term);
-      const [byName, byCode] = await Promise.all([
-        term.length >= 2 ? apiRead<Hit[]>(`/organizations/search?q=${encodeURIComponent(term)}`) : Promise.resolve({ ok: true as const, data: [] as Hit[] }),
-        looksLikeCode ? apiRead<{ id: string; name: string; city: string | null }>(`/organizations/lookup?code=${encodeURIComponent(term.toUpperCase())}`) : Promise.resolve(null),
-      ]);
-      const list: Hit[] = byName.ok ? [...byName.data] : [];
-      if (byCode && byCode.ok && !list.some((h) => h.id === byCode.data.id)) list.unshift({ ...byCode.data, acceptsJoinRequests: true, myStatus: null, viaCode: true, code: term.toUpperCase() });
-      if (!byName.ok && !(byCode && byCode.ok)) return setError(byName.error);
-      setHits(list);
-    });
+      return;
+    }
+    setSearching(true);
+    const looksLikeCode = /^[A-Z0-9]{6,12}$/.test(term.toUpperCase()) && !/\s/.test(term);
+    const [byName, byCode] = await Promise.all([
+      apiRead<Hit[]>(`/organizations/search?q=${encodeURIComponent(term)}`),
+      looksLikeCode ? apiRead<{ id: string; name: string; city: string | null }>(`/organizations/lookup?code=${encodeURIComponent(term.toUpperCase())}`) : Promise.resolve(null),
+    ]);
+    if (id !== seq.current) return; // the user kept typing: a newer search owns the results
+    setSearching(false);
+    const list: Hit[] = byName.ok ? [...byName.data] : [];
+    if (byCode && byCode.ok && !list.some((h) => h.id === byCode.data.id)) list.unshift({ ...byCode.data, acceptsJoinRequests: true, myStatus: null, viaCode: true, code: term.toUpperCase() });
+    if (!byName.ok && !(byCode && byCode.ok)) return setError(byName.error);
+    setHits(list);
+  };
+
+  // Search as the user types; a link with ?code=… looks the Mandal up straight away.
+  const firstRun = useRef(true);
+  useEffect(() => {
+    const delay = firstRun.current && defaultCode ? 0 : 300;
+    firstRun.current = false;
+    timer.current = setTimeout(() => void search(q), delay);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when the text changes
+  }, [q]);
 
   const join = (h: Hit) =>
     start(async () => {
@@ -65,14 +89,6 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
       router.refresh();
     });
 
-  // A link with ?code=… looks the Mandal up straight away.
-  const looked = useRef(false);
-  useEffect(() => {
-    if (!defaultCode || looked.current) return;
-    looked.current = true;
-    search();
-  });
-
   return (
     <div className="flex flex-col gap-3">
       <FormError message={error} />
@@ -80,12 +96,12 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
         className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          search();
+          void search(q);
         }}
       >
         <Input aria-label={t("onb.searchPh")} autoFocus={autoFocus} autoCapitalize="characters" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("onb.searchPh")} maxLength={100} className="h-11 rounded-xl" />
-        <Button type="submit" disabled={pending || q.trim().length < 2} className="h-11 rounded-xl px-4">
-          {pending && !joining ? <Loader2 className="animate-spin" /> : <Search />} {t("onb.find")}
+        <Button type="submit" disabled={searching || q.trim().length < 2} className="h-11 rounded-xl px-4">
+          {searching ? <Loader2 className="animate-spin" /> : <Search />} {t("onb.find")}
         </Button>
       </form>
       {hits && hits.length === 0 && <p className="rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">{t("onb.noneFound")}</p>}
