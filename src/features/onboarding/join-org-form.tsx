@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import { apiRead } from "@/app/actions/api";
 import { apiMutate } from "@/lib/api-client";
 import { MemberAvatar } from "@/components/app/bits";
 import { useT } from "@/i18n/client";
+import { cn } from "@/lib/utils";
 import type { Key } from "@/i18n/core";
 
 interface Hit {
@@ -89,6 +90,9 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
       router.refresh();
     });
 
+  const showResults = q.trim().length >= 2;
+  const canMessage = !!hits && hits.length > 0;
+
   return (
     <div className="flex flex-col gap-3">
       <FormError message={error} />
@@ -104,33 +108,57 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
           {searching ? <Loader2 className="animate-spin" /> : <Search />} {t("onb.find")}
         </Button>
       </form>
-      {hits && hits.length === 0 && <p className="rounded-xl bg-muted/60 px-3 py-2.5 text-sm text-muted-foreground">{t("onb.noneFound")}</p>}
-      {hits && hits.length > 0 && (
-        <>
-          <ul className="flex flex-col gap-2">
-            {hits.map((h) => (
-              <li key={h.id} className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]">
-                <MemberAvatar name={h.name} />
-                <div className="min-w-0 flex-1 text-sm">
-                  <p className="truncate font-semibold">{h.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{[h.city, h.description].filter(Boolean).join(" · ") || (h.viaCode ? t("onb.byCode") : "")}</p>
-                </div>
-                {h.myStatus && h.myStatus !== "rejected" ? (
-                  <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{STATUS_KEY[h.myStatus] ? t(STATUS_KEY[h.myStatus]) : h.myStatus}</span>
-                ) : h.acceptsJoinRequests ? (
-                  <Button size="sm" onClick={() => join(h)} disabled={pending} className="shrink-0 rounded-xl">
-                    {joining === h.id && <Loader2 className="animate-spin" />} {t("onb.requestJoin")}
-                  </Button>
-                ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">{t("onb.inviteOnly")}</span>
-                )}
+      {showResults && (
+        // One region with a stable shape: old results stay (dimmed) until new ones arrive, the
+        // empty state and the loading row are exactly one result row tall, and the message box
+        // keeps its space even with no results, so the card doesn't jump while typing.
+        <div aria-busy={searching} className="flex flex-col gap-3">
+          <ul aria-live="polite" className={cn("flex flex-col gap-2 transition-opacity duration-150", searching && hits && "opacity-60")}>
+            {hits === null ? (
+              // also covers the 300 ms before the first request goes out
+              !error && (
+                <li aria-hidden className="flex min-h-16 items-center gap-3 rounded-2xl bg-muted/40 p-3">
+                  <span className="size-10 shrink-0 animate-pulse rounded-full bg-muted" />
+                  <span className="flex flex-1 flex-col gap-1.5">
+                    <span className="h-3.5 w-2/5 animate-pulse rounded bg-muted" />
+                    <span className="h-3 w-1/4 animate-pulse rounded bg-muted" />
+                  </span>
+                </li>
+              )
+            ) : hits.length === 0 ? (
+              <li className="flex min-h-16 items-center gap-3 rounded-2xl bg-muted/60 p-3 text-sm text-muted-foreground">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-background/70">
+                  <SearchX className="size-4" />
+                </span>
+                {t("onb.noneFound")}
               </li>
-            ))}
+            ) : (
+              hits.map((h) => (
+                <li key={h.id} className="flex min-h-16 items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]">
+                  <MemberAvatar name={h.name} />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <p className="truncate font-semibold">{h.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{[h.city, h.description].filter(Boolean).join(" · ") || (h.viaCode ? t("onb.byCode") : "")}</p>
+                  </div>
+                  {h.myStatus && h.myStatus !== "rejected" ? (
+                    <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{STATUS_KEY[h.myStatus] ? t(STATUS_KEY[h.myStatus]) : h.myStatus}</span>
+                  ) : h.acceptsJoinRequests ? (
+                    <Button size="sm" onClick={() => join(h)} disabled={pending} className="shrink-0 rounded-xl">
+                      {joining === h.id && <Loader2 className="animate-spin" />} {t("onb.requestJoin")}
+                    </Button>
+                  ) : (
+                    <span className="shrink-0 text-xs text-muted-foreground">{t("onb.inviteOnly")}</span>
+                  )}
+                </li>
+              ))
+            )}
           </ul>
-          <Field label={t("onb.msg")} htmlFor="join-msg">
-            <Textarea id="join-msg" rows={2} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={300} placeholder={t("onb.msgPh")} />
-          </Field>
-        </>
+          <div className={cn(!canMessage && "invisible")} aria-hidden={!canMessage}>
+            <Field label={t("onb.msg")} htmlFor="join-msg">
+              <Textarea id="join-msg" rows={2} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={300} placeholder={t("onb.msgPh")} disabled={!canMessage} />
+            </Field>
+          </div>
+        </div>
       )}
     </div>
   );
