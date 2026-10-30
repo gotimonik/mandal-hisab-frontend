@@ -33,6 +33,7 @@ const PERMS: { key: keyof ManagerPermissions; label: string }[] = [
 
 interface V {
   name: string;
+  nameEnglish: string;
   description: string;
   haptaTreatment: "member_savings" | "income";
   interestMode: "manual" | "rate";
@@ -74,6 +75,7 @@ export function SettingsForm({ org }: { org: Org }) {
   const form = useForm<V>({
     defaultValues: {
       name: org.name,
+      nameEnglish: org.nameEnglish ?? "",
       description: org.description ?? "",
       haptaTreatment: s.haptaTreatment,
       interestMode: s.interest.defaultMode,
@@ -131,6 +133,7 @@ export function SettingsForm({ org }: { org: Org }) {
         method: "PATCH",
         body: {
           name: v.name,
+          nameEnglish: v.nameEnglish.trim(),
           description: v.description.trim(),
           address: opt(v.address),
           city: opt(v.city),
@@ -257,6 +260,18 @@ export function SettingsForm({ org }: { org: Org }) {
           </>
         }
       >
+        <Field
+          label="Name in English letters"
+          htmlFor="o-name-en"
+          className="mb-3"
+          hint={
+            org.nameEnglishSuggestion
+              ? `Search already finds “${org.nameEnglishSuggestion}”. Add other spellings people use, separated by commas.`
+              : "Other spellings or names people might search for, separated by commas."
+          }
+        >
+          <Input id="o-name-en" maxLength={200} placeholder={org.nameEnglishSuggestion ?? "e.g. Shree Ganesh Mandal, Ganesh Group"} {...form.register("nameEnglish")} />
+        </Field>
         <div className="grid grid-cols-1 gap-2">
           <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm">
             <Checkbox checked={form.watch("discoverable")} onCheckedChange={(c) => form.setValue("discoverable", !!c)} />

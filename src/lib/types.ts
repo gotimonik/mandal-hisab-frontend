@@ -103,6 +103,10 @@ export interface Org {
   contactEmail: string | null;
   registrationNumber: string | null;
   registrationDetails: string | null;
+  /** Extra English spellings admins added so people find the Mandal when searching in English. */
+  nameEnglish?: string | null;
+  /** Automatic English spelling of a Gujarati/Hindi name (null for English names). */
+  nameEnglishSuggestion?: string | null;
   status: "pending" | "active" | "suspended" | "archived";
   statusReason: string | null;
   settings: OrgSettings;
