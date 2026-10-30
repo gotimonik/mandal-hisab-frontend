@@ -62,7 +62,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           // phones: a bottom sheet (thumb-reachable, full width); sm+: a centred dialog
-          "fixed inset-x-0 bottom-0 z-50 grid max-h-[92dvh] w-full gap-4 overflow-y-auto overscroll-contain rounded-t-3xl bg-popover px-4 pt-7 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm text-popover-foreground shadow-2xl ring-1 ring-foreground/10 duration-200 outline-none data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom",
+          "fixed inset-x-0 bottom-0 z-50 grid max-h-[92dvh] w-full grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto overscroll-contain rounded-t-3xl bg-popover px-4 pt-7 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm text-popover-foreground shadow-2xl ring-1 ring-foreground/10 duration-200 outline-none data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom",
           "sm:inset-x-auto sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:max-h-[90dvh] sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:p-5 sm:duration-150 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0",
           className
         )}
