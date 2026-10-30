@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import { APP_START, WEB_ONLY_PATHS } from "@/lib/native";
+import { APP_START, isWebOnlyPath } from "@/lib/native";
 
 /**
  * Only does something inside the iOS / Android app (Capacitor); on the website it renders nothing.
@@ -26,7 +26,7 @@ export function NativeShell() {
       const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!a) return;
       const url = new URL(a.href, window.location.href);
-      if (url.origin !== window.location.origin || !WEB_ONLY_PATHS.includes(url.pathname)) return;
+      if (url.origin !== window.location.origin || !isWebOnlyPath(url.pathname)) return;
       e.preventDefault();
       e.stopPropagation();
       if (!AUTH.includes(window.location.pathname)) window.location.assign(APP_START);

@@ -9,10 +9,21 @@ const COLUMNS = [
     title: "Product",
     links: [
       { href: "/features", label: "All features" },
-      { href: "/#how-it-works", label: "How it works" },
+      { href: "/how-it-works", label: "How it works" },
+      { href: "/benefits", label: "Benefits" },
       { href: "/download", label: "Download the app" },
       { href: "/features#security", label: "Security & trust" },
       { href: "/faq", label: "FAQ" },
+    ],
+  },
+  {
+    title: "Learn",
+    links: [
+      { href: "/guides", label: "Guides & help" },
+      { href: "/guides/what-is-a-mandal", label: "What is a Mandal?" },
+      { href: "/guides/how-upad-interest-is-calculated", label: "Upad interest explained" },
+      { href: "/guides/monthly-meeting-checklist-for-treasurers", label: "Treasurer's checklist" },
+      { href: "/glossary", label: "Glossary" },
     ],
   },
   {
@@ -72,7 +83,7 @@ export function PublicFooter() {
             </li>
           </ul>
         </div>
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 [.native-app_&]:hidden">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 [.native-app_&]:hidden">
           {COLUMNS.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h2 className="mb-3 text-sm font-bold">{col.title}</h2>

@@ -36,6 +36,8 @@ export const metadata: Metadata = {
   // Phone numbers in amounts (₹ 81,283) must not turn into call links on iPhone.
   formatDetection: { telephone: false, email: false, address: false },
   appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
+  // Lets AdSense confirm the site belongs to this account.
+  ...(site.ads.adsenseClientId ? { other: { "google-adsense-account": site.ads.adsenseClientId } } : {}),
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } } : {}),
 };
 

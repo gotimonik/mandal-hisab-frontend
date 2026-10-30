@@ -1,6 +1,12 @@
 import { PublicShell } from "@/features/public/shell";
+import { AdSense } from "@/components/app/adsense";
 
-/** Marketing / information pages: Home, Features, Download, About, FAQ, Contact, Privacy, Terms. */
+/** Website pages: Home, Features, Guides, How it works, Benefits, Glossary, Download, About, FAQ, Contact, Privacy, Terms. Ads (when set up) load only here. */
 export default function PublicLayout({ children }: LayoutProps<"/">) {
-  return <PublicShell>{children}</PublicShell>;
+  return (
+    <PublicShell language={false}>
+      {children}
+      <AdSense />
+    </PublicShell>
+  );
 }

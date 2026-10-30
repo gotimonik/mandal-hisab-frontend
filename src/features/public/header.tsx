@@ -26,7 +26,7 @@ export function PublicHeader({ actions, mobileActions, language }: { actions: Re
             </Link>
           ))}
         </nav>
-        {/* the language picker shows everywhere, also inside the app */}
+        {/* the language picker (sign-in pages only — the website pages are English-only) */}
         <div className="ml-auto flex items-center">{language}</div>
         <div className="hidden items-center gap-2 sm:flex [.native-app_&]:!hidden">{actions}</div>
         <Button variant="ghost" size="icon" className="lg:hidden [.native-app_&]:!hidden" aria-label="Open menu" onClick={() => setOpen(true)}>

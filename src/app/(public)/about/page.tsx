@@ -17,7 +17,7 @@ const BELIEFS = [
   { icon: <ScrollText />, tone: "violet", title: "History is never overwritten", text: "Mistakes are corrected with a reversal that keeps the original entry and the reason. The audit log shows who did what, and when." },
   { icon: <Smartphone />, tone: "orange", title: "Simple on a phone", text: "Built for the treasurer collecting cash at the monthly meeting: big buttons, quick actions, and it works on any phone browser." },
   { icon: <Languages />, tone: "sky", title: "In your language", text: `Use MandalHisab in ${site.languages.join(", ")}. Everyone in the Mandal can switch to the language they read best.` },
-  { icon: <Lock />, tone: "rose", title: "Your data stays yours", text: "Each Mandal's data is kept separate. We don't show ads or sell data, and you can export your records whenever you like." },
+  { icon: <Lock />, tone: "rose", title: "Your data stays yours", text: "Each Mandal's data is kept separate and never sold. Ads only ever appear on our public website — never inside your Mandal — and you can export your records whenever you like." },
 ] as const;
 
 const AUDIENCE = [

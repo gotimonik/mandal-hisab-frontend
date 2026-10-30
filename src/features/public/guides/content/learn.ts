@@ -1,0 +1,375 @@
+import type { Guide } from "../types";
+
+export const LEARN_GUIDES: Guide[] = [
+  {
+    slug: "for-members-check-your-savings",
+    title: "For members: check your savings, report a payment and request upad",
+    description: "A guide for Mandal members: join your Mandal, read your savings passbook, tell the treasurer you've paid, request upad and download your receipts.",
+    category: "members",
+    kind: "howto",
+    audience: "Members",
+    updated: "2026-10-30",
+    related: ["roles-and-inviting-people", "what-is-a-mandal", "how-upad-interest-is-calculated"],
+    body: [
+      {
+        type: "p",
+        text: "If your Mandal uses MandalHisab, you can see your own savings any time on your phone — no need to ask the treasurer or wait for the yearly meeting. You only ever see your own money; other members can't see yours.",
+      },
+      { type: "h2", text: "Join your Mandal" },
+      {
+        type: "steps",
+        items: [
+          { title: "Create a free account", text: "Use your name, email and a password. Verify your email from the link we send." },
+          { title: "Choose “Join a Mandal”", text: "Type the join code your admin shared, or search for the Mandal by name." },
+          { title: "Send the request", text: "Add a short message so the admin knows who you are. Once approved, your savings appear. If you received an email invitation instead, just open the link." },
+        ],
+      },
+      { type: "h2", text: "Your savings at a glance" },
+      {
+        type: "p",
+        text: "**My savings** shows your balance and how it's made up: **hapta paid + interest earned − withdrawals**, plus any opening balance from before the Mandal moved to MandalHisab. The tabs below show everything in detail.",
+      },
+      {
+        type: "list",
+        items: [
+          "**Savings** — your passbook with date, particulars, credit, debit and running balance.",
+          "**Monthly hapta** — every month's due amount, what you paid and anything still due.",
+          "**My upad** — upad you've taken, what's outstanding and the interest due.",
+          "**Withdrawals**, **Payments**, **Receipts** and **Statement** — every rupee in and out, with receipts you can print or save as PDF.",
+        ],
+      },
+      { type: "h2", text: "Tell the treasurer you've paid" },
+      {
+        type: "p",
+        text: "Paid your hapta to someone else, or outside the meeting? Tap **I have paid**, choose what it's for (monthly hapta, upad or other), enter the amount and date, and submit. Hapta is applied to your oldest unpaid month first. It counts once the admin verifies the money reached the Mandal — then you get a receipt. If it's rejected you'll see the reason.",
+      },
+      { type: "h2", text: "Request upad" },
+      {
+        type: "p",
+        text: "If your Mandal allows requests, tap **Request upad**. You'll see how much the Mandal has available right now. Enter the amount and an optional purpose and send it. The admin approves (with the interest rate) or rejects it. Once given, interest is due every month from the next month on the amount you still owe. You can cancel a request while it's waiting.",
+      },
+      {
+        type: "tip",
+        title: "Notifications",
+        text: "The bell shows payment confirmations, approvals and due-date reminders. In the phone app you can turn on alerts so they arrive the moment something happens.",
+      },
+    ],
+  },
+  {
+    slug: "what-is-a-mandal",
+    title: "What is a Mandal? Savings Mandals, hapta and upad explained",
+    description: "How community savings Mandals (bachat mandals) work in India: monthly hapta, pooled funds, upad loans to members, interest shared back, and settling at the end.",
+    category: "learn",
+    kind: "article",
+    audience: "Everyone",
+    updated: "2026-10-30",
+    related: ["how-upad-interest-is-calculated", "running-a-transparent-mandal", "paper-register-vs-app"],
+    body: [
+      {
+        type: "p",
+        text: "Across Gujarat, Maharashtra, Rajasthan and much of India, families, friends, neighbours and colleagues run small savings groups usually called a **Mandal** — a bachat mandal, a family Mandal, a friends' Mandal or a samaj Mandal. The idea is simple and old: everyone puts in a fixed amount every month, the money is pooled, and members can borrow from the pool when they need it.",
+      },
+      { type: "h2", text: "How a typical Mandal works" },
+      {
+        type: "steps",
+        items: [
+          { title: "Members agree the rules", text: "How much each member pays per month, when the money is collected, what interest is charged on loans, and how long the Mandal runs — often 3 or 5 years." },
+          { title: "Hapta every month", text: "Each member pays the **hapta** — say ₹500 or ₹1,000 — usually in cash at a monthly meeting. Some families pay two or three haptas under one name." },
+          { title: "The fund grows", text: "With 30 members paying ₹1,000, the Mandal collects ₹30,000 a month and ₹3,60,000 in a year." },
+          { title: "Members take upad", text: "A member who needs money takes **upad** — a loan from the pooled cash — and pays interest every month on what's outstanding, typically 1–2% a month." },
+          { title: "Interest is shared", text: "The interest belongs to all the savers, so it's added to members' savings, usually in proportion to what each has saved." },
+          { title: "Settlement", text: "At the end of the term each member gets back their savings plus their share of earnings, minus any upad they still owe." },
+        ],
+      },
+      { type: "h2", text: "Why people choose a Mandal" },
+      {
+        type: "list",
+        items: [
+          "**Discipline** — a fixed monthly amount, collected in front of everyone, makes saving a habit.",
+          "**Quick help** — upad can be given the same evening, without paperwork, to someone the group knows and trusts.",
+          "**Returns stay in the group** — interest paid by one member is earned by all the others.",
+          "**Community** — the monthly meeting is as much social as financial.",
+        ],
+      },
+      { type: "h2", text: "Mandal, chit fund, self-help group: what's the difference?" },
+      {
+        type: "table",
+        head: ["", "Savings Mandal", "Chit fund / BC", "Self-help group (SHG)"],
+        rows: [
+          ["Monthly payment", "Fixed hapta", "Fixed instalment", "Fixed savings"],
+          ["Who gets money", "Anyone who needs upad", "One member per month by auction or draw", "Members, often with bank linkage"],
+          ["Members' savings", "Grow and are returned at the end", "Each gets the pot once", "Grow and stay in the group"],
+          ["Typical size", "10–100 people", "10–50 people", "10–20 people"],
+        ],
+        caption: "Registered chit funds in India are regulated under the Chit Funds Act, 1982. MandalHisab is designed for savings Mandals and does not run auctions or draws.",
+      },
+      { type: "h2", text: "The hard part: the hisab" },
+      {
+        type: "p",
+        text: "Running a Mandal depends completely on trust in the person keeping the accounts. With a paper register it's hard for members to check their own balance, totals are added by hand, and a single mistake can take hours to find. When the treasurer changes or the Mandal closes, small errors become arguments.",
+      },
+      {
+        type: "p",
+        text: "That's the problem MandalHisab solves: it keeps the same Mandal you already run — cash, meetings, your rules — but the records are complete, add up automatically, and every member can see their own savings. Read [paper register vs an app](/guides/paper-register-vs-app) for a comparison, or [start a Mandal](/guides/start-a-new-mandal) in a few minutes.",
+      },
+    ],
+  },
+  {
+    slug: "how-upad-interest-is-calculated",
+    title: "How upad interest is calculated (with examples)",
+    description: "Monthly interest on upad explained with worked examples: monthly vs yearly rates, part repayments, unpaid months carried forward, and how interest is shared with members.",
+    category: "learn",
+    kind: "article",
+    audience: "Everyone",
+    updated: "2026-10-30",
+    related: ["give-upad-and-collect-interest", "credit-interest-to-members", "what-is-a-mandal"],
+    body: [
+      {
+        type: "p",
+        text: "Mandals almost always quote upad interest **per month** — “1 rupiya” or “2 taka” — rather than per year like a bank. Understanding how that works makes it easy to check any member's interest, whether you use MandalHisab or a register.",
+      },
+      { type: "h2", text: "The basic rule" },
+      {
+        type: "p",
+        text: "Each month, interest = **amount still outstanding × monthly rate**. In MandalHisab it's due from the month after the upad is given, and it's calculated on the upad amount only — unpaid interest is carried forward but does not earn interest itself.",
+      },
+      {
+        type: "table",
+        head: ["Upad", "Rate / month", "Interest / month", "Same as per year"],
+        rows: [
+          ["₹10,000", "1%", "₹100", "12% a year"],
+          ["₹25,000", "1.5%", "₹375", "18% a year"],
+          ["₹50,000", "2%", "₹1,000", "24% a year"],
+        ],
+      },
+      { type: "h2", text: "Example 1: a simple upad" },
+      {
+        type: "p",
+        text: "Ramesh takes ₹20,000 upad on 10 March at 1% a month. From April, ₹200 interest is due each month. If he pays ₹200 every month and returns the full ₹20,000 in September, he has paid six months of interest — April to September — **₹1,200** in total.",
+      },
+      { type: "h2", text: "Example 2: returning part of the upad" },
+      {
+        type: "p",
+        text: "Meena takes ₹30,000 at 1.5% a month — ₹450 interest a month. After three months she returns ₹10,000 along with that month's interest. From the next month the outstanding amount is ₹20,000, so the interest falls to **₹300** a month. Returning even part of the upad early saves the member money.",
+      },
+      { type: "h2", text: "Example 3: missed months" },
+      {
+        type: "p",
+        text: "Suresh's upad of ₹15,000 at 2% carries ₹300 a month. He misses June and July. In August, ₹900 is due — three months of ₹300. When he pays ₹600, it clears **June and July first** (oldest month first), and ₹300 for August is still due. The extra months are not charged extra interest; they simply wait to be collected.",
+      },
+      { type: "h2", text: "Where the interest goes" },
+      {
+        type: "p",
+        text: "Interest paid on upad is income for the whole Mandal. MandalHisab adds it to every member's savings **in proportion to their savings**. If the Mandal receives ₹3,000 interest in a month and Asha holds 10% of all members' savings, ₹300 is added to her balance.",
+      },
+      {
+        type: "tip",
+        tone: "note",
+        title: "EMI loans are different",
+        text: "Some Mandals also give formal loans with a repayment schedule. For those MandalHisab supports reducing-balance (EMI), flat, simple and compound interest, and shows the full schedule before the loan is approved. Monthly upad, described here, is the simpler and more common arrangement.",
+      },
+      { type: "h2", text: "Setting a fair rate" },
+      {
+        type: "p",
+        text: "There's no single right rate. Mandals usually set it in the first meeting and keep one default for everyone, which avoids any feeling of favouritism. Write the rate into your Mandal's rules, set it as the default in Settings, and change it only by a meeting decision. See [rules for a transparent Mandal](/guides/running-a-transparent-mandal).",
+      },
+    ],
+  },
+  {
+    slug: "monthly-meeting-checklist-for-treasurers",
+    title: "The treasurer's monthly meeting checklist",
+    description: "A practical before, during and after checklist for Mandal treasurers: what to prepare, how to collect smoothly, and how to close the books for the month.",
+    category: "learn",
+    kind: "article",
+    audience: "Admins & treasurers",
+    updated: "2026-10-30",
+    related: ["collect-hapta-at-the-monthly-meeting", "cash-book-expenses-and-donations", "reports-and-month-summary"],
+    body: [
+      {
+        type: "p",
+        text: "The treasurer (khajanchi) carries the most responsibility in a Mandal, usually without being paid for it. A short routine every month prevents almost every problem. Here's a checklist you can follow whether you use MandalHisab, a spreadsheet or a register.",
+      },
+      { type: "h2", text: "Before the meeting" },
+      {
+        type: "list",
+        items: [
+          "Check last month's closing cash and make sure the cash box matches it.",
+          "Look at who still owes hapta from earlier months — in MandalHisab, the **Older hapta still due** card.",
+          "Check upad interest due this month and any upad requests waiting.",
+          "Verify payments members reported since the last meeting.",
+          "Charge your phone and keep a receipt book or printer ready if your Mandal uses paper receipts too.",
+        ],
+      },
+      { type: "h2", text: "During the meeting" },
+      {
+        type: "list",
+        items: [
+          "Record every payment **as you receive it**, not later from memory.",
+          "Count cash in front of the member and say the amount aloud.",
+          "Record upad given and returned before the cash leaves or enters the box.",
+          "Note expenses (tea, register, photocopies) as cash out entries with a description.",
+          "If someone asks for their balance, show it on the phone — or let them check in the app.",
+        ],
+      },
+      { type: "h2", text: "After the meeting" },
+      {
+        type: "list",
+        items: [
+          "Count the cash and compare it with closing cash in the cash book. Find any difference **the same day**.",
+          "Share the month summary on the Mandal's WhatsApp group.",
+          "Deposit surplus cash in the bank if your Mandal keeps one, and record it as a transfer between accounts.",
+          "Call members who still owe hapta, using the overdue report.",
+        ],
+      },
+      { type: "h2", text: "Once a year" },
+      {
+        type: "list",
+        items: [
+          "Credit any yearly interest or bonus the members agreed.",
+          "Print income & expenditure, trial balance and balance sheet for the annual meeting.",
+          "Have someone other than the treasurer check the books — the audit log helps.",
+          "Review the rules: hapta amount, upad rate, maximum upad per member.",
+        ],
+      },
+      {
+        type: "tip",
+        title: "Two people, always",
+        text: "Wherever possible, have a second person present when cash is counted or paid out. It protects the treasurer as much as the members.",
+      },
+    ],
+  },
+  {
+    slug: "running-a-transparent-mandal",
+    title: "10 rules for running a transparent, trusted Mandal",
+    description: "Practical rules that keep a savings Mandal fair and free of disputes: written rules, fixed rates, two signatures, visible records and a clear plan for closing.",
+    category: "learn",
+    kind: "article",
+    audience: "Everyone",
+    updated: "2026-10-30",
+    related: ["what-is-a-mandal", "monthly-meeting-checklist-for-treasurers", "close-and-settle-a-mandal"],
+    body: [
+      {
+        type: "p",
+        text: "Most Mandal disputes aren't about dishonesty. They come from rules nobody wrote down, numbers nobody could check, and decisions people remember differently. These ten rules, used by well-run Mandals, prevent nearly all of them.",
+      },
+      {
+        type: "steps",
+        items: [
+          { title: "Write the rules down", text: "Hapta amount, due day, upad rate, maximum upad, penalties (if any), term and how money is shared at the end. One page is enough. Share it with every member." },
+          { title: "One rate for everyone", text: "Use one default upad rate. Different rates for different people is the fastest way to lose trust." },
+          { title: "Set a maximum upad", text: "For example, no more than three times a member's savings, or no more than 20% of the fund to one person. It protects the Mandal if someone can't repay." },
+          { title: "Record at the moment", text: "Every rupee is recorded when it changes hands, not later. Memory is the enemy of accurate books." },
+          { title: "Let members see their own balance", text: "When members can check their savings themselves, questions disappear. That's the core idea of MandalHisab." },
+          { title: "Never overwrite history", text: "Mistakes are corrected with a reversal and a reason, never by crossing out or editing. Anyone should be able to see what happened." },
+          { title: "Two people for cash", text: "Count cash and pay out withdrawals and upad with a second person present." },
+          { title: "Share a monthly summary", text: "A one-page summary on the WhatsApp group after every meeting: collected, lent, interest, cash in hand." },
+          { title: "Have the books checked", text: "Once a year, someone other than the treasurer reviews the cash book, trial balance and audit log." },
+          { title: "Plan the closing from day one", text: "Agree how money is shared at the end — by hapta shares is common — and what happens if a member leaves early." },
+        ],
+      },
+      {
+        type: "tip",
+        title: "Decide in the meeting, record the reason",
+        text: "When the Mandal changes something — the hapta amount, a waiver for a member in difficulty — record the reason with it, for example “Decided in the Diwali meeting”. MandalHisab asks for a reason for exactly these actions.",
+      },
+    ],
+  },
+  {
+    slug: "paper-register-vs-app",
+    title: "Paper register, Excel or an app: which is right for your Mandal?",
+    description: "An honest comparison of keeping a Mandal's hisab in a paper register, a spreadsheet, or an app like MandalHisab — accuracy, transparency, effort and risk.",
+    category: "learn",
+    kind: "article",
+    audience: "Everyone",
+    updated: "2026-10-30",
+    related: ["what-is-a-mandal", "start-a-new-mandal", "double-entry-for-mandals"],
+    body: [
+      {
+        type: "p",
+        text: "Every Mandal keeps its accounts somehow. Most start with a register, some move to Excel, and more now use an app. Each has its place; here's an honest comparison to help you decide.",
+      },
+      {
+        type: "table",
+        head: ["", "Paper register", "Excel / Google Sheets", "MandalHisab"],
+        rows: [
+          ["Cost", "Free", "Free", "Free during early access"],
+          ["Totals", "Added by hand", "Formulas (can break)", "Automatic, to the paisa"],
+          ["Members check their balance", "Ask the treasurer", "Only if you share the whole sheet", "Each member sees only their own"],
+          ["Upad interest", "Calculated by hand", "Your own formulas", "Calculated and carried forward"],
+          ["Mistakes", "Crossed out", "Overwritten, often unseen", "Reversals with reasons and an audit log"],
+          ["Receipts", "Receipt book", "None", "Numbered receipts, print or PDF"],
+          ["If the treasurer changes", "Hand over the book", "Hand over the file", "Change roles; history stays"],
+          ["Risk of loss", "Book lost or damaged", "Laptop or file lost", "Kept online; export any time"],
+          ["Works without internet", "Yes", "Yes", "No"],
+        ],
+      },
+      { type: "h2", text: "When a register is enough" },
+      {
+        type: "p",
+        text: "A small Mandal of five or six family members, with no upad and no interest, can do fine with a register — as long as the totals are checked by someone else now and then.",
+      },
+      { type: "h2", text: "When Excel starts to hurt" },
+      {
+        type: "p",
+        text: "Spreadsheets work until the Mandal grows: one wrong formula changes every total, two people edit different copies, and sharing the sheet shows everyone's savings to everyone. Interest that carries forward over months gets complicated quickly.",
+      },
+      { type: "h2", text: "When an app makes sense" },
+      {
+        type: "p",
+        text: "Once you have more than about ten members, any upad with interest, or members who regularly ask “what's my balance?”, an app saves the treasurer hours every month and removes doubt. MandalHisab keeps your Mandal's way of working — cash, meetings, your rules — and only replaces the counting.",
+      },
+      {
+        type: "tip",
+        tone: "note",
+        title: "Keep the register for a while",
+        text: "Many Mandals keep the paper register for the first two or three months alongside MandalHisab, until everyone is comfortable. After that the app becomes the one source of truth.",
+      },
+    ],
+  },
+  {
+    slug: "double-entry-for-mandals",
+    title: "Why your Mandal's books always balance: double-entry, simply explained",
+    description: "A plain-language explanation of double-entry bookkeeping for Mandal members and treasurers — and why it makes savings records trustworthy.",
+    category: "learn",
+    kind: "article",
+    audience: "Everyone",
+    updated: "2026-10-30",
+    related: ["reports-and-month-summary", "cash-book-expenses-and-donations", "paper-register-vs-app"],
+    body: [
+      {
+        type: "p",
+        text: "You don't need to be an accountant to run a Mandal. But one idea from accounting — **double-entry** — explains why MandalHisab's numbers can be trusted, and it's simpler than it sounds.",
+      },
+      { type: "h2", text: "Every rupee comes from somewhere and goes somewhere" },
+      {
+        type: "p",
+        text: "When Asha pays ₹1,000 hapta, two things happen at once: the **cash box goes up** by ₹1,000, and the Mandal **owes Asha** ₹1,000 more (her savings). Double-entry simply records both sides of every transaction. Because each entry has two equal sides, the totals must always balance.",
+      },
+      {
+        type: "table",
+        head: ["What happened", "One side", "Other side"],
+        rows: [
+          ["Asha pays ₹1,000 hapta", "Cash +₹1,000", "Asha's savings +₹1,000"],
+          ["Ramesh takes ₹20,000 upad", "Upad given out +₹20,000", "Cash −₹20,000"],
+          ["Ramesh pays ₹200 interest", "Cash +₹200", "Interest income +₹200"],
+          ["Mandal buys a ₹150 register", "Expenses +₹150", "Cash −₹150"],
+        ],
+      },
+      { type: "h2", text: "Why it matters to members" },
+      {
+        type: "list",
+        items: [
+          "**Totals can't drift.** If the cash book says ₹48,350, the sum of all savings, income and expenses agrees — always.",
+          "**Every report agrees.** The month summary, cash book and member passbooks are all built from the same entries.",
+          "**Errors show up.** A one-sided mistake can't hide; something won't balance.",
+          "**Corrections are visible.** A mistake is fixed with an opposite entry (a reversal) — the original stays, so nothing disappears.",
+        ],
+      },
+      { type: "h2", text: "You don't have to do any of it" },
+      {
+        type: "p",
+        text: "In MandalHisab the treasurer just taps **Collect**, **Give upad** or **Withdrawal**. The app posts both sides in the background. The **Trial balance** and **Balance sheet** reports show the result for anyone who wants to check — for example the auditor at the annual meeting.",
+      },
+    ],
+  },
+];

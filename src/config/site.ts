@@ -28,7 +28,7 @@ export const site = {
     grievanceOfficer: "Monik Goti", // required under India's IT Rules / DPDP Act
     grievanceEmail: "gotimonik1@gmail.com",
     jurisdiction: "Surat, Gujarat, India", // courts for disputes
-    lastUpdated: "27 October 2026",
+    lastUpdated: "30 October 2026",
   },
 
   /** App store links. null = "Coming soon". */
@@ -45,6 +45,15 @@ export const site = {
   /** Google Analytics (gtag.js). Loaded only in production builds; set to null to turn it off. */
   analytics: {
     googleTagId: "G-H94RE38JJF" as string | null,
+  },
+
+  /**
+   * Google AdSense. Set to your publisher ID ("ca-pub-1234567890123456") once AdSense gives you one:
+   * the Auto ads script then loads on the public website pages (never on sign-in pages, inside a
+   * Mandal, or in the iOS / Android apps) and /ads.txt is served. null = no ads.
+   */
+  ads: {
+    adsenseClientId: "ca-pub-6031242056409187" as string | null,
   },
 
   languages: ["English", "ગુજરાતી", "हिन्दी"],

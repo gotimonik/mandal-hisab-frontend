@@ -82,7 +82,36 @@ export default function PrivacyPage() {
               receives names, contact details, amounts or any Mandal&apos;s records.
             </li>
           </ul>
-          <p>We do not use advertising cookies, and we don&apos;t use analytics to show you ads or build advertising profiles.</p>
+          <h3>Advertising on our public website</h3>
+          <p>
+            To keep {site.name} free, our <b>public website pages</b> — such as the home page, features, guides, glossary and FAQ — may show ads served by <b>Google AdSense</b>. Ads are{" "}
+            <b>never</b> shown on the sign-in pages, anywhere inside a Mandal once you&apos;re signed in, or inside the Android and iOS apps.
+          </p>
+          <ul>
+            <li>
+              Google and its partners use cookies (such as <code>__gads</code> and <code>__gpi</code>) or similar technology to serve ads based on your earlier visits to this and other websites, to
+              limit how often you see an ad, and to measure how ads perform. Google&apos;s use of advertising cookies lets it and its partners show ads to you based on those visits.
+            </li>
+            <li>
+              You can turn off personalised ads in Google&apos;s{" "}
+              <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer">
+                Ad Settings
+              </a>
+              , or opt out of some third-party vendors&apos; use of cookies at{" "}
+              <a href="https://www.aboutads.info/choices" target="_blank" rel="noopener noreferrer">
+                aboutads.info
+              </a>
+              . Read{" "}
+              <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">
+                how Google uses information from sites that use its services
+              </a>
+              .
+            </li>
+            <li>
+              Ad partners never receive anything from inside a Mandal: no names, contact details, amounts, balances or other records. We don&apos;t use the analytics described above to build
+              advertising profiles.
+            </li>
+          </ul>
 
           <h2>3. Why we use it</h2>
           <ul>
@@ -93,7 +122,7 @@ export default function PrivacyPage() {
             <li>To meet legal obligations.</li>
           </ul>
           <p>
-            <b>We never sell personal data, and we never show ads.</b>
+            <b>We never sell personal data.</b> Ads appear only on our public website pages, as described in section 2 — never inside a Mandal or in the apps.
           </p>
 
           <h2>4. Who can see what</h2>
@@ -127,6 +156,9 @@ export default function PrivacyPage() {
             </li>
             <li>
               <b>Google Analytics and Firebase</b> (Google) — measure how the website and apps are used, as described in section 2.
+            </li>
+            <li>
+              <b>Google AdSense</b> (Google) — shows ads on our public website pages, as described in section 2.
             </li>
           </ul>
           <p>Some of these providers may process data on servers outside India as part of delivering their service. Where that happens, we rely on their contractual and security commitments.</p>
@@ -169,7 +201,7 @@ export default function PrivacyPage() {
           <h2>9. Children</h2>
           <p>
             {site.name} accounts are meant for adults. If a Mandal records information about a person under 18 (for example, as a member whose parent manages their savings), the Mandal is
-            responsible for obtaining verifiable consent from a parent or lawful guardian. We do not knowingly track or target children or show them advertising.
+            responsible for obtaining verifiable consent from a parent or lawful guardian. We do not knowingly track or target children, and ads are never shown inside a Mandal or in the apps, where members&apos; records are.
           </p>
 
           <h2>10. Changes to this policy</h2>

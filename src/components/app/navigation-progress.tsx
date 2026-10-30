@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { cn } from "@/lib/utils";
-import { WEB_ONLY_PATHS } from "@/lib/native";
+import { isWebOnlyPath } from "@/lib/native";
 
 const START = "mh:navstart";
 
@@ -61,7 +61,7 @@ export function NavigationProgress() {
       const here = window.location;
       if (to.origin !== here.origin || to.pathname.startsWith("/api/")) return;
       if (to.pathname === here.pathname && to.search === here.search) return; // same page / #hash
-      if (WEB_ONLY_PATHS.includes(to.pathname) && Capacitor.isNativePlatform()) return; // blocked in the app
+      if (isWebOnlyPath(to.pathname) && Capacitor.isNativePlatform()) return; // blocked in the app
       start();
     };
     // Capture phase: Next.js <Link> cancels the browser's default click (to navigate in-app),
