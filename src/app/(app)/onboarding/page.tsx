@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
 import { ActionButton } from "@/components/app/action-button";
 import { OnboardingActions } from "@/features/onboarding/onboarding-actions";
+import { OrgLogo } from "@/components/app/org-logo";
 import { getT } from "@/i18n/server";
 import type { Key } from "@/i18n/core";
 
@@ -15,7 +16,7 @@ interface MyInvitation {
   id: string;
   role: string;
   expiresAt: string;
-  organization: { _id: string; name: string; city?: string | null } | null;
+  organization: { _id: string; name: string; city?: string | null; logoUrl?: string | null } | null;
   invitedByName: string | null;
 }
 
@@ -61,9 +62,11 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
           <div className="flex flex-col gap-2">
             {invitations.map((i) => (
               <div key={i.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-2 ring-amber-400/40">
-                <IconChip tone="amber">
-                  <Mail />
-                </IconChip>
+                <OrgLogo logoUrl={i.organization?.logoUrl} className="rounded-xl">
+                  <IconChip tone="amber">
+                    <Mail />
+                  </IconChip>
+                </OrgLogo>
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="truncate font-semibold">{i.organization?.name ?? t("onb.aMandal")}</p>
                   <p className="text-xs text-muted-foreground">{i.invitedByName ? t("onb.invitedBy", { who: i.invitedByName, role: role(i.role) }) : t("onb.invitedAs", { role: role(i.role) })}</p>
@@ -91,7 +94,9 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
               const open = o.membershipStatus === "active" && o.status !== "suspended";
               const body = (
                 <>
-                  <MemberAvatar name={o.name} />
+                  <OrgLogo logoUrl={o.logoUrl}>
+                    <MemberAvatar name={o.name} />
+                  </OrgLogo>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{o.name}</span>
                     <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">

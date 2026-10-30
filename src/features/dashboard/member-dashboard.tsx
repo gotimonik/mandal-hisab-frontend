@@ -17,6 +17,7 @@ import { moneyFmt } from "@/lib/currency";
 import { MySchemes } from "@/features/my/my-schemes";
 import { SectionTitle } from "@/components/app/bits";
 import { ArrowRight } from "lucide-react";
+import { OrgLogo } from "@/components/app/org-logo";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function MemberDashboard({ orgId, data, org }: { orgId: string; data: any; org: Org }) {
@@ -34,8 +35,13 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
   return (
     <>
       <div className="mb-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {org.name} · {tr("mdash.memberNo", { no: data.member.membershipNumber })}
+        <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <OrgLogo logoUrl={org.logoUrl} className="size-6 rounded-md">
+            {null}
+          </OrgLogo>
+          <span className="min-w-0 truncate">
+            {org.name} · {tr("mdash.memberNo", { no: data.member.membershipNumber })}
+          </span>
         </p>
         <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">{tr("dash.namaste", { name: data.member.name.split(" ")[0] })}</h1>
       </div>

@@ -7,6 +7,7 @@ import { SummaryBand } from "@/components/app/summary-band";
 import { ChipLinks } from "@/components/app/chip-links";
 import { EmptyState } from "@/components/app/empty-state";
 import { IconChip } from "@/components/app/bits";
+import { OrgLogo } from "@/components/app/org-logo";
 import { StatusBadge } from "@/components/app/status-badge";
 import { ActionButton } from "@/components/app/action-button";
 import { FilterBar, FilterField } from "@/components/app/filter-bar";
@@ -22,6 +23,7 @@ interface PlatformOrg {
   _id: string;
   name: string;
   code: string;
+  logoUrl?: string | null;
   city?: string;
   status: string;
   statusReason?: string;
@@ -108,9 +110,11 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
             {orgs.map((o) => (
               <li key={o._id} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", o.status === "pending" && "ring-2 ring-amber-400/40", o.status === "archived" && "opacity-70")}>
                 <div className="flex items-start gap-3">
-                  <IconChip tone="indigo" size="sm">
-                    <Building2 />
-                  </IconChip>
+                  <OrgLogo logoUrl={o.logoUrl} className="size-8 rounded-lg">
+                    <IconChip tone="indigo" size="sm">
+                      <Building2 />
+                    </IconChip>
+                  </OrgLogo>
                   <div className="min-w-0 flex-1 text-sm">
                     <span className="font-semibold">{o.name}</span>
                     <p className="truncate text-xs text-muted-foreground">{orgLine(o)}</p>
@@ -143,9 +147,11 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
                     <TableRow key={o._id} className={cn(o.status === "archived" && "text-muted-foreground")}>
                       <TableCell>
                         <div className="flex items-center gap-2.5">
-                          <IconChip tone="indigo" size="sm">
-                            <Building2 />
-                          </IconChip>
+                          <OrgLogo logoUrl={o.logoUrl} className="size-8 rounded-lg">
+                            <IconChip tone="indigo" size="sm">
+                              <Building2 />
+                            </IconChip>
+                          </OrgLogo>
                           <div className="min-w-0">
                             <div className="font-semibold">{o.name}</div>
                             <div className="text-xs text-muted-foreground">{orgLine(o)}</div>

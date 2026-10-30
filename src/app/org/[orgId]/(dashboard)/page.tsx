@@ -40,6 +40,7 @@ import { SchemesOverview } from "@/features/dashboard/schemes-overview";
 import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
+import { OrgLogo } from "@/components/app/org-logo";
 
 export const metadata = { title: "Dashboard" };
 
@@ -83,8 +84,13 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
   return (
     <>
       <div className="mb-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {org.name} · {tr("dash.fy", { fy: d.financialYear })}
+        <p className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <OrgLogo logoUrl={org.logoUrl} className="size-6 rounded-md">
+            {null}
+          </OrgLogo>
+          <span className="min-w-0 truncate">
+            {org.name} · {tr("dash.fy", { fy: d.financialYear })}
+          </span>
         </p>
         <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">{tr("dash.namaste", { name: me.user.name.split(" ")[0] })}</h1>
         {org.settings.endMonth && !org.settings.settlement && (

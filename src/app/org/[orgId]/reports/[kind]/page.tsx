@@ -15,6 +15,7 @@ import { reportLook } from "@/features/reports/look";
 import { IconChip } from "@/components/app/bits";
 import Link from "next/link";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
+import { OrgLogo } from "@/components/app/org-logo";
 
 export default async function ReportPage({ params, searchParams }: PageProps<"/org/[orgId]/reports/[kind]">) {
   const { orgId, kind } = await params;
@@ -128,11 +129,16 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
           )}
         </FilterBar>
       )}
-      <div className="hidden print:mb-4 print:block">
-        <h2 className="text-lg font-semibold">
-          {org.name} — {meta.title}
-        </h2>
-        <p className="text-sm">{period}</p>
+      <div className="hidden print:mb-4 print:flex print:items-center print:gap-3">
+        <OrgLogo logoUrl={org.logoUrl} className="size-12 rounded-lg ring-0">
+          {null}
+        </OrgLogo>
+        <div>
+          <h2 className="text-lg font-semibold">
+            {org.name} — {meta.title}
+          </h2>
+          <p className="text-sm">{period}</p>
+        </div>
       </div>
       {renderReport(kind, data, orgId)}
     </>

@@ -11,6 +11,7 @@ import { Field, FormError } from "@/components/app/field";
 import { apiRead } from "@/app/actions/api";
 import { apiMutate } from "@/lib/api-client";
 import { MemberAvatar } from "@/components/app/bits";
+import { OrgLogo } from "@/components/app/org-logo";
 import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { Key } from "@/i18n/core";
@@ -20,6 +21,7 @@ interface Hit {
   name: string;
   city: string | null;
   description?: string | null;
+  logoUrl?: string | null;
   acceptsJoinRequests: boolean;
   myStatus: string | null;
   viaCode?: boolean;
@@ -57,7 +59,7 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
     const looksLikeCode = /^[A-Z0-9]{6,12}$/.test(term.toUpperCase()) && !/\s/.test(term);
     const [byName, byCode] = await Promise.all([
       apiRead<Hit[]>(`/organizations/search?q=${encodeURIComponent(term)}`),
-      looksLikeCode ? apiRead<{ id: string; name: string; city: string | null }>(`/organizations/lookup?code=${encodeURIComponent(term.toUpperCase())}`) : Promise.resolve(null),
+      looksLikeCode ? apiRead<{ id: string; name: string; city: string | null; logoUrl?: string | null }>(`/organizations/lookup?code=${encodeURIComponent(term.toUpperCase())}`) : Promise.resolve(null),
     ]);
     if (id !== seq.current) return; // the user kept typing: a newer search owns the results
     setSearching(false);
@@ -135,7 +137,9 @@ export function JoinOrgForm({ defaultCode, autoFocus = false }: { defaultCode?: 
             ) : (
               hits.map((h) => (
                 <li key={h.id} className="flex min-h-16 items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]">
-                  <MemberAvatar name={h.name} />
+                  <OrgLogo logoUrl={h.logoUrl}>
+                    <MemberAvatar name={h.name} />
+                  </OrgLogo>
                   <div className="min-w-0 flex-1 text-sm">
                     <p className="truncate font-semibold">{h.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{[h.city, h.description].filter(Boolean).join(" · ") || (h.viaCode ? t("onb.byCode") : "")}</p>

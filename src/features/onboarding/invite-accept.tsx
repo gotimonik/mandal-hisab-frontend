@@ -11,9 +11,10 @@ import { apiMutate } from "@/lib/api-client";
 import { logoutAction } from "@/app/actions/auth";
 import { useT } from "@/i18n/client";
 import { LogoutButton } from "@/components/app/logout-button";
+import { OrgLogo } from "@/components/app/org-logo";
 
 export interface InvitePreview {
-  organization: { _id: string; name: string; city: string | null } | null;
+  organization: { _id: string; name: string; city: string | null; logoUrl?: string | null } | null;
   invitedByName: string | null;
   role: "admin" | "manager" | "member";
   email: string;
@@ -33,9 +34,11 @@ export function InviteAccept({ token, preview, error: initialError }: { token: s
   return (
     <Card className="mx-auto max-w-md gap-0 overflow-hidden p-0">
       <div className="bg-hero flex flex-col items-center gap-2 px-6 py-7 text-center">
-        <span className="flex size-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
-          <HandCoins className="size-6" />
-        </span>
+        <OrgLogo logoUrl={preview?.organization?.logoUrl} className="size-14 rounded-2xl ring-white/25">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25">
+            <HandCoins className="size-6" />
+          </span>
+        </OrgLogo>
         <p className="text-sm text-white/85">{preview?.invitedByName ? t("invite.invitedBy", { who: preview.invitedByName }) : t("invite.invited")}</p>
         <h1 className="text-2xl font-extrabold tracking-tight">{orgName}</h1>
         {preview?.organization?.city && <p className="text-sm text-white/80">{preview.organization.city}</p>}

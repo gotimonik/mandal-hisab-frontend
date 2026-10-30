@@ -21,6 +21,7 @@ import type { Lang } from "@/i18n/core";
 import { logoutAction } from "@/app/actions/auth";
 import { selectOrg } from "@/app/actions/api";
 import { LogoutButton } from "@/components/app/logout-button";
+import { OrgLogo } from "@/components/app/org-logo";
 import { startNavigationProgress } from "@/components/app/navigation-progress";
 import { EdgeSwipeMenu } from "@/components/app/edge-swipe-menu";
 import { AppVersion } from "@/components/app/app-version";
@@ -213,14 +214,11 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
 
 /** The Mandal's logo when it has one, otherwise its first letter. */
 function OrgAvatar({ name, logoUrl, className }: { name: string; logoUrl?: string | null; className?: string }) {
-  if (logoUrl)
-    return (
-      <span className={cn("flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-foreground/[0.06]", className)}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- small Vercel Blob image (≤ 1 MB) */}
-        <img src={logoUrl} alt="" className="size-full object-contain" />
-      </span>
-    );
-  return <span className={cn("bg-hero flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm", className)}>{name.slice(0, 1).toUpperCase()}</span>;
+  return (
+    <OrgLogo logoUrl={logoUrl} className={cn("size-9 rounded-xl shadow-sm", className)}>
+      <span className={cn("bg-hero flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm", className)}>{name.slice(0, 1).toUpperCase()}</span>
+    </OrgLogo>
+  );
 }
 
 function UserMenu({ user }: { user: { name: string; email: string } }) {
