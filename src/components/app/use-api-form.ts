@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
 import { apiMutate } from "@/lib/api-client";
 import type { ActionResult } from "@/lib/action-result";
+import { announceFormError } from "./form-error";
 
 /**
  * Submit a react-hook-form to the API via the server-side proxy. Server validation
@@ -14,7 +15,12 @@ import type { ActionResult } from "@/lib/action-result";
 export function useApiSubmit<TForm extends FieldValues>(form: UseFormReturn<TForm>) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  /** Show a form error; it scrolls into view even if the same message was already shown. */
+  const setError = (message: string | null) => {
+    setErrorState(message);
+    if (message) announceFormError();
+  };
 
   function submit<T>(req: { path: string; method?: "POST" | "PATCH"; body: unknown }, opts: { success?: string; onSuccess?: (data: T) => void; refresh?: boolean } = {}) {
     start(async () => {

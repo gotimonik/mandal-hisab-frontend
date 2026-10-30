@@ -19,11 +19,5 @@ export function Field({ label, htmlFor, error, hint, children, className }: { la
   );
 }
 
-export function FormError({ message }: { message?: string | null }) {
-  if (!message) return null;
-  return (
-    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-      <Translated text={message} />
-    </div>
-  );
-}
+/** Form-level error box; scrolls itself into view when it appears off-screen. */
+export { FormError } from "./form-error";
