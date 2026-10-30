@@ -67,6 +67,7 @@ export interface ShellOrg {
   name: string;
   role: string;
   status: string;
+  logoUrl?: string | null;
 }
 
 export interface ShellData {
@@ -164,7 +165,7 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" className="h-auto w-full justify-between gap-2 rounded-xl px-2 py-2 text-left md:h-auto" />}>
         <span className="flex min-w-0 items-center gap-2">
-          <OrgAvatar name={current.name} />
+          <OrgAvatar name={current.name} logoUrl={current.logoUrl} />
           <span className="min-w-0">
             <span className="block truncate text-sm font-medium">{current.name}</span>
             <span className="block text-xs text-muted-foreground">{roleLabel(t, current.role)}</span>
@@ -185,7 +186,7 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
                 router.push(`/org/${o.id}`);
               }}
             >
-              <Building2 />
+              {o.logoUrl ? <OrgAvatar name={o.name} logoUrl={o.logoUrl} className="size-5 rounded-md" /> : <Building2 />}
               <span className="flex-1 truncate">{o.name}</span>
               {o.id === current.id && <Check />}
             </DropdownMenuItem>
@@ -210,7 +211,15 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
   );
 }
 
-function OrgAvatar({ name, className }: { name: string; className?: string }) {
+/** The Mandal's logo when it has one, otherwise its first letter. */
+function OrgAvatar({ name, logoUrl, className }: { name: string; logoUrl?: string | null; className?: string }) {
+  if (logoUrl)
+    return (
+      <span className={cn("flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-foreground/[0.06]", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- small Vercel Blob image (≤ 1 MB) */}
+        <img src={logoUrl} alt="" className="size-full object-contain" />
+      </span>
+    );
   return <span className={cn("bg-hero flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm", className)}>{name.slice(0, 1).toUpperCase()}</span>;
 }
 
@@ -267,7 +276,7 @@ export function MobileHeaderContent({ data }: { data: ShellData }) {
   return (
     <>
       <Link href={`/org/${data.org.id}`} className="flex min-w-0 flex-1 items-center gap-2">
-        <OrgAvatar name={data.org.name} className="size-8 rounded-lg text-xs" />
+        <OrgAvatar name={data.org.name} logoUrl={data.org.logoUrl} className="size-8 rounded-lg text-xs" />
         <span className="min-w-0">
           <span className="block truncate text-[15px] leading-tight font-semibold">{data.org.name}</span>
           <span className="block text-[11px] leading-tight text-muted-foreground">{roleLabel(t, data.org.role)}</span>

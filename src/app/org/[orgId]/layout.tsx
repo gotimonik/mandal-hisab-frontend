@@ -97,8 +97,8 @@ const loadShell = cache(async (orgId: string): Promise<ShellData> => {
   // Picked a language before it was saved on the account? Save it now (notifications and pushes use it).
   if (me.user.language !== lang && (await hasLangCookie())) void apiCall("/auth/me", { method: "PATCH", body: { language: lang } }).catch(() => null);
   return {
-    org: { id: org.id, name: org.name, role: org.myRole, status: org.status },
-    orgs: me.organizations.filter((o) => o.membershipStatus === "active").map((o) => ({ id: o.id, name: o.name, role: o.role, status: o.status })),
+    org: { id: org.id, name: org.name, role: org.myRole, status: org.status, logoUrl: org.logoUrl },
+    orgs: me.organizations.filter((o) => o.membershipStatus === "active").map((o) => ({ id: o.id, name: o.name, role: o.role, status: o.status, logoUrl: o.logoUrl })),
     nav: buildNav(org.id, org.myPermissions, org.myRole, t),
     quick: buildQuickActions(org.id, org.myPermissions, org.myRole, { live: org.status === "active", memberRequests: !!org.settings.fundLoans?.allowMemberRequests }, t),
     lang,

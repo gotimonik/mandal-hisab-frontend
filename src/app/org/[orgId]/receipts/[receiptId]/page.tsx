@@ -34,7 +34,11 @@ export default async function ReceiptPage({ params }: PageProps<"/org/[orgId]/re
             <span className="-rotate-12 rounded-lg border-4 border-destructive/60 px-6 py-2 text-4xl font-bold tracking-widest text-destructive/60">CANCELLED</span>
           </div>
         )}
-        <header className="flex flex-col gap-1 border-b pb-4 text-center">
+        <header className="flex flex-col items-center gap-1 border-b pb-4 text-center">
+          {o.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- printed as-is; a Vercel Blob image (≤ 1 MB)
+            <img src={o.logoUrl} alt="" className="mb-1 h-16 w-auto max-w-40 object-contain" />
+          )}
           <h1 className="text-xl font-semibold">{o.name}</h1>
           {o.address && <p className="text-xs text-muted-foreground">{o.address}</p>}
           <p className="text-xs text-muted-foreground">
