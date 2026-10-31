@@ -5,7 +5,7 @@
 	<!-- Push Notifications. Xcode switches this to "production" automatically for App Store / TestFlight builds. -->
 	<key>aps-environment</key>
 	<string>development</string>
-	<!-- Time Sensitive notifications: meeting pushes break through Focus and stay on the lock screen. -->
+	<!-- Time Sensitive notifications: every push breaks through Focus and stays on the lock screen. -->
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
 	<true/>
 </dict>
