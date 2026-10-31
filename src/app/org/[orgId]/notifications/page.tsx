@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, HandCoins, Landmark, Lock, Percent, Receipt, UserPlus, Wallet } from "lucide-react";
+import { Bell, CalendarCheck, CalendarClock, HandCoins, Landmark, Lock, Percent, Receipt, UserPlus, Wallet } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import type { Notification } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
@@ -24,6 +24,10 @@ const LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
   withdrawal: { tone: "rose", icon: <Wallet /> },
   membership: { tone: "sky", icon: <UserPlus /> },
   settlement: { tone: "amber", icon: <Lock /> },
+  meeting: { tone: "sky", icon: <CalendarCheck /> },
+  fundLoan: { tone: "orange", icon: <HandCoins /> },
+  upadRequest: { tone: "orange", icon: <HandCoins /> },
+  upadClaim: { tone: "orange", icon: <HandCoins /> },
 };
 const look = (type: string) => LOOK[type.split(".")[0]] ?? { tone: "slate" as Tone, icon: <Bell /> };
 

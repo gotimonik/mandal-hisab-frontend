@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, use, useState, type ReactNode } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, Bell, BarChart3, BookOpenCheck, BookText, CalendarDays, Building2, CalendarClock, Check, ChevronsUpDown, ClipboardList, FileBarChart, HandCoins, Heart, Landmark, LayoutDashboard, Menu, Percent, PiggyBank, Banknote, Plus, Receipt, Send, UserPlus, X, Settings, ShieldCheck, UserRound, Users, Wallet } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Bell, BarChart3, BookOpenCheck, BookText, CalendarDays, Building2, CalendarCheck, CalendarClock, Check, ChevronsUpDown, ClipboardList, FileBarChart, HandCoins, Heart, Landmark, LayoutDashboard, Menu, Percent, PiggyBank, Banknote, Plus, Receipt, Send, UserPlus, X, Settings, ShieldCheck, UserRound, Users, Wallet } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ const ICONS: Record<NavIcon, typeof Bell> = {
   withdrawals: ArrowUpFromLine,
   cashbook: BookOpenCheck,
   fundloans: HandCoins,
+  meetings: CalendarCheck,
 };
 
 const QUICK_ICONS: Record<QuickIcon, typeof Bell> = {
@@ -61,6 +62,7 @@ const QUICK_ICONS: Record<QuickIcon, typeof Bell> = {
   pay: Send,
   request: HandCoins,
   statement: PiggyBank,
+  meeting: CalendarCheck,
 };
 
 export interface ShellOrg {

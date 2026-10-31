@@ -33,7 +33,7 @@ describe("amount validation", () => {
 describe("navigation", () => {
   it("hides items the user cannot access", () => {
     const member = buildNav("a".repeat(24), ["org.view", "self.view", "self.submitPayment"], "member").map((n) => n.label);
-    expect(member).toEqual(["Dashboard", "My savings", "Notifications"]);
+    expect(member).toEqual(["Dashboard", "My savings", "Notifications", "Meetings"]);
     const admin = buildNav("a".repeat(24), ["org.view", "members.view", "memberships.manage", "org.settings.manage", "self.view"], "admin").map((n) => n.label);
     expect(admin).toContain("Users & joining");
     expect(admin).toContain("Settings");

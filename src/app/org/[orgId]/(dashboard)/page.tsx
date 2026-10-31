@@ -41,6 +41,7 @@ import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
 import { OrgLogo } from "@/components/app/org-logo";
+import { NextMeeting } from "@/features/meetings/next-meeting";
 
 export const metadata = { title: "Dashboard" };
 
@@ -109,6 +110,8 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           <ArrowRight className="size-4" />
         </Link>
       )}
+
+      <NextMeeting orgId={orgId} meeting={d.nextMeeting} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
         {/* ---- this month's hapta: the hero */}

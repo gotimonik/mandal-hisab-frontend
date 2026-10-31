@@ -19,7 +19,8 @@ export type NavIcon =
   | "interest"
   | "withdrawals"
   | "cashbook"
-  | "fundloans";
+  | "fundloans"
+  | "meetings";
 
 import type { Tone } from "./tones";
 import { translator, type T } from "@/i18n/core";
@@ -49,6 +50,7 @@ export function buildNav(orgId: string, perms: string[], role: string, t: T = tr
     { href: `${base}/cashbook`, label: t("nav.cashbook"), icon: "cashbook", when: can("accounts.view") },
     { href: `${base}/reports`, label: t("nav.reports"), icon: "reports", when: can("reports.view") },
     { href: `${base}/notifications`, label: t("nav.notifications"), short: t("nav.short.alerts"), icon: "notifications", primary: role === "member", when: true },
+    { href: `${base}/meetings`, label: t("nav.meetings"), icon: "meetings", when: true },
     { href: `${base}/users`, label: t("nav.users"), icon: "users", when: can("memberships.manage") },
     { href: `${base}/settings`, label: t("nav.settings"), icon: "settings", when: can("org.settings.manage") },
     // Less-used tools
@@ -66,7 +68,7 @@ export function buildNav(orgId: string, perms: string[], role: string, t: T = tr
   return items.filter((i) => i.when).map(({ when: _w, ...rest }) => rest);
 }
 
-export type QuickIcon = "collect" | "receive" | "give" | "withdraw" | "member" | "cash" | "summary" | "pay" | "request" | "statement";
+export type QuickIcon = "collect" | "receive" | "give" | "withdraw" | "member" | "cash" | "summary" | "pay" | "request" | "statement" | "meeting";
 
 export interface QuickAction {
   key: string;
@@ -93,6 +95,7 @@ export function buildQuickActions(orgId: string, perms: string[], role: string, 
     { key: "member", label: t("quick.member"), hint: "New member", href: `${base}/members?new=1`, icon: "member", tone: "sky", when: can("members.manage") },
     { key: "cash", label: t("quick.cash"), hint: "Other cash", href: `${base}/cashbook?new=1`, icon: "cash", tone: "emerald", when: live && can("accounts.manage") },
     { key: "summary", label: t("quick.summary"), hint: "Who paid what", href: `${base}/monthly/report`, icon: "summary", tone: "violet", when: can("reports.view") && role !== "member" },
+    { key: "meeting", label: t("quick.meeting"), hint: "Notify all members", href: `${base}/meetings?new=1`, icon: "meeting", tone: "sky", when: can("org.settings.manage") },
     // members
     { key: "pay", label: t("quick.pay"), hint: "Tell the treasurer", href: `${base}/my?pay=1`, icon: "pay", tone: "indigo", when: live && role === "member" && can("self.view") },
     { key: "request", label: t("quick.request"), hint: "From the Mandal", href: `${base}/my?tab=upad&new=1`, icon: "request", tone: "orange", when: live && role === "member" && !!opts.memberRequests && can("self.view") },
