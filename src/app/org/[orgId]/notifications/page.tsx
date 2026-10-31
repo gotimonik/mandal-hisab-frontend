@@ -3,6 +3,7 @@ import { api, qs } from "@/lib/server/api";
 import type { Notification } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
+import { PushStatus } from "@/components/app/push-status";
 import { ActionButton } from "@/components/app/action-button";
 import { CountPill, IconChip } from "@/components/app/bits";
 import { formatDateTime } from "@/lib/format";
@@ -56,6 +57,7 @@ export default async function NotificationsPage({ params, searchParams }: PagePr
           ) : null
         }
       />
+      <PushStatus />
       {data.items.length === 0 ? (
         <EmptyState icon={<Bell />} title="You're all caught up" description="Due-date reminders, payment confirmations and approvals appear here." />
       ) : (

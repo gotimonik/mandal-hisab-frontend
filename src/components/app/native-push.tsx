@@ -8,12 +8,27 @@ import { apiMutate } from "@/lib/api-client";
 import { getPref, isNativeApp, messaging, nativePlatform, setPref } from "@/lib/native-plugins";
 import { useT } from "@/i18n/client";
 
-const DISMISSED = "mh.pushPromptDismissedAt";
+export const PUSH_PROMPT_DISMISSED = "mh.pushPromptDismissedAt";
+const DISMISSED = PUSH_PROMPT_DISMISSED;
+/** The "Turn on alerts" card comes back at most once a month after "Not now". */
+/** Fired when alerts are turned on (or refused) so every status card on screen updates. */
+export const PUSH_CHANGED = "mh:push-changed";
+export const PROMPT_AGAIN_MS = 30 * 86_400_000;
 
 async function register(token: string) {
   const platform = nativePlatform();
   if (platform === "web") return;
   await apiMutate({ path: "/me/push-devices", body: { token, platform } }).catch(() => null);
+}
+
+/** Ask the phone for permission and register it. True when alerts are now on. */
+export async function enablePush(): Promise<boolean> {
+  const fm = messaging();
+  const { receive } = await fm.requestPermissions().catch(() => ({ receive: "denied" as const }));
+  if (receive !== "granted") return false;
+  const { token } = await fm.getToken();
+  if (token) await register(token);
+  return true;
 }
 
 /**
@@ -57,24 +72,25 @@ export function NativePush() {
       } else if (receive !== "denied") {
         // ask again at most once a month if they said "Not now"
         const dismissed = Number((await getPref(DISMISSED)) ?? 0);
-        if (Date.now() - dismissed > 30 * 86_400_000) setAsk(true);
+        if (Date.now() - dismissed > PROMPT_AGAIN_MS) setAsk(true);
       }
     })().catch(() => {});
     return () => [...handles, appState].forEach((h) => void h.then((x) => x.remove()));
   }, [router]);
 
   if (!ask) return null;
+  const notNow = () => {
+    setAsk(false);
+    void setPref(DISMISSED, String(Date.now())).then(() => window.dispatchEvent(new Event(PUSH_CHANGED)));
+  };
   const turnOn = async () => {
     setAsk(false);
-    const fm = messaging();
-    const { receive } = await fm.requestPermissions().catch(() => ({ receive: "denied" as const }));
-    if (receive !== "granted") return void setPref(DISMISSED, String(Date.now()));
-    const { token } = await fm.getToken();
-    if (token) await register(token);
+    if (!(await enablePush())) await setPref(DISMISSED, String(Date.now()));
+    window.dispatchEvent(new Event(PUSH_CHANGED));
   };
   return (
     <div role="dialog" aria-labelledby="push-title" className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md rounded-2xl bg-card p-4 shadow-xl ring-1 ring-foreground/10 md:bottom-6">
-      <button type="button" aria-label={t("native.notNow")} onClick={() => (setAsk(false), void setPref(DISMISSED, String(Date.now())))} className="absolute top-2 right-2 rounded-full p-2 text-muted-foreground hover:bg-muted">
+      <button type="button" aria-label={t("native.notNow")} onClick={() => notNow()} className="absolute top-2 right-2 rounded-full p-2 text-muted-foreground hover:bg-muted">
         <X className="size-4" />
       </button>
       <div className="flex items-start gap-3 pr-6">
@@ -87,7 +103,7 @@ export function NativePush() {
         </div>
       </div>
       <div className="mt-3 flex gap-2">
-        <Button variant="ghost" className="flex-1" onClick={() => (setAsk(false), void setPref(DISMISSED, String(Date.now())))}>
+        <Button variant="ghost" className="flex-1" onClick={() => notNow()}>
           {t("native.notNow")}
         </Button>
         <Button className="flex-1" onClick={() => void turnOn()}>

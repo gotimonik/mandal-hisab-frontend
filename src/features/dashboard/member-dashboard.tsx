@@ -19,6 +19,7 @@ import { SectionTitle } from "@/components/app/bits";
 import { ArrowRight } from "lucide-react";
 import { OrgLogo } from "@/components/app/org-logo";
 import { NextMeeting } from "@/features/meetings/next-meeting";
+import { PushStatus } from "@/components/app/push-status";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function MemberDashboard({ orgId, data, org }: { orgId: string; data: any; org: Org }) {
@@ -47,6 +48,7 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
         <h1 className="text-2xl font-bold tracking-tight sm:text-[1.7rem]">{tr("dash.namaste", { name: data.member.name.split(" ")[0] })}</h1>
       </div>
       <NextMeeting orgId={orgId} meeting={data.nextMeeting} />
+      <PushStatus variant="nudge" className="mb-3" />
       {data.savings && (
         <section aria-label="My savings" className="bg-hero relative mb-3 overflow-hidden rounded-3xl p-5 shadow-lg shadow-primary/20">
           <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />

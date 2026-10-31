@@ -7,6 +7,7 @@ import { IconChip, MemberAvatar } from "@/components/app/bits";
 import { ProfileForm, PasswordForm } from "@/features/account/account-forms";
 import { ActionButton } from "@/components/app/action-button";
 import { AppLockSetting } from "@/features/account/app-lock-setting";
+import { PushStatus } from "@/components/app/push-status";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
@@ -46,6 +47,8 @@ export default async function AccountPage() {
 
       {/* app only: Face ID / fingerprint lock on this phone */}
       <AppLockSetting />
+      {/* app only: are phone notifications on on this phone? */}
+      <PushStatus hideOnWeb />
 
       {!me.user.emailVerified && (
         <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-amber-500/10 p-3.5 text-sm ring-1 ring-amber-500/30 sm:flex-row sm:items-center">
