@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { BellOff, BellRing, CheckCircle2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,12 @@ export function PushStatus({ variant = "full", hideOnWeb = false, className }: {
     return (
       <div className={cn("mb-4 flex items-start gap-3 rounded-2xl bg-muted/50 p-3.5 text-sm", className)}>
         <Smartphone className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-        <p className="text-muted-foreground">{t("native.pushWeb")}</p>
+        <p className="text-muted-foreground">
+          {t("native.pushWeb")}{" "}
+          <Link href="/download" className="font-semibold whitespace-nowrap text-primary hover:underline">
+            {t("native.getApp")}
+          </Link>
+        </p>
       </div>
     );
   }

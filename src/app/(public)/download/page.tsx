@@ -5,14 +5,15 @@ import { IconChip } from "@/components/app/bits";
 import { cn } from "@/lib/utils";
 import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/public/blocks";
 import { StoreBadges } from "@/features/public/store-badges";
-import { site } from "@/config/site";
+import { appsLine, site } from "@/config/site";
 import { NativeRedirect } from "@/features/public/native-redirect";
 import { pageMeta } from "@/lib/seo";
 import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = pageMeta({ title: "Download the app", description: "MandalHisab for Android and iPhone is coming soon. Use it today in any phone browser and add it to your home screen.", path: "/download" });
+const { android, ios } = site.stores;
+const anyApp = !!(android || ios);
 
-const comingSoon = !site.stores.android || !site.stores.ios;
+export const metadata = pageMeta({ title: "Download the app", description: `${appsLine()} Same account on phone, tablet and computer.`, path: "/download" });
 
 function Steps({ tone, icon, title, steps }: { tone: "emerald" | "sky"; icon: React.ReactNode; title: string; steps: React.ReactNode[] }) {
   return (
@@ -33,6 +34,32 @@ function Steps({ tone, icon, title, steps }: { tone: "emerald" | "sky"; icon: Re
   );
 }
 
+/** The phone's store app: open the store page, install, sign in. */
+function StoreSteps({ tone, title, store, href }: { tone: "emerald" | "sky"; title: string; store: string; href: string }) {
+  return (
+    <Steps
+      tone={tone}
+      icon={<Smartphone />}
+      title={title}
+      steps={[
+        <>
+          <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary hover:underline">
+            Open MandalHisab on the {store}
+          </a>
+          .
+        </>,
+        <>
+          Tap <b>Get</b> / <b>Install</b>.
+        </>,
+        <>
+          Open the app and sign in with your email — or create your Mandal.
+        </>,
+        <>Turn on notifications when asked, so you hear about meetings, hapta and payments right away.</>,
+      ]}
+    />
+  );
+}
+
 export default function DownloadPage() {
   return (
     <>
@@ -40,15 +67,22 @@ export default function DownloadPage() {
       <NativeRedirect />
       <PageHero
         eyebrow="Download"
-        title={comingSoon ? "MandalHisab on your phone" : "Get the MandalHisab app"}
-        description={comingSoon ? "The Android and iPhone apps are on the way. You don't have to wait — everything already works in your phone's browser, and you can add it to your home screen with its own icon." : "Get the app for Android or iPhone, or use it in any browser."}
+        title={anyApp ? "Get the MandalHisab app" : "MandalHisab on your phone"}
+        description={anyApp ? `${appsLine()} Sign in with the same email everywhere and you see the same Mandal.` : "The Android and iPhone apps are on the way. You don't have to wait — everything already works in your phone's browser, and you can add it to your home screen with its own icon."}
       >
         <StoreBadges />
       </PageHero>
 
       <Section>
-        <SectionHeading eyebrow="Use it today" title="Add MandalHisab to your home screen" description="Open MandalHisab from an icon on your phone, just like an app. Takes less than a minute." />
+        <SectionHeading
+          eyebrow={anyApp ? "Get started" : "Use it today"}
+          title={android && ios ? "Install MandalHisab" : anyApp ? "Install the app, or add the website to your home screen" : "Add MandalHisab to your home screen"}
+          description={anyApp ? "Either way you sign in with the same email and see the same Mandal." : "Open MandalHisab from an icon on your phone, just like an app. Takes less than a minute."}
+        />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {android ? (
+            <StoreSteps tone="emerald" title="Android" store="Google Play" href={android} />
+          ) : (
           <Steps
             tone="emerald"
             icon={<Smartphone />}
@@ -66,6 +100,10 @@ export default function DownloadPage() {
               <>Tap <b>Add</b>. MandalHisab now has its own icon.</>,
             ]}
           />
+          )}
+          {ios ? (
+            <StoreSteps tone="sky" title="iPhone" store="App Store" href={ios} />
+          ) : (
           <Steps
             tone="sky"
             icon={<Smartphone />}
@@ -83,6 +121,7 @@ export default function DownloadPage() {
               <>Tap <b>Add</b>. MandalHisab now has its own icon.</>,
             ]}
           />
+          )}
         </div>
         <div className="mt-6 flex flex-wrap gap-2">
           <Link href="/register" className={buttonVariants({ size: "lg" })}>
@@ -106,9 +145,15 @@ export default function DownloadPage() {
           <FeatureCard icon={<RefreshCw />} tone="emerald" title="One account everywhere">
             Sign in with the same email on the phone app, the browser and the computer — you see the same Mandal and the same numbers.
           </FeatureCard>
-          <FeatureCard icon={<Globe />} tone="violet" title="Nothing to install today">
-            The browser version has every feature. When the store apps arrive, just sign in — nothing to move over.
-          </FeatureCard>
+          {anyApp ? (
+            <FeatureCard icon={<Globe />} tone="violet" title="Already using the browser?">
+              Install the app and sign in with the same email. Your Mandal is already there — nothing to move over.
+            </FeatureCard>
+          ) : (
+            <FeatureCard icon={<Globe />} tone="violet" title="Nothing to install today">
+              The browser version has every feature. When the store apps arrive, just sign in — nothing to move over.
+            </FeatureCard>
+          )}
         </div>
         <p className="mt-6 text-sm text-muted-foreground">
           {site.pricing.headline}. Questions? <Link href="/faq" className="font-medium text-primary hover:underline">Read the FAQ</Link> or <Link href="/contact" className={cn("font-medium text-primary hover:underline")}>contact us</Link>.

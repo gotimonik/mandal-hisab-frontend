@@ -34,7 +34,7 @@ export const site = {
   /** App store links. null = "Coming soon". */
   stores: {
     android: null as string | null,
-    ios: null as string | null,
+    ios: "https://apps.apple.com/app/mandalhisab-bachat-khata/id6827958501" as string | null,
   },
 
   pricing: {
@@ -59,6 +59,18 @@ export const site = {
   languages: ["English", "ગુજરાતી", "हिन्दी"],
   copyrightYear: 2026,
 } as const;
+
+/** The App Store id ("6827958501"), for the iPhone Safari banner. */
+export const iosAppId = site.stores.ios?.match(/\/id(\d+)/)?.[1] ?? null;
+
+/** One line about the phone apps that stays right as each store link is added. */
+export function appsLine() {
+  const { android, ios } = site.stores;
+  if (android && ios) return "Get the app for Android and iPhone, or use it in any browser.";
+  if (ios) return "The iPhone app is on the App Store. The Android app is on the way. Until then it works fully in Chrome.";
+  if (android) return "The Android app is on Google Play. The iPhone app is on the way. Until then it works fully in Safari.";
+  return "The Android and iPhone apps are on the way. Until then MandalHisab works fully in any phone browser.";
+}
 
 const PLACEHOLDER = /example\.com|00000|^\[|City, State/;
 /** True for values that still need filling in (used to show a dev-only tag). */

@@ -25,7 +25,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
-import { site } from "@/config/site";
+import { appsLine, site } from "@/config/site";
 import { Container, Section, SectionHeading } from "@/features/public/blocks";
 import { StoreBadges } from "@/features/public/store-badges";
 import { PhoneMockup } from "@/features/public/home/phone-mockup";
@@ -184,7 +184,7 @@ const FAQ_TEASER = [
   { q: "Is MandalHisab free?", a: site.pricing.detail },
   {
     q: "Do members need to install anything?",
-    a: "No. MandalHisab works in any phone browser. Members sign in to see their own balance — apps for Android and iPhone are coming soon.",
+    a: `No. MandalHisab works in any phone browser, and members sign in to see their own balance. ${appsLine()}`,
   },
   {
     q: "Can we start with the balances we already have?",
@@ -404,7 +404,7 @@ export default function HomePage() {
                 </span>
                 On your phone, today
               </h2>
-              <p className="mt-2 max-w-lg text-sm text-white/85 sm:text-base">MandalHisab works fully in any phone browser right now. Apps for Android and iPhone are on the way.</p>
+              <p className="mt-2 max-w-lg text-sm text-white/85 sm:text-base">{appsLine()}</p>
               <StoreBadges className="mt-4 sm:mt-6" />
               <Link href="/download" className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white">
                 More about the apps <ArrowRight className="size-4" />

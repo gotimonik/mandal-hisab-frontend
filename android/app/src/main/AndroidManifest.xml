@@ -20,6 +20,25 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- App Links: mandalhisab.com links to a Mandal, invitations and sign-in emails open the app
+                 (verified by /.well-known/assetlinks.json; keep the paths in sync with APP_LINK_PREFIXES). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="mandalhisab.com" />
+                <data android:pathPrefix="/org" />
+                <data android:pathPrefix="/invite" />
+                <data android:pathPrefix="/onboarding" />
+                <data android:pathPrefix="/account" />
+                <data android:pathPrefix="/login" />
+                <data android:pathPrefix="/register" />
+                <data android:pathPrefix="/verify-email" />
+                <data android:pathPrefix="/reset-password" />
+                <data android:pathPrefix="/forgot-password" />
+                <data android:pathPrefix="/check-email" />
+            </intent-filter>
         </activity>
 
         <provider

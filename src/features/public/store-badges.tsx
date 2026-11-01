@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Globe, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { site } from "@/config/site";
+import { appsLine, site } from "@/config/site";
 
 function AppleGlyph() {
   return (
@@ -59,7 +59,7 @@ export function StoreBadges({ dark = true, showWeb = true, className }: { dark?:
         </Link>
       )}
       <span className="sr-only">
-        <Smartphone /> The phone apps are on the way. Until then, MandalHisab works fully in any phone browser.
+        <Smartphone /> {appsLine()}
       </span>
     </div>
   );

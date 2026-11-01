@@ -9,7 +9,7 @@ import { GoogleTag } from "@/components/app/google-tag";
 import { AnalyticsClicks } from "@/components/app/analytics-clicks";
 import "./globals.css";
 import { NATIVE_APP_UA } from "@/lib/native";
-import { site } from "@/config/site";
+import { iosAppId, site } from "@/config/site";
 import { NavigationProgress } from "@/components/app/navigation-progress";
 import { ScrollToTop } from "@/components/app/scroll-to-top";
 
@@ -36,6 +36,8 @@ export const metadata: Metadata = {
   // Phone numbers in amounts (₹ 81,283) must not turn into call links on iPhone.
   formatDetection: { telephone: false, email: false, address: false },
   appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
+  // iPhone Safari shows an "Open / Get" banner for the App Store app
+  ...(iosAppId ? { itunes: { appId: iosAppId } } : {}),
   // Lets AdSense confirm the site belongs to this account.
   ...(site.ads.adsenseClientId ? { other: { "google-adsense-account": site.ads.adsenseClientId } } : {}),
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } } : {}),

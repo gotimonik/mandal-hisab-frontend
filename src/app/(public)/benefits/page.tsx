@@ -7,6 +7,7 @@ import { CtaBand } from "@/features/public/cta-band";
 import { Breadcrumb } from "@/features/public/json-ld";
 import { NativeRedirect } from "@/features/public/native-redirect";
 import { pageMeta } from "@/lib/seo";
+import { appsLine } from "@/config/site";
 
 export const metadata = pageMeta({
   title: "Benefits for treasurers, members and committees",
@@ -82,7 +83,7 @@ const GROUP_WIDE = [
   { icon: <Clock />, tone: "indigo", title: "Shorter meetings", text: "Collection is faster, and the month summary is ready before people leave. More time for the social side of the meeting." },
   { icon: <History />, tone: "violet", title: "A complete history", text: "Every hapta, upad and withdrawal since the start, in one place — useful when a question comes up years later." },
   { icon: <Languages />, tone: "sky", title: "Everyone included", text: "English, ગુજરાતી and हिन्दी, so older members can read their own savings in the language they're comfortable with." },
-  { icon: <Smartphone />, tone: "orange", title: "Works on any phone", text: "In any phone browser today, with the Android and iPhone apps on the way. Also works on a computer." },
+  { icon: <Smartphone />, tone: "orange", title: "Works on any phone", text: `${appsLine()} Also works on a computer.` },
   { icon: <MessageSquareOff />, tone: "rose", title: "No more screenshot hisab", text: "No more photos of register pages on WhatsApp. Share a clean month summary instead." },
 ] as const;
 

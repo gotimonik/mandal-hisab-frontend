@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import { APP_START, isWebOnlyPath } from "@/lib/native";
+import { APP_START, appLinkTarget, isWebOnlyPath } from "@/lib/native";
 
 /**
  * Only does something inside the iOS / Android app (Capacitor); on the website it renders nothing.
@@ -11,7 +11,9 @@ import { APP_START, isWebOnlyPath } from "@/lib/native";
  * - Android back button: closes an open dialog/sheet first, then goes back, and leaves the app on the first screen.
  * - Status bar text follows light / dark mode.
  * - Adds `native-app` / `native-ios` / `native-android` classes to <html> for app-only styling.
+ * - A tapped mandalhisab.com link that opened the app (Universal / App Links) opens that screen.
  */
+const LAST_LINK = "mh.lastAppLink";
 export function NativeShell() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -40,6 +42,16 @@ export function NativeShell() {
       void SplashScreen.hide({ fadeOutDuration: 300 }).catch(() => {});
 
       const { App } = await import("@capacitor/app");
+      // A mandalhisab.com link opened the app: show that screen. (The event is kept until the page
+      // listens, so a link that launched the app is caught too; each link is opened once.)
+      const opened = await App.addListener("appUrlOpen", ({ url }) => {
+        const target = appLinkTarget(url);
+        if (!target || sessionStorage.getItem(LAST_LINK) === url) return;
+        sessionStorage.setItem(LAST_LINK, url);
+        if (target !== window.location.pathname + window.location.search) window.location.assign(target);
+      });
+      cleanups.push(() => void opened.remove());
+
       const back = await App.addListener("backButton", ({ canGoBack }) => {
         const dialog = document.querySelector('[role="dialog"], [role="alertdialog"]');
         if (dialog) {

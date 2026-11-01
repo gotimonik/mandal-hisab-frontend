@@ -1,4 +1,4 @@
-import { site } from "@/config/site";
+import { appsLine, site } from "@/config/site";
 
 export type Faq = { q: string; a: string };
 export type FaqGroup = { id: string; title: string; items: Faq[] };
@@ -55,7 +55,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
     id: "app",
     title: "App & languages",
     items: [
-      { q: "Is there a mobile app?", a: "The Android and iPhone apps are coming soon. Until then MandalHisab works fully in any phone browser, and you can add it to your home screen so it opens from an icon." },
+      { q: "Is there a mobile app?", a: `${appsLine()} In a browser you can also add it to your home screen so it opens from an icon.` },
       { q: "Does it work without internet?", a: "No. The books are kept online so everyone sees the same numbers, so you need a connection to record or view entries." },
       { q: "Which languages are available?", a: `MandalHisab is available in ${site.languages.join(", ")}. You can switch language any time.` },
       { q: "Can I use it on a computer too?", a: "Yes. The same account works on phone, tablet and computer. On a bigger screen you get a sidebar and wider tables, which is handy for reports and printing." },

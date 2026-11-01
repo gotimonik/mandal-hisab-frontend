@@ -8,5 +8,12 @@
 	<!-- Time Sensitive notifications: every push breaks through Focus and stays on the lock screen. -->
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
 	<true/>
+	<!-- Universal Links: mandalhisab.com links to a Mandal, invitations and sign-in emails open the app
+	     (served by src/app/.well-known/apple-app-site-association). -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:mandalhisab.com</string>
+		<string>webcredentials:mandalhisab.com</string>
+	</array>
 </dict>
 </plist>

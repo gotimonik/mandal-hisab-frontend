@@ -20,3 +20,36 @@ export const isWebOnlyPath = (pathname: string) => WEB_ONLY_PATHS.includes(pathn
 
 /** Where the app goes instead: the last Mandal (or the Mandal list), or sign-in if signed out. */
 export const APP_START = "/onboarding?auto=1";
+
+/** The store apps, for links that open the app (Universal Links / Android App Links). */
+export const APP_IDS = {
+  /** Apple Team ID + bundle id (ios/App/App.xcodeproj) */
+  ios: "8A8JG3NNKM.com.mandalhisab.app",
+  /** applicationId in android/app/build.gradle */
+  android: "com.mandalhisab.app",
+};
+
+/**
+ * Links to these open the installed app instead of the browser: a Mandal screen (receipts,
+ * notifications in emails …), invitations and sign-in / email links. Website-only pages
+ * (home, guides …) stay in the browser. Keep in sync with android/app/src/main/AndroidManifest.xml.
+ */
+export const APP_LINK_PREFIXES = ["/org", "/invite", "/onboarding", "/account", "/login", "/register", "/verify-email", "/reset-password", "/forgot-password", "/check-email"];
+
+const LINK_HOSTS = ["mandalhisab.com", "www.mandalhisab.com"];
+
+/**
+ * The in-app path for a link that opened the app, or null if it isn't one of ours.
+ * Website-only pages go to the app's start screen instead.
+ */
+export function appLinkTarget(link: string, here: string = typeof window === "undefined" ? "" : window.location.host): string | null {
+  let u: URL;
+  try {
+    u = new URL(link);
+  } catch {
+    return null;
+  }
+  if (!LINK_HOSTS.includes(u.host) && u.host !== here) return null;
+  if (isWebOnlyPath(u.pathname)) return APP_START;
+  return u.pathname + u.search + u.hash;
+}
