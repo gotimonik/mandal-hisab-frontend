@@ -115,7 +115,7 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
             ) : (
               <b>No backup taken yet</b>
             )}
-            <span className="block text-xs text-muted-foreground">{backupDue ? "Take a backup at least once a month." : "Take a new one at least once a month."}</span>
+            <span className="block text-xs text-muted-foreground">Take a backup every month, or once all the cash is collected.</span>
           </p>
           <ExportCsvButton href={`/api/backup?orgId=${orgId}`} className="h-10" refreshAfter>
             <DatabaseBackup /> Download backup

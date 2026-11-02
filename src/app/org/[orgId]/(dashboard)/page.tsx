@@ -8,6 +8,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
+  DatabaseBackup,
   HandCoins,
   Landmark,
   Lock,
@@ -43,6 +44,7 @@ import type { MoneyFmt } from "@/lib/currency";
 import { OrgLogo } from "@/components/app/org-logo";
 import { NextMeeting } from "@/features/meetings/next-meeting";
 import { PushStatus } from "@/components/app/push-status";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 
 export const metadata = { title: "Dashboard" };
 
@@ -70,6 +72,21 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
   const olderDue = Math.max(0, (t.outstandingHaptaPaise ?? 0) - monthDue);
   const month = monthLabel(lang, d.asOf);
   const monthsLeft = org.settings.endMonth ? monthsBetween(String(d.asOf).slice(0, 7), org.settings.endMonth) : 0;
+  // Backup reminder (admins): none yet, over a month old, or this month is all collected and money
+  // has moved since the last one — the moment a backup is most worth having.
+  const backup = can(org, "org.settings.manage") && !org.platformView
+    ? await api<{ due: boolean; daysSince: number | null; changedSinceBackup: boolean }>(`/orgs/${orgId}/backup/status`).catch(() => null)
+    : null;
+  const allCollected = expected > 0 && collected >= expected;
+  const backupTitle = !backup
+    ? null
+    : backup.daysSince === null
+      ? tr("dash.backupFirst")
+      : backup.due
+        ? tr("dash.backupOld", { days: backup.daysSince })
+        : allCollected && backup.changedSinceBackup
+          ? tr("dash.backupCollected", { month })
+          : null;
 
   type Todo = { key: string; href: string; tone: Tone; icon: React.ReactNode; title: string; subtitle?: string; trailing: React.ReactNode };
   const todos: Todo[] = [];
@@ -114,6 +131,22 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
 
       <NextMeeting orgId={orgId} meeting={d.nextMeeting} />
       <PushStatus variant="nudge" />
+      {backupTitle && (
+        <section aria-label={backupTitle} className="mb-3 flex flex-col gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-2 ring-emerald-500/25 sm:flex-row sm:items-center">
+          <span className="flex min-w-0 flex-1 items-start gap-3">
+            <IconChip tone="emerald">
+              <DatabaseBackup />
+            </IconChip>
+            <span className="min-w-0 text-sm">
+              <b className="block">{backupTitle}</b>
+              <span className="text-xs text-muted-foreground">{tr("dash.backupWhy")}</span>
+            </span>
+          </span>
+          <ExportCsvButton href={`/api/backup?orgId=${orgId}`} className="h-10 shrink-0" refreshAfter>
+            <DatabaseBackup /> {tr("dash.backupNow")}
+          </ExportCsvButton>
+        </section>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
         {/* ---- this month's hapta: the hero */}

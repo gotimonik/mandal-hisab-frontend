@@ -246,6 +246,11 @@ export const en = {
     deactivated: "deactivated",
   },
   dash: {
+    backupFirst: "Take a backup of your Mandal's records",
+    backupOld: "Your last backup is {days} days old",
+    backupCollected: "{month} hapta is all collected — take a backup now",
+    backupWhy: "Take a backup every month, or once all the cash is collected. If anything ever goes wrong, send the file to MandalHisab and your latest records come back.",
+    backupNow: "Download backup",
     namaste: "Namaste, {name}",
     fy: "FY {fy}",
     haptaCollected: "{month} hapta collected",

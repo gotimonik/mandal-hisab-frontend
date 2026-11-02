@@ -248,6 +248,11 @@ export const gu: Dict = {
     deactivated: "બંધ કરેલ",
   },
   dash: {
+    backupFirst: "મંડળના હિસાબનો બેકઅપ લો",
+    backupOld: "છેલ્લો બેકઅપ {days} દિવસ જૂનો છે",
+    backupCollected: "{month} નો બધો હપ્તો ભેગો થઈ ગયો — હવે બેકઅપ લો",
+    backupWhy: "દર મહિને, અથવા બધી રોકડ ભેગી થાય પછી બેકઅપ લો. ક્યારેય કંઈ ખોટું થાય તો ફાઇલ MandalHisab ને મોકલો — તમારો તાજો હિસાબ પાછો આવી જશે.",
+    backupNow: "બેકઅપ ડાઉનલોડ કરો",
     namaste: "નમસ્તે, {name}",
     fy: "નાણાકીય વર્ષ {fy}",
     haptaCollected: "{month}નો હપ્તો જમા",

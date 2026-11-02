@@ -248,6 +248,11 @@ export const hi: Dict = {
     deactivated: "बंद किया",
   },
   dash: {
+    backupFirst: "मंडल के हिसाब का बैकअप लें",
+    backupOld: "आख़िरी बैकअप {days} दिन पुराना है",
+    backupCollected: "{month} का पूरा हप्ता जमा हो गया — अब बैकअप लें",
+    backupWhy: "हर महीने, या सारा नकद जमा होने के बाद बैकअप लें। कभी कुछ गड़बड़ हो तो फ़ाइल MandalHisab को भेजें — आपका ताज़ा हिसाब वापस आ जाएगा।",
+    backupNow: "बैकअप डाउनलोड करें",
     namaste: "नमस्ते, {name}",
     fy: "वित्त वर्ष {fy}",
     haptaCollected: "{month} का हफ़्ता जमा",
