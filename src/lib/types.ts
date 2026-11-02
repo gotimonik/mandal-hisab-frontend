@@ -486,6 +486,8 @@ export interface FundLoan {
   unpaidMonths: string[];
   interestPaidPaise: number;
   nextInterestPaise: number;
+  /** the borrower's upad advance (interest paid ahead; shared by all their upads) */
+  memberAdvancePaise?: number;
 }
 
 export interface FundLoanList {
@@ -543,7 +545,8 @@ export interface UpadPaymentClaim {
   _id: string;
   memberId: string;
   member?: { _id: string; name: string; membershipNumber: string } | null;
-  loanId: string;
+  /** null: interest for all the member's upads at once */
+  loanId: string | null;
   loanNumber: string;
   interestPaise: number;
   principalPaise: number;

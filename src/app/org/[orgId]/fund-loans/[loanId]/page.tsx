@@ -37,9 +37,12 @@ interface Payment {
   allocations: { period: string; amountPaise: number }[];
   status: "valid" | "reversed";
   reversalReason?: string;
-  receiptId: string;
+  /** null: paid from the member's advance */
+  receiptId: string | null;
   note?: string;
   recordedByName: string | null;
+  groupId?: string | null;
+  advanceAddedPaise?: number;
 }
 
 const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
@@ -57,11 +60,15 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
   const months = (p: Payment) => [p.allocations.length ? p.allocations.map((a) => monthName(a.period)).join(", ") : "", p.recordedByName ? `by ${p.recordedByName}` : ""].filter(Boolean).join(" · ");
   const paymentActions = (p: Payment) => (
     <>
-      <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-        <Receipt className="size-3.5" /> Receipt
-      </Link>
+      {p.receiptId ? (
+        <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
+          <Receipt className="size-3.5" /> Receipt
+        </Link>
+      ) : (
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">Paid from advance</span>
+      )}
       {staffView && latestValid?._id === p._id && can(org, "transactions.adjust") && live && (
-        <ActionButton path={`/orgs/${orgId}/fund-loan-payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: "Use only if it was recorded by mistake. The interest shares are taken back from members' balances.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
+        <ActionButton path={`/orgs/${orgId}/fund-loan-payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: p.groupId ? "It covered several upads (or was paid from the advance): all of it is reversed together. The interest shares are taken back from members' balances." : "Use only if it was recorded by mistake. The interest shares are taken back from members' balances.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
           Reverse
         </ActionButton>
       )}
@@ -109,6 +116,27 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
         </p>
       ) : (
         l.status === "active" && <p className="mb-5 rounded-2xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-300">Nothing unpaid — interest is up to date.</p>
+      )}
+
+      {(l.memberAdvancePaise ?? 0) > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-500/10 px-3.5 py-2.5 text-sm ring-1 ring-emerald-500/25">
+          <p className="min-w-0 flex-1">
+            <b>
+              Upad interest paid ahead: <Money paise={l.memberAdvancePaise!} />
+            </b>
+            <span className="block text-xs text-muted-foreground">Used automatically for the next interest due on {l.member?.name ?? "the member"}&apos;s upads.</span>
+          </p>
+          {staffView && can(org, "withdrawals.record") && live && (
+            <ActionButton
+              path={`/orgs/${orgId}/members/${l.memberId}/upad-advance/return`}
+              size="xs"
+              successMessage="Advance returned"
+              confirm={{ title: `Return ${money.fmt(l.memberAdvancePaise!)} to ${l.member?.name ?? "the member"}?`, description: "Pays the advance back in cash. Do this when their upads are closed, or before closing the Mandal.", confirmLabel: "Return advance" }}
+            >
+              Return advance
+            </ActionButton>
+          )}
+        </div>
       )}
 
       <SectionTitle>Monthly interest</SectionTitle>

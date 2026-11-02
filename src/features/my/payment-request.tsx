@@ -28,6 +28,8 @@ interface Options {
   schemes: SchemeOpt[];
   hapta: { duePaise: number; months: number; pendingPaise: number };
   upads: { _id: string; number: string; interestDuePaise: number; outstandingPaise: number; monthlyRate: string; unpaidMonths: string[] }[];
+  /** interest paid ahead; used first for the next interest */
+  upadAdvancePaise?: number;
   methods: string[];
 }
 
@@ -67,7 +69,12 @@ function Form(_props: { methods: string[] }) {
         setAmount(paiseToRupeeInput(s0.duePaise || s0.nextPaise));
       } else setAmount(r.data.hapta.duePaise ? paiseToRupeeInput(r.data.hapta.duePaise) : "");
       const first = r.data.upads[0];
-      if (first) {
+      if (r.data.upads.length > 1) {
+        // several upads: start with "interest on all of them" — one payment, one receipt
+        const due = Math.max(0, r.data.upads.reduce((t, u) => t + u.interestDuePaise, 0) - (r.data.upadAdvancePaise ?? 0));
+        setLoanId("all");
+        setInterest(due ? paiseToRupeeInput(due) : "");
+      } else if (first) {
         setLoanId(first._id);
         setInterest(first.interestDuePaise ? paiseToRupeeInput(first.interestDuePaise) : "");
       }
@@ -81,10 +88,12 @@ function Form(_props: { methods: string[] }) {
     setAmount(paiseToRupeeInput(x.duePaise || x.nextPaise));
     setError(null);
   };
+  const allDuePaise = Math.max(0, (opts?.upads ?? []).reduce((t, u) => t + u.interestDuePaise, 0) - (opts?.upadAdvancePaise ?? 0));
   const pickUpad = (id: string) => {
     setLoanId(id);
     const u = opts?.upads.find((x) => x._id === id);
-    setInterest(u?.interestDuePaise ? paiseToRupeeInput(u.interestDuePaise) : "");
+    const due = id === "all" ? allDuePaise : (u?.interestDuePaise ?? 0);
+    setInterest(due ? paiseToRupeeInput(due) : "");
     setPrincipal("");
   };
 
@@ -238,6 +247,7 @@ function Form(_props: { methods: string[] }) {
           {opts.upads.length > 1 && (
             <Field label={t("pay.whichUpad")} htmlFor="pr-upad">
               <NativeSelect id="pr-upad" value={loanId} onChange={(e) => pickUpad(e.target.value)}>
+                <option value="all">{t("pay.allUpads")}</option>
                 {opts.upads.map((u) => (
                   <option key={u._id} value={u._id}>
                     {t("pay.optOutstanding", { number: u.number, amount: money.fmt(u.outstandingPaise) })}
@@ -252,14 +262,24 @@ function Form(_props: { methods: string[] }) {
               {upad.unpaidMonths.length > 0 && <> ({upad.unpaidMonths.map((m) => monthName(lang, m)).join(", ")})</>}
             </FormNote>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          {loanId === "all" && <FormNote>{t("pay.allUpadsDue", { due: money.fmt(allDuePaise) })}</FormNote>}
+          {(opts.upadAdvancePaise ?? 0) > 0 && <FormNote tone="good">{t("pay.advanceYou", { amount: money.fmt(opts.upadAdvancePaise!) })}</FormNote>}
+          <div className={cn("grid gap-3", loanId === "all" ? "grid-cols-1" : "grid-cols-2")}>
             <Field label={t("pay.interestPaid")} htmlFor="pr-int">
               <AmountInput id="pr-int" placeholder="0" className="text-xl md:text-lg" value={interest} onChange={(e) => setInterest(e.target.value)} />
             </Field>
-            <Field label={t("pay.upadReturned")} htmlFor="pr-princ" hint={t("common.optional")}>
-              <AmountInput id="pr-princ" placeholder="0" className="text-xl md:text-lg" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
-            </Field>
+            {loanId !== "all" && (
+              <Field label={t("pay.upadReturned")} htmlFor="pr-princ" hint={t("common.optional")}>
+                <AmountInput id="pr-princ" placeholder="0" className="text-xl md:text-lg" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
+              </Field>
+            )}
           </div>
+          {(() => {
+            const v = rupeesOrZero.safeParse(interest);
+            const paid = v.success ? Math.round(Number(v.data) * 100) : 0;
+            const due = loanId === "all" ? allDuePaise : (upad?.interestDuePaise ?? 0);
+            return paid > due ? <FormNote tone="good">{t("upad.keptAsAdvance", { amount: money.fmt(paid - due) })}</FormNote> : null;
+          })()}
         </>
       )}
 

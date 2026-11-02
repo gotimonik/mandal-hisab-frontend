@@ -56,6 +56,13 @@ export function LoanPaymentDialog({
   const [key, setKey] = useState(() => newIdempotencyKey("flp"));
   const [pending, start] = useTransition();
 
+  // paid beyond what's due → kept as the member's advance for the next interest
+  const interestPaise = (() => {
+    const v = rupeesOrZero.safeParse(interest);
+    return v.success ? Math.round(Number(v.data) * 100) : 0;
+  })();
+  const extraPaise = Math.max(0, interestPaise - interestDuePaise);
+
   const reset = () => {
     setInterest(paiseToRupeeInput(interestDuePaise));
     setPrincipal("");
@@ -155,7 +162,7 @@ export function LoanPaymentDialog({
                 <Input id="lp-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
               </Field>
             </MoreOptions>
-            <FormNote>{t("upad.payNote")}</FormNote>
+            {extraPaise > 0 ? <FormNote tone="good">{t("upad.keptAsAdvance", { amount: money.fmt(extraPaise) })}</FormNote> : <FormNote>{t("upad.payNote")}</FormNote>}
             <SubmitButton pending={pending} icon={<CheckCircle2 />}>
               {t("upad.recordPaid")}
             </SubmitButton>

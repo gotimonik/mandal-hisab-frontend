@@ -111,7 +111,10 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
               </span>
               {canRequest ? <RequestUpadDialog availablePaise={upadReqs.availablePaise} upadOutPaise={upadReqs.upadOutPaise} size="sm" defaultOpen={sp.new === "1"} /> : openRequest ? <span className="text-xs text-muted-foreground">{t("my.waitingApproval")}</span> : null}
             </div>
-            {upadReqs.items.length > 0 && (
+{(myLoans[0]?.memberAdvancePaise ?? 0) > 0 && (
+              <p className="rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-500/25 dark:text-emerald-200">{t("pay.advanceYou", { amount: money.fmt(myLoans[0].memberAdvancePaise!) })}</p>
+            )}
+                        {upadReqs.items.length > 0 && (
               <ul className="divide-y rounded-xl text-sm ring-1 ring-foreground/10">
                 {upadReqs.items.map((r) => (
                   <li key={r._id} className="flex items-center justify-between gap-2 px-3 py-2">
@@ -137,7 +140,7 @@ export default async function MyPage({ params, searchParams }: PageProps<"/org/[
                 {upadClaims!.map((x) => (
                   <li key={x._id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <span>
-                      {t("my.paidOn", { amount: money.fmt(x.interestPaise + x.principalPaise), number: x.loanNumber })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
+                      {t("my.paidOn", { amount: money.fmt(x.interestPaise + x.principalPaise), number: x.loanNumber || t("pay.allUpads") })} <span className="text-muted-foreground">· {formatDate(x.date)}</span>
                       <span className="block text-xs text-muted-foreground">
                         {x.interestPaise > 0 && t("my.interestX", { amount: money.fmt(x.interestPaise) })}
                         {x.interestPaise > 0 && x.principalPaise > 0 && " + "}
