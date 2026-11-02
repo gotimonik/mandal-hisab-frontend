@@ -113,6 +113,8 @@ export interface Org {
   myRole: Role;
   myPermissions: string[];
   myMemberId: string | null;
+  /** A platform admin looking at a Mandal they don't belong to: read-only. */
+  platformView?: boolean;
 }
 
 export interface Paged<T> {

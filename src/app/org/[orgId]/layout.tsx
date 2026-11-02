@@ -10,7 +10,8 @@ import { clientDict } from "@/i18n/dicts";
 import { LangBoundary } from "@/i18n/boundary";
 import { BottomNavContent, MobileHeaderContent, ShellFrame, SidebarContent, TopbarContent, type ShellData } from "@/components/app/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MailOpen } from "lucide-react";
+import Link from "next/link";
+import { Eye, MailOpen } from "lucide-react";
 import { ActionButton } from "@/components/app/action-button";
 import { CurrencyProvider } from "@/components/app/currency";
 import { PageSkeleton } from "@/components/app/page-skeleton";
@@ -143,6 +144,21 @@ async function BottomNav({ params }: P) {
 
 async function StatusBanner({ params }: P) {
   const [org, { t }] = await Promise.all([getOrg((await params).orgId), getT()]);
+  if (org.platformView)
+    return (
+      <div className="mb-4 flex flex-col gap-2 rounded-xl bg-violet-500/10 px-3 py-2.5 text-sm ring-1 ring-violet-500/30 sm:flex-row sm:items-center">
+        <Eye className="hidden size-4 shrink-0 text-violet-700 sm:block dark:text-violet-300" />
+        <p className="min-w-0 flex-1">
+          <b>Viewing as platform admin — read-only.</b>{" "}
+          <span className="text-muted-foreground">
+            You&apos;re not a member of this Mandal{org.status !== "active" ? ` (${org.status})` : ""}. Nothing can be changed, and this visit appears in the Mandal&apos;s audit log.
+          </span>
+        </p>
+        <Link href="/platform" className="shrink-0 font-semibold text-violet-700 hover:underline dark:text-violet-300">
+          ← Back to platform
+        </Link>
+      </div>
+    );
   if (org.status === "pending")
     return (
       <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-sm">

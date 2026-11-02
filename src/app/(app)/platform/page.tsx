@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2 } from "lucide-react";
+import { Building2, Eye } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import type { Me } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = { title: "Platform admin" };
 
@@ -54,6 +56,10 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
   const by = stats.organizationsByStatus;
   const actions = (o: PlatformOrg) => (
     <>
+      {/* read-only look inside the Mandal (each visit is in its audit log) */}
+      <Link href={`/org/${o._id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <Eye /> Open
+      </Link>
       {o.status === "pending" && (
         <ActionButton path={`/platform/organizations/${o._id}`} method="PATCH" body={{ action: "approve" }} successMessage="Organization approved" variant="default">
           Approve

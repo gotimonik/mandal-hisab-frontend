@@ -206,7 +206,7 @@ const GROUPS: Group[] = [
 
 const SECURITY = [
   "Every request is checked on the server: what you can see and do depends on your role in that Mandal",
-  "Each Mandal's data is kept separate — even platform administrators get no automatic access to it",
+  "Each Mandal's data is kept separate — platform administrators can only view it, read-only, and every visit shows in the Mandal's audit log",
   "Your sign-in is kept in a secure, HttpOnly cookie that page scripts cannot read",
   "Passwords are stored only as salted hashes, and repeated sign-in attempts are rate-limited",
   "Sign out of every device at once from your account page",

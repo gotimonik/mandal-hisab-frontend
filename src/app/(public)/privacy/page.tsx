@@ -134,8 +134,9 @@ export default function PrivacyPage() {
               <b>Admins and managers</b> of a Mandal see that Mandal&apos;s records, limited by the permissions of their role. They cannot see any other Mandal.
             </li>
             <li>
-              <b>Platform administrators</b> (our staff) can approve or suspend Mandals but do not get access to a Mandal&apos;s financial records through the app. We may access data only when needed
-              to provide support you ask for, to fix a technical problem, or where the law requires it.
+              <b>Platform administrators</b> (our staff) can approve or suspend Mandals and can view a Mandal&apos;s records, read-only, for support and oversight. They cannot change anything,
+              and every visit appears in that Mandal&apos;s audit log. We access data only when needed to provide support you ask for, to fix a technical problem, to review a Mandal for
+              misuse, or where the law requires it.
             </li>
           </ul>
 

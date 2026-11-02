@@ -40,7 +40,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
     id: "privacy",
     title: "Privacy & security",
     items: [
-      { q: "Who can see our Mandal's data?", a: "Only people who are members of your Mandal in MandalHisab, and only what their role allows. Each Mandal's data is kept separate, and platform administrators get no automatic access to it." },
+      { q: "Who can see our Mandal's data?", a: "Only people who are members of your Mandal in MandalHisab, and only what their role allows. Each Mandal's data is kept separate. Our platform administrators can view a Mandal read-only for support and oversight — they can't change anything, and every visit appears in your Mandal's audit log." },
       { q: "How is my account protected?", a: "Passwords are stored only as salted hashes, repeated failed sign-in attempts are limited, and your session is kept in a secure cookie that page scripts can't read. You can sign out of every device at once from your account page." },
       { q: "Can I get our data out?", a: "Yes. Reports, statements, the cash book and more can be downloaded as CSV files or printed and saved as PDF at any time." },
       { q: "Is there a record of who changed what?", a: "Yes. The audit log shows who did what and when, and sensitive actions like reversals, waivers and rejections require a reason." },
