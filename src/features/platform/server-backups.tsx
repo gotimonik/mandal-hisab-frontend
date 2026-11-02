@@ -30,7 +30,7 @@ export async function ServerBackups() {
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold">Server backups</h2>
           <p className="text-sm text-muted-foreground">
-            Every night at 6:00 am the whole database (every Mandal) is copied, encrypted, outside MongoDB Atlas. The last {data.keepDays} days are kept.
+            Every day at 6:00 am IST, a full copy of the whole database — every Mandal, with all its records from the start — is saved, encrypted, outside MongoDB Atlas. The {data.keepDays} most recent copies are kept, so you can restore the database as it was on any of the last {data.keepDays} days; older copies are deleted.
           </p>
         </div>
         {data.configured && (
