@@ -91,3 +91,41 @@ export async function uploadOrgLogo(orgId: string, formData: FormData): Promise<
     return { ok: false, error: "Upload failed" };
   }
 }
+
+export interface RestoreSummary {
+  organization: { id: string; name: string; code: string };
+  backupCreatedAt: string;
+  signatureValid: boolean;
+  existsInDatabase: boolean;
+  replacedExisting: boolean;
+  usersCreated: number;
+  usersMatchedByEmail: number;
+  counts: Record<string, number>;
+  dryRun: boolean;
+}
+
+/**
+ * Platform admin: load a Mandal back from its backup file (compressed in the browser).
+ * `dryRun` only checks the file; the API refuses everyone who isn't a platform admin.
+ */
+export async function restoreMandalBackup(formData: FormData, opts: { dryRun?: boolean; replace?: boolean; trustUnsigned?: boolean }): Promise<ActionResult<RestoreSummary>> {
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Choose the backup file" };
+  if (file.size > 5 * 1024 * 1024) return { ok: false, error: "The backup file is too big to upload (max 5 MB). Restore it with npm run backup:restore instead." };
+  const { getSessionToken } = await import("@/lib/server/session");
+  const token = await getSessionToken();
+  const fd = new FormData();
+  fd.set("file", file);
+  const q = new URLSearchParams();
+  if (opts.dryRun) q.set("dryRun", "1");
+  if (opts.replace) q.set("replace", "1");
+  if (opts.trustUnsigned) q.set("trustUnsigned", "1");
+  try {
+    const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/platform/backups/restore?${q}`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd, cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { data?: RestoreSummary; error?: { message: string } };
+    if (!res.ok || !json.data) return { ok: false, error: json.error?.message ?? "Restore failed" };
+    return { ok: true, data: json.data };
+  } catch {
+    return { ok: false, error: "Restore failed — the server couldn't be reached" };
+  }
+}

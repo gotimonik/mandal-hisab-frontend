@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Building2, Eye } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import type { Me } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
@@ -10,14 +9,14 @@ import { EmptyState } from "@/components/app/empty-state";
 import { IconChip } from "@/components/app/bits";
 import { OrgLogo } from "@/components/app/org-logo";
 import { StatusBadge } from "@/components/app/status-badge";
-import { ActionButton } from "@/components/app/action-button";
 import { FilterBar, FilterField } from "@/components/app/filter-bar";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { RestoreBackupDialog } from "@/features/platform/restore-backup";
+import { PlatformOrgActions } from "@/features/platform/org-actions";
 
 export const metadata = { title: "Platform admin" };
 
@@ -54,38 +53,11 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
     api<PlatformOrg[]>(`/platform/organizations${qs({ status, q })}`),
   ]);
   const by = stats.organizationsByStatus;
-  const actions = (o: PlatformOrg) => (
-    <>
-      {/* read-only look inside the Mandal (each visit is in its audit log) */}
-      <Link href={`/org/${o._id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-        <Eye /> Open
-      </Link>
-      {o.status === "pending" && (
-        <ActionButton path={`/platform/organizations/${o._id}`} method="PATCH" body={{ action: "approve" }} successMessage="Organization approved" variant="default">
-          Approve
-        </ActionButton>
-      )}
-      {(o.status === "active" || o.status === "pending") && (
-        <ActionButton path={`/platform/organizations/${o._id}`} method="PATCH" body={{ action: "suspend" }} successMessage="Organization suspended" confirm={{ title: `Suspend ${o.name}?`, description: "Its users lose access until it is reactivated.", reason: "required", destructive: true, confirmLabel: "Suspend" }}>
-          Suspend
-        </ActionButton>
-      )}
-      {(o.status === "suspended" || o.status === "archived") && (
-        <ActionButton path={`/platform/organizations/${o._id}`} method="PATCH" body={{ action: "reactivate" }} successMessage="Organization reactivated">
-          Reactivate
-        </ActionButton>
-      )}
-      {o.status !== "archived" && (
-        <ActionButton path={`/platform/organizations/${o._id}`} method="PATCH" body={{ action: "archive" }} successMessage="Organization archived" variant="ghost" confirm={{ title: `Archive ${o.name}?`, description: "Archived organizations become read-only.", reason: "required", confirmLabel: "Archive" }}>
-          Archive
-        </ActionButton>
-      )}
-    </>
-  );
+  const actions = (o: PlatformOrg) => <PlatformOrgActions id={o._id} name={o.name} status={o.status} />;
   const orgLine = (o: PlatformOrg) => [o.code, o.city, o.registrationNumber && `Reg ${o.registrationNumber}`].filter(Boolean).join(" · ");
   return (
     <>
-      <PageHeader title="Platform administration" description="Approve and manage registered organizations. Organization financial data is not visible here." />
+      <PageHeader title="Platform administration" description="Approve and manage registered organizations. Open a Mandal to view it read-only." actions={<RestoreBackupDialog />} />
       <SummaryBand
         icon={<Building2 />}
         label="Organizations"
@@ -131,7 +103,7 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
                   <StatusBadge status={o.status} />
                 </div>
                 {o.statusReason && <p className="mt-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">{o.statusReason}</p>}
-                <div className="mt-2 flex flex-wrap items-center justify-end gap-1 empty:hidden">{actions(o)}</div>
+                <div className="mt-2">{actions(o)}</div>
               </li>
             ))}
           </ul>
@@ -175,7 +147,7 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
                         {o.statusReason && <div className="mt-1 max-w-48 text-xs text-muted-foreground">{o.statusReason}</div>}
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end gap-1">{actions(o)}</div>
+                        {actions(o)}
                       </TableCell>
                     </TableRow>
                   ))}
