@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -25,8 +26,9 @@ async function shareCsvInApp(name: string, csv: string) {
     if (!/cancel/i.test(String((e as { message?: string })?.message ?? e))) throw e;
   }
 }
-export function ExportCsvButton({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
+export function ExportCsvButton({ href, children, className, refreshAfter = false }: { href: string; children: ReactNode; className?: string; /** reload the page's data once saved (e.g. "Last backup") */ refreshAfter?: boolean }) {
   const t = useT();
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   return (
     <a
@@ -65,6 +67,7 @@ export function ExportCsvButton({ href, children, className }: { href: string; c
           toast.error(t("common.downloadFailed"));
         } finally {
           setBusy(false);
+          if (refreshAfter) router.refresh();
         }
       }}
     >

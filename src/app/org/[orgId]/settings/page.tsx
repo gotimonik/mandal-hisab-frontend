@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarClock, CalendarDays, KeyRound, Lock } from "lucide-react";
+import { CalendarClock, CalendarDays, DatabaseBackup, KeyRound, Lock } from "lucide-react";
 import { getOrg, getMoney } from "@/lib/server/data";
+import { api } from "@/lib/server/api";
+import { ExportCsvButton } from "@/components/app/export-csv-button";
 import { PageHeader } from "@/components/app/page-header";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, SectionTitle } from "@/components/app/bits";
@@ -45,6 +47,8 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
   const h = org.settings.monthlyHapta;
   const thisMonth = await requestMonth();
   const settlement = org.settings.settlement;
+  const backup = await api<{ lastBackupAt: string | null; lastBackupBy: string | null; due: boolean }>(`/orgs/${orgId}/backup/status`).catch(() => null);
+  const backupDue = backup?.due ?? true;
   return (
     <div className="max-w-3xl">
       <PageHeader title="Mandal settings" description={org.name} />
@@ -92,6 +96,34 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
         <Link href={`/org/${orgId}/settings/close`} className={buttonVariants({ variant: settlement && !settlement.closedAt ? "default" : "outline" })}>
           {settlement?.closedAt ? "View settlement" : settlement ? "Continue closing" : "Close & settle…"}
         </Link>
+      </SettingBlock>
+
+      <SectionTitle className="mt-6">Safety</SectionTitle>
+      <SettingBlock
+        tone="emerald"
+        icon={<DatabaseBackup />}
+        title="Backup of the Mandal's data"
+        description="Download a copy of everything: members, hapta, upad, cash book, receipts, meetings. Keep it somewhere safe, like Google Drive or an email to yourself. If the data is ever lost, send this file to MandalHisab and we'll load it back."
+      >
+        <div className={cn("flex flex-wrap items-center justify-between gap-3 rounded-xl px-3.5 py-3", backupDue ? "bg-amber-500/10 ring-1 ring-amber-500/25" : "bg-emerald-500/8")}>
+          <p className="text-sm">
+            {backup?.lastBackupAt ? (
+              <>
+                Last backup: <b>{formatDate(backup.lastBackupAt)}</b>
+                {backup.lastBackupBy ? ` by ${backup.lastBackupBy}` : ""}
+              </>
+            ) : (
+              <b>No backup taken yet</b>
+            )}
+            <span className="block text-xs text-muted-foreground">{backupDue ? "Take a backup at least once a month." : "Take a new one at least once a month."}</span>
+          </p>
+          <ExportCsvButton href={`/api/backup?orgId=${orgId}`} className="h-10" refreshAfter>
+            <DatabaseBackup /> Download backup
+          </ExportCsvButton>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          The file has members&apos; names, phone numbers and money details, so keep it private. Passwords are never in it. It can only be loaded back by MandalHisab, and a file that has been edited is refused.
+        </p>
       </SettingBlock>
 
       <SectionTitle className="mt-6">Mandal details & rules</SectionTitle>
