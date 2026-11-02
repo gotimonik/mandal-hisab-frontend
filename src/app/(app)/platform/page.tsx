@@ -17,6 +17,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { RestoreBackupDialog } from "@/features/platform/restore-backup";
 import { PlatformOrgActions } from "@/features/platform/org-actions";
+import { ServerBackups } from "@/features/platform/server-backups";
 
 export const metadata = { title: "Platform admin" };
 
@@ -157,6 +158,7 @@ export default async function PlatformPage({ searchParams }: PageProps<"/platfor
           </div>
         </>
       )}
+      <ServerBackups />
     </>
   );
 }
