@@ -27,7 +27,7 @@ import { NativeRedirect } from "@/features/public/native-redirect";
 import { pageMeta } from "@/lib/seo";
 import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = pageMeta({ title: "Features", description: "Everything MandalHisab does: hapta, savings, upad and interest, loans, collections, expenses, withdrawals, cash book, reports, roles, member self-service and more.", path: "/features" });
+export const metadata = pageMeta({ title: "Features", description: "Everything MandalHisab does: hapta, savings, upad and interest, loans, collections, expenses, withdrawals, cash book, reports, roles, member self-service — and Personal Hisab, a private book for your own money.", path: "/features" });
 
 type Group = { id: string; tone: Tone; icon: React.ReactNode; title: string; intro: string; points: string[] };
 
@@ -174,12 +174,35 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    id: "personal",
+    tone: "emerald",
+    icon: <Wallet />,
+    title: "Personal Hisab",
+    intro: "New: a private book for your own income and spending — separate from every Mandal, and seen only by you. No Mandal needed to use it.",
+    points: [
+      "Add spending, money received, or money moved between your wallets in a few taps",
+      "Wallets for cash, bank, UPI and card, each with its own balance and a total across all of them",
+      "Categories with icons and colours — suggested from the name, in English, ગુજરાતી and हिन्दी",
+      "Monthly budget overall and per category, with a notification at 80% and when you go over",
+      "Reminders for rent, bills and EMIs to pay — weekly, monthly or yearly — sent as a notification at the time you choose",
+      "Reminders for money someone promised to give you, with Call and WhatsApp buttons",
+      "Overview of the month, spending day by day, and reports for any period, month by month",
+      "Default wallet and categories so everyday entries are quicker",
+      "Optional: copy your own Mandal hapta, upad and withdrawals in automatically so your balance stays right",
+      "Search and filter every entry, and download them as CSV",
+    ],
+  },
+  {
     id: "notifications",
     tone: "amber",
     icon: <Bell />,
     title: "Notifications",
     intro: "Know when something needs you.",
-    points: ["Due-date reminders, payment confirmations, approvals and join requests", "Unread count on the bell; open a notification to go straight to it"],
+    points: [
+      "Due-date reminders, payment confirmations, approvals and join requests",
+      "Personal Hisab bill reminders and budget alerts, as notifications on the app",
+      "Unread count on the bell; open a notification to go straight to it",
+    ],
   },
   {
     id: "languages",
@@ -210,6 +233,7 @@ const SECURITY = [
   "Your sign-in is kept in a secure, HttpOnly cookie that page scripts cannot read",
   "Passwords are stored only as salted hashes, and repeated sign-in attempts are rate-limited",
   "Sign out of every device at once from your account page",
+  "Personal Hisab is visible only to you — no Mandal admin, manager or member can ever see it",
   "Audit log of who did what and when",
   "Mistakes are fixed with reversals, never by editing history",
   "Sensitive actions ask for confirmation and a reason",
@@ -221,7 +245,7 @@ export default function FeaturesPage() {
     <>
       <Breadcrumb name="Features" path="/features" />
       <NativeRedirect />
-      <PageHero eyebrow="Features" title="Everything your Mandal's hisab needs, in one place" description="From the first hapta to closing and settling the Mandal — members, savings, upad, interest, loans, expenses, withdrawals, cash book and reports, accurate to the paisa.">
+      <PageHero eyebrow="Features" title="Everything your Mandal's hisab needs, in one place" description="From the first hapta to closing and settling the Mandal — members, savings, upad, interest, loans, expenses, withdrawals, cash book and reports, accurate to the paisa. And now Personal Hisab, for your own money.">
         <div className="flex flex-wrap gap-2">
           <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "bg-white text-primary hover:bg-white/90")}>
             Get started free <ArrowRight />

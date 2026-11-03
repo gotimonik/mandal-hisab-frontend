@@ -7,7 +7,7 @@ import { absUrl, breadcrumbLd, pageMeta } from "@/lib/seo";
 
 export const metadata = pageMeta({
   title: "Mandal glossary: hapta, upad, vyaj and more",
-  description: "Plain-language meanings of the words used in Mandal and savings-group accounts — hapta, upad, vyaj, mudal, jama, udhar, rojmel, khatavahi — in English, Gujarati and Hindi.",
+  description: "Plain-language meanings of the words used in Mandal and savings-group accounts — hapta, upad, vyaj, mudal, jama, udhar, rojmel, khatavahi — plus Personal Hisab terms, in English, Gujarati and Hindi.",
   path: "/glossary",
 });
 
@@ -38,6 +38,9 @@ const TERMS: Term[] = [
   { term: "Mudal", local: "મુદ્દલ · मूलधन", def: "Principal — the original amount of an upad or loan, on which interest is charged." },
   { term: "Opening balance", def: "A member's savings at the date the Mandal started using MandalHisab, carried over from the old register." },
   { term: "Part payment", def: "Paying less than the full amount due. The rest stays due and is carried forward." },
+  { term: "Personal Hisab", def: "Your own private money book in MandalHisab: what you spend and receive, wallets, budgets and reminders. Only you can see it — it's separate from every Mandal.", link: { href: "/guides/personal-hisab-track-your-own-money", label: "Personal Hisab guide" } },
+  { term: "Budget", def: "In Personal Hisab, a monthly spending limit — overall or for one category. It starts again every month, and you can get an alert at 80% and when you go over." },
+  { term: "Wallet", def: "In Personal Hisab, a place you keep money — cash, a bank account, UPI or a card — with its own balance. It's only a name: MandalHisab never asks for account numbers." },
   { term: "Passbook", def: "A member's savings statement: each hapta, interest credit and withdrawal with a running balance." },
   { term: "Pahonch (receipt)", local: "પહોંચ · रसीद", def: "Proof that money was received. MandalHisab gives every payment a numbered receipt." },
   { term: "Pramukh", local: "પ્રમુખ · अध्यक्ष", def: "The president or head of the Mandal, who chairs meetings." },

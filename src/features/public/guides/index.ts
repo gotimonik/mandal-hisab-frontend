@@ -2,6 +2,7 @@ import type { Guide, GuideBlock, GuideCategory, GuideCategoryId } from "./types"
 import { START_GUIDES } from "./content/start";
 import { EVERYDAY_GUIDES } from "./content/everyday";
 import { LEARN_GUIDES } from "./content/learn";
+import { PERSONAL_GUIDES } from "./content/personal";
 
 export type { Guide, GuideBlock, GuideCategory, GuideCategoryId } from "./types";
 
@@ -12,10 +13,11 @@ export const GUIDE_CATEGORIES: GuideCategory[] = [
   { id: "members", title: "Members & access", description: "Roles, join codes, invitations and the member's own view.", tone: "sky" },
   { id: "books", title: "Cash book & reports", description: "Other income and expenses, donations and every report.", tone: "violet" },
   { id: "closing", title: "Closing a Mandal", description: "Share out the money and settle with every member.", tone: "rose" },
+  { id: "personal", title: "Personal Hisab", description: "Track your own income and spending, budgets and bill reminders.", tone: "emerald" },
   { id: "learn", title: "Learn", description: "How Mandals work, interest explained and good practice.", tone: "amber" },
 ];
 
-export const GUIDES: Guide[] = [...START_GUIDES, ...EVERYDAY_GUIDES, ...LEARN_GUIDES];
+export const GUIDES: Guide[] = [...START_GUIDES, ...EVERYDAY_GUIDES, ...PERSONAL_GUIDES, ...LEARN_GUIDES];
 
 export const getGuide = (slug: string) => GUIDES.find((g) => g.slug === slug);
 export const guidesIn = (cat: GuideCategoryId) => GUIDES.filter((g) => g.category === cat);

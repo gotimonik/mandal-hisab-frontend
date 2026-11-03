@@ -8,7 +8,7 @@ export const site = {
   name: "MandalHisab",
   tagline: "Transparent hisab for your Mandal.",
   description:
-    "Hapta, savings, upad, interest, withdrawals, cash book and reports for Mandals, trusts and community groups — accurate to the paisa, in English, ગુજરાતી and हिन्दी.",
+    "Hapta, savings, upad, interest, cash book and reports for Mandals and community groups — plus Personal Hisab, a private book for your own income, spending and budgets. In English, ગુજરાતી and हिन्दी.",
   url: "https://mandalhisab.com",
 
   /** Shown in the footer and on Contact us. Set a channel to null to hide it. */
@@ -28,7 +28,7 @@ export const site = {
     grievanceOfficer: "Monik Goti", // required under India's IT Rules / DPDP Act
     grievanceEmail: "gotimonik1@gmail.com",
     jurisdiction: "Surat, Gujarat, India", // courts for disputes
-    lastUpdated: "2 November 2026",
+    lastUpdated: "3 November 2026",
   },
 
   /** App store links. null = "Coming soon". */

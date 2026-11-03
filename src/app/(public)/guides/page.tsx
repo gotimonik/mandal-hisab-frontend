@@ -12,7 +12,7 @@ import { site } from "@/config/site";
 
 export const metadata = pageMeta({
   title: "Guides — how to run your Mandal's hisab",
-  description: "Step-by-step guides to MandalHisab — starting a Mandal, collecting hapta, giving upad, crediting interest, withdrawals, reports and closing — plus articles on how savings Mandals work.",
+  description: "Step-by-step guides to MandalHisab — starting a Mandal, collecting hapta, giving upad, crediting interest, withdrawals, reports and closing — plus Personal Hisab, household budgeting and articles on how savings Mandals work.",
   path: "/guides",
 });
 
@@ -35,7 +35,7 @@ export default function GuidesPage() {
           },
         ]}
       />
-      <PageHero eyebrow="Guides & help" title="Learn to run your Mandal's hisab, step by step" description="Practical guides for treasurers and members — from registering your Mandal to the final settlement — and plain-language articles on how savings Mandals work.">
+      <PageHero eyebrow="Guides & help" title="Learn to run your Mandal's hisab, step by step" description="Practical guides for treasurers and members — from registering your Mandal to the final settlement — guides to Personal Hisab for your own money, and plain-language articles on how savings Mandals work.">
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 font-semibold">
             <ListChecks className="size-4" /> {howtos} how-to guides

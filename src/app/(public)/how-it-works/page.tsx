@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarCheck2, CalendarDays, Flag, HandCoins, PiggyBank, Settings2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, CalendarCheck2, CalendarDays, Flag, HandCoins, PiggyBank, Settings2, UserPlus, Users, Wallet } from "lucide-react";
 import { IconChip } from "@/components/app/bits";
 import type { Tone } from "@/lib/tones";
 import { PageHero, Section, SectionHeading } from "@/features/public/blocks";
@@ -178,7 +178,40 @@ export default function HowItWorksPage() {
         </p>
       </Section>
 
-      <Section tinted>
+      <Section tinted id="personal-hisab">
+        <div className="grid grid-cols-1 gap-5 rounded-3xl bg-card p-5 shadow-card ring-1 ring-emerald-500/25 sm:p-8 lg:grid-cols-[1fr_1.3fr] lg:items-center lg:gap-10">
+          <div className="flex flex-col gap-3">
+            <IconChip tone="emerald" size="lg">
+              <Wallet />
+            </IconChip>
+            <p className="text-xs font-bold tracking-wider text-emerald-700 uppercase dark:text-emerald-300">New · Personal Hisab</p>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">And for your own money</h2>
+            <p className="text-sm text-pretty text-muted-foreground sm:text-base">
+              Everyone with an account — admin, manager, member, or not in a Mandal at all — also gets a private Personal Hisab. Only you can see it.
+            </p>
+            <Link href="/guides/personal-hisab-track-your-own-money" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+              Guide: Personal Hisab <ArrowRight className="size-4" />
+            </Link>
+          </div>
+          <ol className="flex flex-col gap-2.5 text-sm">
+            {[
+              ["Open Personal Hisab", "From the menu, or from Your Mandals after you sign in. Starter wallets and categories are ready."],
+              ["Add entries as they happen", "Tap + and choose Spent, Received or Move money. Pick a category and wallet — or let your defaults fill them in."],
+              ["Set budgets and reminders", "A monthly limit for groceries or fuel, a reminder for rent on the 1st. Notifications arrive on the app."],
+              ["Check your month", "The overview shows what came in, what went out and what's left in each wallet; Reports show any period."],
+            ].map(([title, text], i) => (
+              <li key={title} className="flex gap-3">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">{i + 1}</span>
+                <span className="min-w-0">
+                  <b className="font-semibold">{title}.</b> <span className="text-muted-foreground">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Section>
+
+      <Section>
         <CtaBand title="Ready to set up your Mandal?" />
       </Section>
     </>

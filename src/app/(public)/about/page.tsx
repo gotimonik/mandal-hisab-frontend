@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, Eye, HandHeart, Languages, Lock, MessageSquareText, PiggyBank, ScrollText, Smartphone, Users, Landmark, Building2 } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Eye, HandHeart, Languages, Lock, MessageSquareText, PiggyBank, ScrollText, Smartphone, Users, Landmark, Building2, Wallet } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { site } from "@/config/site";
@@ -9,7 +9,7 @@ import { NativeRedirect } from "@/features/public/native-redirect";
 import { pageMeta } from "@/lib/seo";
 import { Breadcrumb } from "@/features/public/json-ld";
 
-export const metadata = pageMeta({ title: "About us", description: "Why MandalHisab exists, what we believe and who it's for — simple, transparent hisab for Mandals, savings groups and trusts.", path: "/about" });
+export const metadata = pageMeta({ title: "About us", description: "Why MandalHisab exists, what we believe and who it's for — simple, transparent hisab for Mandals, savings groups and trusts, and a private Personal Hisab for your own money.", path: "/about" });
 
 const BELIEFS = [
   { icon: <Eye />, tone: "indigo", title: "Every member can see", text: "Members see their own balance, hapta, interest and receipts on their phone — no need to ask the treasurer or wait for the yearly meeting." },
@@ -25,6 +25,7 @@ const AUDIENCE = [
   { icon: <PiggyBank />, tone: "emerald", title: "Savings groups", text: "Bachat mandals and self-help groups that collect regularly and lend from the common fund." },
   { icon: <Landmark />, tone: "violet", title: "Trusts", text: "Donations with receipts, approved expenses, accounts and reports the trustees can check." },
   { icon: <Building2 />, tone: "sky", title: "Community & society groups", text: "Festival committees, samaj groups and housing societies that collect and spend for members." },
+  { icon: <Wallet />, tone: "orange", title: "You and your family", text: "Personal Hisab: a private book for your own income, spending, budgets and bill reminders." },
 ] as const;
 
 export default function AboutPage() {
@@ -65,8 +66,8 @@ export default function AboutPage() {
       </Section>
 
       <Section>
-        <SectionHeading eyebrow="Who it's for" title="Any group that collects, saves and lends together" description="If your group keeps money on behalf of its members, MandalHisab is made for you." />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SectionHeading eyebrow="Who it's for" title="Any group that collects, saves and lends together — and anyone keeping their own hisab" description="If your group keeps money on behalf of its members, MandalHisab is made for you. And for your own household money, there's Personal Hisab." />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {AUDIENCE.map((a) => (
             <FeatureCard key={a.title} icon={a.icon} tone={a.tone} title={a.title}>
               {a.text}
@@ -94,7 +95,7 @@ export default function AboutPage() {
             <h2 className="text-xl font-bold">Privacy by design</h2>
             <p className="text-sm text-pretty text-muted-foreground">
               Admins, managers and members each see only what their role allows, and members see only their own savings. Every request is checked on the server, sensitive actions need a reason, and
-              nothing is ever silently changed. Read our{" "}
+              nothing is ever silently changed. Your Personal Hisab is seen by you alone — never by any Mandal. Read our{" "}
               <Link href="/privacy" className="font-medium text-primary underline-offset-4 hover:underline">
                 privacy policy
               </Link>{" "}

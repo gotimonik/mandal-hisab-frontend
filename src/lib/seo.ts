@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { site } from "@/config/site";
 
 /** The shared social preview (src/app/opengraph-image.jpg). */
-export const OG_IMAGE = { url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "MandalHisab — transparent hisab for your Mandal: hapta, savings, upad and reports", type: "image/jpeg" };
+export const OG_IMAGE = { url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "MandalHisab — transparent hisab for your Mandal (hapta, savings, upad and reports) and a private Personal Hisab for your own money", type: "image/jpeg" };
 
 /** Absolute URL on the main domain. */
 export const absUrl = (path = "/") => `${site.url}${path === "/" ? "" : path}`;
@@ -62,6 +62,18 @@ export function softwareAppLd() {
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web, Android, iOS",
     inLanguage: ["en", "gu", "hi"],
+    featureList: [
+      "Monthly hapta collection",
+      "Member savings passbooks",
+      "Upad (loans) with monthly interest",
+      "Withdrawals and closing settlement",
+      "Cash book and accounting reports",
+      "Member self-service",
+      "Personal Hisab: private income and expense tracker",
+      "Wallets, categories with icons and monthly budgets",
+      "Bill, rent and money-to-collect reminders",
+      "Budget alerts",
+    ],
     offers: { "@type": "Offer", price: "0", priceCurrency: "INR", description: site.pricing.headline },
     publisher: { "@id": ORG_ID },
     image: absUrl("/opengraph-image.jpg"),

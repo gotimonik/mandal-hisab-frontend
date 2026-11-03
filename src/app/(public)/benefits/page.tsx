@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Calculator, Check, Clock, FileBarChart, HandCoins, History, Languages, MessageSquareOff, ShieldCheck, Smartphone, UserCheck, Users, X } from "lucide-react";
+import { BadgeCheck, Calculator, Check, Clock, FileBarChart, HandCoins, History, Languages, MessageSquareOff, ShieldCheck, Smartphone, UserCheck, Users, Wallet, X } from "lucide-react";
 import { IconChip } from "@/components/app/bits";
 import type { Tone } from "@/lib/tones";
 import { FeatureCard, PageHero, Section, SectionHeading } from "@/features/public/blocks";
@@ -10,8 +10,8 @@ import { pageMeta } from "@/lib/seo";
 import { appsLine } from "@/config/site";
 
 export const metadata = pageMeta({
-  title: "Benefits for treasurers, members and committees",
-  description: "What changes when a Mandal moves its hisab to MandalHisab: less work for the treasurer, instant answers for members, clean books for the committee, and fewer disputes for everyone.",
+  title: "Benefits for treasurers, members, committees — and you",
+  description: "What changes when a Mandal moves its hisab to MandalHisab: less work for the treasurer, instant answers for members, clean books for the committee, fewer disputes for everyone — and Personal Hisab for your own money.",
   path: "/benefits",
 });
 
@@ -66,6 +66,22 @@ const AUDIENCES: Audience[] = [
       { title: "Your data, exportable", text: "Download CSV files of reports and statements whenever you like." },
     ],
   },
+  {
+    id: "personal",
+    tone: "orange",
+    icon: <Wallet />,
+    who: "For you, personally",
+    headline: "Know where your own money goes",
+    intro: "Personal Hisab is a private book for your household money, in the same app — whether or not you're in a Mandal.",
+    points: [
+      { title: "Every rupee noted in seconds", text: "Tap +, choose Spent or Received, type the amount. Your wallets and monthly totals update by themselves." },
+      { title: "See where it went", text: "Spending by category with icons, day by day, and month by month — no more guessing at the end of the month." },
+      { title: "Budgets that warn you", text: "Set a monthly limit overall or per category and get a notification at 80% and when you cross it." },
+      { title: "Never miss rent or a bill", text: "Reminders for rent, bills and EMIs arrive before they're due, at the time you pick. Mark paid and it's added to your spending." },
+      { title: "Collect what you're owed", text: "Lent money to someone? Get reminded on the day they promised, with Call and WhatsApp buttons ready." },
+      { title: "Completely private", text: "Only you can see your Personal Hisab. It's never shared with any Mandal, its admins or its members." },
+    ],
+  },
 ];
 
 const BEFORE_AFTER: [string, string][] = [
@@ -92,7 +108,7 @@ export default function BenefitsPage() {
     <>
       <Breadcrumb name="Benefits" path="/benefits" />
       <NativeRedirect />
-      <PageHero tone="green" eyebrow="Benefits" title="Better for the treasurer, the members and the whole Mandal" description="MandalHisab keeps the Mandal you already run — cash, meetings and your own rules — and replaces only the counting, the register and the guesswork." />
+      <PageHero tone="green" eyebrow="Benefits" title="Better for the treasurer, the members and the whole Mandal" description="MandalHisab keeps the Mandal you already run — cash, meetings and your own rules — and replaces only the counting, the register and the guesswork. And with Personal Hisab, it looks after your own money too." />
 
       <nav aria-label="Jump to" className="no-print border-b border-border/60 bg-background">
         <div className="mx-auto flex w-full max-w-6xl gap-2 overflow-x-auto px-4 py-2.5 sm:px-6">

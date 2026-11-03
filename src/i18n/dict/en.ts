@@ -104,7 +104,7 @@ export const en = {
     meeting: "Call meeting",
   },
   auth: {
-    tagline: "Hapta, upad and savings — simple and clear",
+    tagline: "Your Mandal's hisab and your own — simple and clear",
     signIn: "Sign in",
     welcomeBack: "Welcome back to MandalHisab.",
     signInToAccept: "Sign in to accept your Mandal invitation. New to MandalHisab? Create an account below.",
@@ -115,7 +115,7 @@ export const en = {
     createAccount: "Create an account",
     createAccountBtn: "Create account",
     createTitle: "Create your account",
-    createDesc: "Then create a new Mandal or join an existing one with its code.",
+    createDesc: "Then create a new Mandal, join one with its code, or just keep your own Personal Hisab.",
     invitedTitle: "You're invited — create your account",
     invitedDesc: "Set your own password. You'll join the Mandal right after.",
     fullName: "Full name",

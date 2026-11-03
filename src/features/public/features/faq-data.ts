@@ -9,7 +9,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
     id: "getting-started",
     title: "Getting started",
     items: [
-      { q: "What is MandalHisab?", a: "MandalHisab keeps the accounts of a Mandal, trust or community savings group: monthly hapta, members' savings, upad (loans from the fund) and interest, withdrawals, expenses, donations, a cash book and reports — in one place everyone can trust." },
+      { q: "What is MandalHisab?", a: "MandalHisab keeps the accounts of a Mandal, trust or community savings group: monthly hapta, members' savings, upad (loans from the fund) and interest, withdrawals, expenses, donations, a cash book and reports — in one place everyone can trust. Every account also gets Personal Hisab, a private book for your own income and spending." },
       { q: "How do I start a new Mandal?", a: "Create a free account, then choose \"Create a Mandal\". Enter its name, the monthly hapta amount and when it starts, and you're ready to add members. Depending on how registration is set up, a new Mandal may be marked pending until it's approved; you can set it up in the meantime." },
       { q: "How do I join a Mandal that already uses MandalHisab?", a: "Ask the admin for the Mandal's join code, or search for the Mandal by name after signing up, and send a request to join. You can also be invited by email or in the app — the invitation works even if you don't have an account yet." },
       { q: "Can I bring in our existing members and balances?", a: "Yes. Add members one by one or import them from a CSV file, and enter each member's opening balance so their savings passbook starts from the right amount." },
@@ -37,12 +37,24 @@ export const FAQ_GROUPS: FaqGroup[] = [
     ],
   },
   {
+    id: "personal",
+    title: "Personal Hisab",
+    items: [
+      { q: "What is Personal Hisab?", a: "Personal Hisab is a private income and expense book for your own money, inside MandalHisab. Note what you spend and receive, keep wallets for cash, bank, UPI and card, see spending by category, set monthly budgets and get reminders for rent and bills. It's separate from every Mandal." },
+      { q: "Who can see my Personal Hisab?", a: "Only you. Your Mandal's admins, managers and other members can't see it, and it never appears in any Mandal's reports, cash book or backup file." },
+      { q: "Do I need to be in a Mandal to use it?", a: "No. Create a free account and open Personal Hisab — no Mandal needed. If you are in a Mandal, it's in the same app under the same login." },
+      { q: "Does Personal Hisab connect to my bank or UPI?", a: "No. You add entries yourself. Wallets like Bank or UPI are just names for where you keep money — MandalHisab never asks for account numbers, never reads your bank or SMS, and never moves money." },
+      { q: "How do reminders and budget alerts work?", a: "Add a reminder for rent, a bill or an EMI — once, weekly, monthly or yearly — and choose how long before it's due you want to hear about it. You can also be reminded about money someone promised to give you. Turn on budget alerts to get a notification at 80% of a budget and when you go over. Notifications come on the MandalHisab app, so allow them on your phone." },
+      { q: "Can my Mandal hapta and upad show up in Personal Hisab?", a: "Yes, if you want. Turn on \"Add my Mandal money to Personal Hisab\" and the hapta you pay, upad you take or repay, and savings you withdraw are copied in from your Mandals automatically. Money that's really yours — hapta into your own savings, upad, withdrawals — changes your balance without counting as spending; upad interest counts as spending. It works once your Mandal's admin has linked your account to your member record. Only your own transactions are copied, and the Mandal can't see your Personal Hisab." },
+    ],
+  },
+  {
     id: "privacy",
     title: "Privacy & security",
     items: [
       { q: "Who can see our Mandal's data?", a: "Only people who are members of your Mandal in MandalHisab, and only what their role allows. Each Mandal's data is kept separate. Our platform administrators can view a Mandal read-only for support and oversight — they can't change anything, and every visit appears in your Mandal's audit log." },
       { q: "How is my account protected?", a: "Passwords are stored only as salted hashes, repeated failed sign-in attempts are limited, and your session is kept in a secure cookie that page scripts can't read. You can sign out of every device at once from your account page." },
-      { q: "Can I get our data out?", a: "Yes. Reports, statements, the cash book and more can be downloaded as CSV files or printed and saved as PDF at any time." },
+      { q: "Can I get our data out?", a: "Yes. Reports, statements, the cash book and more can be downloaded as CSV files or printed and saved as PDF at any time. Your Personal Hisab entries can be downloaded as CSV too." },
       { q: "Is there a record of who changed what?", a: "Yes. The audit log shows who did what and when, and sensitive actions like reversals, waivers and rejections require a reason." },
     ],
   },

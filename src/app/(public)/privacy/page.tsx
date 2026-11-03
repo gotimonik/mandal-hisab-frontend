@@ -22,8 +22,11 @@ export default function PrivacyPage() {
             data. It is written with India&apos;s Digital Personal Data Protection Act, 2023 (&quot;DPDP Act&quot;) and the Information Technology Act, 2000 and its rules in mind.
           </p>
 
-          <h2>1. Two kinds of information</h2>
-          <p>{site.name} is a record-keeping tool for Mandals, savings groups, trusts and similar community organizations (each a &quot;Mandal&quot;). We handle two kinds of information:</p>
+          <h2>1. Three kinds of information</h2>
+          <p>
+            {site.name} is a record-keeping tool for Mandals, savings groups, trusts and similar community organizations (each a &quot;Mandal&quot;), and it also gives every account a private
+            Personal Hisab for the person&apos;s own money. We handle three kinds of information:
+          </p>
           <ul>
             <li>
               <b>Your account information</b>, which you give us when you sign up: your name, email address, and optionally your phone number, plus your password (stored only as a one-way hash —
@@ -33,22 +36,35 @@ export default function PrivacyPage() {
               <b>Mandal records</b>, which a Mandal&apos;s admins and managers enter: members&apos; names, membership numbers and contact details, and the cash the Mandal collects and pays out —
               hapta, savings balances, upad and loans, interest, withdrawals, donations, expenses (including photos or PDFs of bills), receipts and notes.
             </li>
+            <li>
+              <b>Your Personal Hisab</b>, which you enter for yourself: the amounts, dates, notes and categories of what you spend and receive, the names and starting balances of your wallets,
+              your budgets, and your reminders (including, if you add them, the name and phone number of someone who is to pay you). If you turn on &quot;Add my Mandal money to Personal
+              Hisab&quot;, copies of your own transactions from your Mandals are added to it.
+            </li>
           </ul>
           <p>
             For Mandal records, the Mandal decides what to record and why. In DPDP Act terms the Mandal is the &quot;data fiduciary&quot; for its members&apos; records and we act on its instructions as
             a &quot;data processor&quot;. Questions about what your Mandal has recorded about you should go to your Mandal&apos;s admin first.
           </p>
+          <p>
+            Your Personal Hisab is different: it belongs to you, not to any Mandal. You decide what goes in it, you can change or delete any entry, and we process it only to provide Personal
+            Hisab to you. If you add another person&apos;s name or phone number to a reminder, please do so only for your own reminders about money between you.
+          </p>
 
           <h3>What we don&apos;t collect</h3>
           <p>
-            {site.name} is for keeping a Mandal&apos;s own savings hisab, and it records <b>cash only</b>. It does not take or process payments of any kind. So we never ask for, and never store:
+            {site.name} is for keeping hisab — a Mandal&apos;s own savings hisab, where it records <b>cash only</b>, and your Personal Hisab, where you note your own money yourself. It does
+            not take or process payments of any kind, and it never connects to your bank, UPI app or SMS. So we never ask for, and never store:
           </p>
           <ul>
             <li>bank account numbers, IFSC codes, debit or credit card details, UPI IDs or wallet details;</li>
             <li>PAN, Aadhaar or any other government ID number;</li>
             <li>any payment-gateway or online-banking information.</li>
           </ul>
-          <p>Please don&apos;t type such details into notes or other free-text fields either.</p>
+          <p>
+            Please don&apos;t type such details into notes or other free-text fields either. In Personal Hisab, a wallet called &quot;Bank&quot; or &quot;UPI&quot; is only a name you choose
+            — there is no field for an account or card number.
+          </p>
 
           <h2>2. What we collect automatically</h2>
           <ul>
@@ -68,7 +84,7 @@ export default function PrivacyPage() {
               <b>Google Analytics.</b> To understand how people use {site.name} — which pages are visited, roughly from which city or country, on what kind of device — we use Google
               Analytics. It sets its own cookies (named <code>_ga</code>) and sends Google the address of the page you open, your browser and device type, an approximate location, your role in the
               Mandal (admin, manager or member) and the kind of action you take — for example &quot;a payment was recorded&quot; or &quot;a member was added&quot;. It never receives names,
-              emails, phone numbers, amounts, balances, notes or any other part of a Mandal&apos;s records; page addresses are sent with internal IDs removed. You can block it with your
+              emails, phone numbers, amounts, balances, notes or any other part of a Mandal&apos;s records or your Personal Hisab; page addresses are sent with internal IDs removed. You can block it with your
               browser&apos;s privacy settings, a content blocker, or Google&apos;s{" "}
               <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">
                 opt-out add-on
@@ -79,7 +95,7 @@ export default function PrivacyPage() {
               <b>Google Analytics for Firebase (Android and iOS apps).</b> Inside the apps, the same information is sent to Firebase Analytics instead of the website tag: the screen
               you open (with IDs removed), your role in the Mandal and the kind of action you take, plus installs, app opens, sessions and the app and phone software versions. It uses a
               random ID for the app installation, not the device&apos;s advertising ID — advertising-ID collection and ad personalisation are turned off. Like the website, it never
-              receives names, contact details, amounts or any Mandal&apos;s records.
+              receives names, contact details, amounts, any Mandal&apos;s records or your Personal Hisab.
             </li>
           </ul>
           <h3>Advertising on our public website</h3>
@@ -108,7 +124,7 @@ export default function PrivacyPage() {
               .
             </li>
             <li>
-              Ad partners never receive anything from inside a Mandal: no names, contact details, amounts, balances or other records. We don&apos;t use the analytics described above to build
+              Ad partners never receive anything from inside a Mandal or your Personal Hisab: no names, contact details, amounts, balances or other records. We don&apos;t use the analytics described above to build
               advertising profiles.
             </li>
           </ul>
@@ -117,6 +133,7 @@ export default function PrivacyPage() {
           <ul>
             <li>To create and run your account and let you sign in.</li>
             <li>To provide the service: keep the Mandal&apos;s accounts, calculate balances and interest, produce receipts, statements and reports.</li>
+            <li>To run your Personal Hisab: work out your balances, totals, budgets and reports, and send the reminders and budget alerts you set up.</li>
             <li>To send service emails — email verification, password resets, invitations to join a Mandal and important notices. We don&apos;t send marketing email without your consent.</li>
             <li>To keep the service secure: rate-limiting sign-in attempts, detecting misuse and investigating problems.</li>
             <li>To meet legal obligations.</li>
@@ -132,6 +149,11 @@ export default function PrivacyPage() {
             </li>
             <li>
               <b>Admins and managers</b> of a Mandal see that Mandal&apos;s records, limited by the permissions of their role. They cannot see any other Mandal.
+            </li>
+            <li>
+              <b>Your Personal Hisab</b> is visible only to you. No Mandal admin, manager or member can see it, and it is never included in a Mandal&apos;s reports, exports or backup
+              file. It isn&apos;t shown on the platform administrators&apos; panel either; it&apos;s stored in our database and server backups like your account, and we look at it only if you
+              ask us to for support, to fix a technical problem, or where the law requires it.
             </li>
             <li>
               <b>Platform administrators</b> (our staff) can approve or suspend Mandals and can view a Mandal&apos;s records, read-only, for support and oversight. They cannot change anything,
@@ -159,6 +181,10 @@ export default function PrivacyPage() {
               <b>Google Analytics and Firebase</b> (Google) — measure how the website and apps are used, as described in section 2.
             </li>
             <li>
+              <b>Firebase Cloud Messaging</b> (Google), and Apple&apos;s push service on iPhones — deliver notifications to the Android and iOS apps. The text of a notification passes through
+              them, for example a reminder&apos;s title and amount or a budget alert.
+            </li>
+            <li>
               <b>Google AdSense</b> (Google) — shows ads on our public website pages, as described in section 2.
             </li>
           </ul>
@@ -169,7 +195,7 @@ export default function PrivacyPage() {
             <li>All traffic is encrypted with HTTPS.</li>
             <li>Passwords are stored as one-way hashes; sign-in tokens are stored only as keyed hashes.</li>
             <li>Every request is checked on the server against the user&apos;s role and Mandal, so one Mandal can never see another&apos;s data.</li>
-            <li>Financial entries are never silently edited or deleted — corrections are reversals that keep the original and a reason, recorded in the audit log.</li>
+            <li>A Mandal&apos;s financial entries are never silently edited or deleted — corrections are reversals that keep the original and a reason, recorded in the audit log. (Your Personal Hisab is yours to edit and delete freely.)</li>
           </ul>
           <p>No system is perfectly secure. If a breach affects your personal data, we will inform you and the authorities as the law requires.</p>
 
@@ -177,7 +203,8 @@ export default function PrivacyPage() {
           <p>
             We keep account information while your account is active. Mandal records are kept while the Mandal uses {site.name}, because financial records must stay complete and auditable. When a
             Mandal is closed or asks us to delete its data, we delete or anonymise it within a reasonable time, except where we must keep some records to meet legal, tax or dispute-resolution
-            obligations. Security logs and expired sessions are removed automatically after they are no longer needed.
+            obligations. Your Personal Hisab is kept while your account is active; entries, wallets, categories and reminders you delete are removed, and if you ask us to delete your
+            account, your Personal Hisab is deleted with it. Security logs and expired sessions are removed automatically after they are no longer needed.
           </p>
 
           <h2>8. Your choices and rights</h2>
@@ -192,7 +219,7 @@ export default function PrivacyPage() {
           </ul>
           <p>
             <b>Export:</b> admins can download members, statements, reports and the cash book as CSV files at any time, and members can download their own statement. <b>Sign out everywhere:</b> you
-            can end all your sessions from your Account page.
+            can end all your sessions from your Account page. <b>Personal Hisab:</b> you can download your entries as a CSV file at any time, and change or delete any of them.
           </p>
           <p>
             To make a request, email <a href={`mailto:${c.email}`}>{c.email}</a>. We may need to confirm your identity first. For records about you inside a Mandal, we may pass your request to that

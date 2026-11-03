@@ -9,6 +9,7 @@ const COLUMNS = [
     title: "Product",
     links: [
       { href: "/features", label: "All features" },
+      { href: "/features#personal", label: "Personal Hisab" },
       { href: "/how-it-works", label: "How it works" },
       { href: "/benefits", label: "Benefits" },
       { href: "/download", label: "Download the app" },

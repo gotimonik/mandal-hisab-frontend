@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  BarChart3,
+  BellRing,
   BookOpenCheck,
   CalendarDays,
   Check,
@@ -13,8 +15,11 @@ import {
   Lock,
   MessageSquareWarning,
   PiggyBank,
+  RefreshCw,
   ShieldCheck,
   Smartphone,
+  Tags,
+  Target,
   Undo2,
   UserCog,
   UserPlus,
@@ -120,6 +125,16 @@ const FEATURES: {
   },
 ];
 
+/** The person's own money book — shown in its own band on the home page. */
+const PERSONAL: { icon: React.ReactNode; tone: Tone; title: string; text: string }[] = [
+  { icon: <Wallet />, tone: "emerald", title: "Wallets", text: "Cash, bank, UPI and card — see what's left in each, and in all of them together." },
+  { icon: <Tags />, tone: "orange", title: "Categories with icons", text: "Groceries, fuel, rent, school fees… see at a glance where your money went." },
+  { icon: <Target />, tone: "rose", title: "Monthly budgets", text: "Set a limit overall or per category. Get an alert at 80% and when you go over." },
+  { icon: <BellRing />, tone: "amber", title: "Reminders", text: "Rent, bills and EMIs to pay, or money someone promised you — a notification before it's due." },
+  { icon: <BarChart3 />, tone: "violet", title: "Reports", text: "Income, spending and savings for any period, month by month, with CSV export." },
+  { icon: <RefreshCw />, tone: "sky", title: "Mandal money, added for you", text: "Optional: the hapta you pay and upad you take can be copied in automatically." },
+];
+
 const STEPS = [
   {
     title: "Create your Mandal",
@@ -191,6 +206,10 @@ const FAQ_TEASER = [
     a: "Yes. Enter each member's opening balance when you add them, and carry on from there.",
   },
   {
+    q: "What is Personal Hisab?",
+    a: "A private income and expense book for your own money, inside the same app. Add what you spend and receive, keep wallets for cash, bank and UPI, set monthly budgets and get reminders for bills. Only you can see it — never your Mandal — and you can use it even if you're not in a Mandal.",
+  },
+  {
     q: "Does MandalHisab handle our money?",
     a: "No. Members pay in cash as usual and the treasurer records it. MandalHisab never takes payments or asks for bank details — it only keeps the hisab.",
   },
@@ -216,6 +235,13 @@ export default function HomePage() {
             <p className="mt-3 max-w-xl text-[0.95rem] text-pretty text-white/85 sm:mt-5 sm:text-lg">
               Monthly hapta, member savings, upad and interest, withdrawals and reports — in one app on your phone. Accurate to the paisa, and open to every member who needs to see it.
             </p>
+            <Link
+              href="#personal-hisab"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-300/95 px-3 py-1.5 text-xs font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-200 sm:mt-4 sm:text-sm"
+            >
+              <span className="rounded-full bg-amber-950/10 px-1.5 py-0.5 text-[10px] tracking-wider uppercase sm:text-[11px]">New</span>
+              Personal Hisab — track your own money too <ArrowRight className="size-3.5" />
+            </Link>
             <div className="mt-5 flex flex-col gap-2 sm:mt-7 sm:flex-row sm:flex-wrap sm:gap-3">
               <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "h-12 w-full rounded-2xl bg-white px-5 text-base text-primary hover:bg-white/90 sm:w-auto")}>
                 Create your Mandal <ArrowRight />
@@ -307,6 +333,50 @@ export default function HomePage() {
           <Link href="/features" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 rounded-2xl lg:hidden [.native-app_&]:hidden")}>
             See every feature <ArrowRight />
           </Link>
+        </div>
+      </Section>
+
+      {/* 3b. Personal Hisab — the person's own money book */}
+      <Section id="personal-hisab" className="scroll-mt-20">
+        <div className="relative overflow-hidden rounded-3xl bg-card p-5 shadow-card ring-1 ring-emerald-500/25 sm:rounded-[2rem] sm:p-10">
+          <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-emerald-500/[0.07]" />
+          <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr] lg:gap-12">
+            <div className="flex min-w-0 flex-col gap-3">
+              <p className="inline-flex items-center gap-2 self-start rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-wider text-emerald-700 uppercase dark:text-emerald-300">
+                <PiggyBank className="size-3.5" /> New · Personal Hisab
+              </p>
+              <h2 className="text-[1.5rem] leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">Your own money, in the same app</h2>
+              <p className="text-sm text-pretty text-muted-foreground sm:text-base">
+                Note what you spend and receive each day, and see where it goes. Personal Hisab is a private book just for you — separate from every Mandal. You don&apos;t even need to be in a Mandal
+                to use it.
+              </p>
+              <p className="flex items-start gap-2 rounded-2xl bg-emerald-500/[0.07] p-3 text-sm">
+                <Lock className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>
+                  <b className="font-semibold">Only you can see it.</b> Not your Mandal&apos;s admin, not other members — nobody.
+                </span>
+              </p>
+              <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "h-11 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700")}>
+                  Start your Personal Hisab <ArrowRight />
+                </Link>
+                <Link href="/guides/personal-hisab-track-your-own-money" className={cn(buttonVariants({ size: "lg", variant: "outline" }), "h-11 rounded-2xl [.native-app_&]:hidden")}>
+                  How it works
+                </Link>
+              </div>
+            </div>
+            <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+              {PERSONAL.map((f) => (
+                <li key={f.title} className="flex gap-3.5 border-b border-foreground/[0.08] py-4 last:border-0 sm:[&:nth-last-child(2)]:border-0">
+                  <IconChip tone={f.tone}>{f.icon}</IconChip>
+                  <div className="min-w-0">
+                    <h3 className="font-bold">{f.title}</h3>
+                    <p className="mt-1 text-sm text-pretty text-muted-foreground">{f.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </Section>
 

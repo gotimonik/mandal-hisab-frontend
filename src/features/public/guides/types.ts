@@ -14,7 +14,7 @@ export type GuideBlock =
   | { type: "tip"; tone?: "tip" | "note" | "warn"; title: string; text: string }
   | { type: "table"; head: string[]; rows: string[][]; caption?: string };
 
-export type GuideCategoryId = "start" | "everyday" | "upad" | "members" | "books" | "closing" | "learn";
+export type GuideCategoryId = "start" | "everyday" | "upad" | "members" | "books" | "closing" | "personal" | "learn";
 
 export type GuideCategory = { id: GuideCategoryId; title: string; description: string; tone: Tone };
 

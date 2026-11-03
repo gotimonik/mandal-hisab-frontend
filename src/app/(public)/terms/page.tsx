@@ -25,7 +25,8 @@ export default function TermsPage() {
           <h2>1. What {site.name} is — and isn&apos;t</h2>
           <p>
             {site.name} is a <b>record-keeping tool</b>. It helps Mandals, savings groups, trusts and similar community organizations (each a &quot;Mandal&quot;) keep accounts of hapta, savings, upad and
-            loans, interest, withdrawals, donations and expenses, and share those records with their members.
+            loans, interest, withdrawals, donations and expenses, and share those records with their members. It also gives each account a private <b>Personal Hisab</b> for keeping a record
+            of the person&apos;s own income, spending, budgets and reminders.
           </p>
           <ul>
             <li>
@@ -33,8 +34,13 @@ export default function TermsPage() {
               collected, kept and paid out by the Mandal itself.
             </li>
             <li>
-              <b>Cash only.</b> The Service does not take, process or route payments of any kind — no cards, UPI, net banking, wallets or payment gateways. Every amount in {site.name} is cash
-              handed over in person and recorded by the Mandal.
+              <b>Cash only.</b> The Service does not take, process or route payments of any kind — no cards, UPI, net banking, wallets or payment gateways. Every amount a Mandal records in {site.name} is cash
+              handed over in person and recorded by the Mandal. In Personal Hisab, you record your own money yourself; wallets such as &quot;Bank&quot; or &quot;UPI&quot; are only labels,
+              and {site.name} never connects to or moves money in any account.
+            </li>
+            <li>
+              Personal Hisab totals, budgets and reminders are for your own convenience. They are not financial, tax or investment advice, and a reminder that is late or doesn&apos;t arrive
+              (for example because notifications are turned off on your phone) doesn&apos;t change what you owe or are owed.
             </li>
             <li>Interest, balances and schedules are calculated from the rules and entries the Mandal sets up. They are not financial, legal or tax advice.</li>
             <li>Each Mandal is responsible for complying with any laws that apply to how it collects, lends and manages money.</li>
@@ -66,7 +72,7 @@ export default function TermsPage() {
             <li>They will give admin and manager roles only to people the Mandal trusts with that access.</li>
           </ul>
           <p>
-            The Mandal owns the records it enters. We store and process them to provide the Service as described in our <Link href="/privacy">Privacy policy</Link>.
+            The Mandal owns the records it enters, and you own your Personal Hisab. We store and process them to provide the Service as described in our <Link href="/privacy">Privacy policy</Link>.
           </p>
 
           <h2>5. Acceptable use</h2>

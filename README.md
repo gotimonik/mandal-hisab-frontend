@@ -18,6 +18,8 @@ Next.js 16 (App Router, Cache Components, Server Actions) · TypeScript · Tailw
 
 Login · register · forgot/reset password · email verification · invitations · onboarding (create a Mandal or join with a code) · platform admin (approve/suspend/archive orgs) · account (profile, password, sign out everywhere).
 
+**Personal Hisab** (`/personal`, outside every Mandal — only the signed-in person sees it): overview of the month, entries (spent / received / move money, search, filters, CSV), reports for any period, wallets (cash, bank, UPI, card) with balances, categories with icons and colours, monthly budgets (overall and per category) with 80% / over-budget push alerts, reminders (money to pay or to receive; once / weekly / monthly / yearly; push before the chosen time; Call / WhatsApp), default wallet and categories, and an opt-in copy of the person's own Mandal money (hapta, upad, withdrawals).
+
 **Everyday Mandal screens** (the main menu; everything else is under *More*):
 
 | Screen | What you do there |

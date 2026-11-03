@@ -54,7 +54,7 @@ function StoreSteps({ tone, title, store, href }: { tone: "emerald" | "sky"; tit
         <>
           Open the app and sign in with your email — or create your Mandal.
         </>,
-        <>Turn on notifications when asked, so you hear about meetings, hapta and payments right away.</>,
+        <>Turn on notifications when asked, so you hear about meetings, hapta and payments right away — and get your Personal Hisab bill reminders and budget alerts.</>,
       ]}
     />
   );
@@ -143,11 +143,11 @@ export default function DownloadPage() {
             Your Mandal&apos;s books are kept online, so you need to be connected to record or see entries.
           </FeatureCard>
           <FeatureCard icon={<RefreshCw />} tone="emerald" title="One account everywhere">
-            Sign in with the same email on the phone app, the browser and the computer — you see the same Mandal and the same numbers.
+            Sign in with the same email on the phone app, the browser and the computer — you see the same Mandal, the same numbers and the same Personal Hisab.
           </FeatureCard>
           {anyApp ? (
             <FeatureCard icon={<Globe />} tone="violet" title="Already using the browser?">
-              Install the app and sign in with the same email. Your Mandal is already there — nothing to move over.
+              Install the app and sign in with the same email. Your Mandal and your Personal Hisab are already there — nothing to move over.
             </FeatureCard>
           ) : (
             <FeatureCard icon={<Globe />} tone="violet" title="Nothing to install today">
