@@ -15,6 +15,9 @@ const url = process.env.CAP_SERVER_URL || "https://mandalhisab.com";
 const config: CapacitorConfig = {
   // Lets the server tell app requests from website visits (website-only pages are skipped in the app).
   appendUserAgent: "MandalHisabApp",
+  // The app window behind the website: brand purple like the splash, so the moment between the
+  // splash and the first page never shows as a black screen.
+  backgroundColor: "#5E36D3",
   appId: "com.mandalhisab.app",
   appName: "MandalHisab",
   // Shown only if the site can't be loaded (e.g. offline at first launch).
@@ -26,10 +29,12 @@ const config: CapacitorConfig = {
   },
   plugins: {
     // The app icon on the brand purple stays up until the website has loaded and calls
-    // SplashScreen.hide() (components/app/native-shell.tsx). 15 s is only a safety cap.
+    // SplashScreen.hide() (components/app/native-shell.tsx), or the offline page does.
+    // 15 s is only a safety cap — a shorter one hid the splash before a slow first load had
+    // drawn anything, leaving a black screen.
     SplashScreen: {
       launchAutoHide: true,
-      launchShowDuration: 3000,
+      launchShowDuration: 15000,
       launchFadeOutDuration: 300,
       backgroundColor: "#5E36D3",
       androidScaleType: "CENTER_CROP",
