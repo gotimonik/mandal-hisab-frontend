@@ -7,7 +7,7 @@ const BG = { indigo: "bg-hero shadow-primary/20", green: "bg-hero-green shadow-e
  * The coloured summary card at the top of a page (same look as the dashboard / Accounts):
  * a small label, one big figure, a line of context, and optional mini stats underneath.
  */
-export function SummaryBand({ tone = "indigo", label, value, sub, stats, icon, className }: { tone?: keyof typeof BG; label: ReactNode; value: ReactNode; sub?: ReactNode; stats?: { label: ReactNode; value: ReactNode }[]; icon?: ReactNode; className?: string }) {
+export function SummaryBand({ tone = "indigo", label, value, sub, stats, statsLabel, statsNote, icon, className }: { tone?: keyof typeof BG; label: ReactNode; value: ReactNode; sub?: ReactNode; stats?: { label: ReactNode; value: ReactNode }[]; /** what period the mini stats cover */ statsLabel?: ReactNode; statsNote?: ReactNode; icon?: ReactNode; className?: string }) {
   return (
     <section className={cn("relative mb-5 overflow-hidden rounded-3xl p-5 text-white shadow-lg sm:p-6", BG[tone], className)}>
       <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
@@ -19,6 +19,7 @@ export function SummaryBand({ tone = "indigo", label, value, sub, stats, icon, c
         </div>
         {icon && <span className="shrink-0 opacity-80 [&_svg]:size-9">{icon}</span>}
       </div>
+      {stats && stats.length > 0 && statsLabel && <p className="relative mt-4 -mb-2 text-[11px] font-bold tracking-wider text-white/85 uppercase">{statsLabel}</p>}
       {stats && stats.length > 0 && (
         <div className={cn("relative mt-4 grid gap-2", stats.length >= 3 ? "grid-cols-3" : "grid-cols-2")}>
           {stats.map((s, i) => (
@@ -29,6 +30,7 @@ export function SummaryBand({ tone = "indigo", label, value, sub, stats, icon, c
           ))}
         </div>
       )}
+      {statsNote && <p className="relative mt-2 text-[11px] leading-snug text-white/80">{statsNote}</p>}
     </section>
   );
 }

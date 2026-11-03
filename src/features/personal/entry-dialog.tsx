@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode, type RefObj
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, Camera, CheckCircle2, ExternalLink, FileText, Loader2, Paperclip, Settings2, Star, Trash2, X } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CalendarClock, Camera, CheckCircle2, ExternalLink, FileText, Loader2, Paperclip, Settings2, Star, Trash2, X } from "lucide-react";
 import { useSetDefault } from "./manage-dialogs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import { rupees } from "@/lib/schemas";
 import { TONE_CHIP, TONE_TEXT, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import { useLang, useT } from "@/i18n/client";
+import { monthName } from "@/i18n/core";
 import { BILL_MAX_BYTES, categoryName, mandalLabel, walletName, type BillScan, type BillUsage, type EntryType, type ManualType, type PBill, type PCategory, type PEntry, type PWallet } from "./types";
 import { CategoryIcon } from "./icons";
 
@@ -68,6 +69,7 @@ export interface EntryDefaults {
 
 function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone }: { book: Book; type: ManualType; entry?: PEntry; defaults?: EntryDefaults; initialBill?: File; onDone: () => void }) {
   const t = useT();
+  const lang = useLang();
   const router = useRouter();
   const { wallets: allWallets, categories: allCategories } = book;
   // hidden wallets / categories can only stay on an entry that already uses them
@@ -295,6 +297,14 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
           <Input id="pe-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t(type === "expense" ? "ph.entry.notePhExpense" : type === "income" ? "ph.entry.notePhIncome" : "ph.entry.notePhTransfer")} />
         </Field>
       </div>
+
+      {/* spending / income dated in another month doesn't show in this month's totals — say so */}
+      {type !== "transfer" && (!entry || date !== entry.date) && /^\d{4}-\d{2}-\d{2}$/.test(date) && date.slice(0, 7) !== todayISO().slice(0, 7) && (
+        <p className="flex items-start gap-2 rounded-2xl bg-amber-500/10 p-3 text-xs text-amber-900 ring-1 ring-amber-500/25 dark:text-amber-200">
+          <CalendarClock className="mt-0.5 size-4 shrink-0" />
+          <span>{t(type === "income" ? "ph.entry.otherMonthIncome" : "ph.entry.otherMonthExpense", { date: formatDate(date), month: monthName(lang, date.slice(0, 7)) })}</span>
+        </p>
+      )}
 
       <SubmitButton pending={pending} icon={<CheckCircle2 />}>
         {t("ph.entry.save")}

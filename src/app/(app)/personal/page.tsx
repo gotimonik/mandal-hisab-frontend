@@ -78,7 +78,9 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
         icon={<PiggyBank />}
         label={t("ph.totalBalance")}
         value={<Money paise={o.totalBalancePaise} />}
-        sub={`${t("ph.inWallets")} · ${monthName(lang, o.month)}`}
+        sub={t("ph.balanceToday")}
+        statsLabel={isThisMonth ? t("ph.monthOnlyThis", { month: monthName(lang, o.month) }) : t("ph.monthOnly", { month: monthName(lang, o.month) })}
+        statsNote={t("ph.monthOnlyNote", { month: monthName(lang, o.month) })}
         stats={[
           { label: t("ph.moneyIn"), value: <Money paise={m.incomePaise} short /> },
           { label: t("ph.spent"), value: <Money paise={m.expensePaise} short /> },
