@@ -199,6 +199,9 @@ function OrgSwitcher({ current, orgs, isPlatformAdmin }: { current: ShellOrg; or
         <DropdownMenuItem render={<Link href="/onboarding" />}>
           <Plus /> {t("shell.createOrJoin")}
         </DropdownMenuItem>
+        <DropdownMenuItem render={<Link href="/personal" />}>
+          <PiggyBank /> {t("ph.open")}
+        </DropdownMenuItem>
         {isPlatformAdmin && (
           <DropdownMenuItem
             onClick={() => {
@@ -220,6 +223,20 @@ function OrgAvatar({ name, logoUrl, className }: { name: string; logoUrl?: strin
     <OrgLogo logoUrl={logoUrl} className={cn("size-9 rounded-xl shadow-sm", className)}>
       <span className={cn("bg-hero flex size-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm", className)}>{name.slice(0, 1).toUpperCase()}</span>
     </OrgLogo>
+  );
+}
+
+/** Personal Hisab lives outside every Mandal: one link to it from any Mandal's menu. */
+function PersonalLink() {
+  const t = useT();
+  return (
+    <Link href="/personal" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground lg:py-2">
+      <PiggyBank className="size-[18px] shrink-0 text-emerald-600 dark:text-emerald-400" />
+      <span className="min-w-0">
+        <span className="block font-medium">{t("ph.open")}</span>
+        <span className="block truncate text-[11px] text-muted-foreground">{t("ph.openDesc")}</span>
+      </span>
+    </Link>
   );
 }
 
@@ -251,6 +268,7 @@ export function SidebarContent({ data }: { data: ShellData }) {
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <NavLinks items={data.nav} base={`/org/${data.org.id}`} />
       </div>
+      <PersonalLink />
       <UserMenu user={data.user} />
       <AppVersion />
     </>

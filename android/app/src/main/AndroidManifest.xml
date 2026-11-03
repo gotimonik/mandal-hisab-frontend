@@ -32,6 +32,7 @@
                 <data android:pathPrefix="/invite" />
                 <data android:pathPrefix="/onboarding" />
                 <data android:pathPrefix="/account" />
+                <data android:pathPrefix="/personal" />
                 <data android:pathPrefix="/login" />
                 <data android:pathPrefix="/register" />
                 <data android:pathPrefix="/verify-email" />

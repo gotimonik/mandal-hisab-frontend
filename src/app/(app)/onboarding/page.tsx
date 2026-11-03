@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronRight, Clock, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronRight, Clock, Mail, PiggyBank, ShieldCheck, Sparkles } from "lucide-react";
 import { api } from "@/lib/server/api";
 import { lastOrg } from "@/lib/server/session";
 import type { Me } from "@/lib/types";
@@ -140,6 +140,18 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
           </section>
         )
       )}
+
+      {/* the person's own money book — outside every Mandal */}
+      <Link href="/personal" className="flex items-center gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-emerald-500/25 transition-colors hover:bg-muted/50 active:scale-[0.99]">
+        <IconChip tone="emerald">
+          <PiggyBank />
+        </IconChip>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">{t("ph.open")}</span>
+          <span className="block text-xs text-muted-foreground">{t("ph.openDesc")}</span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+      </Link>
 
       <OnboardingActions defaultTab={sp.new === "1" ? "create" : "join"} defaultCode={typeof sp.code === "string" ? sp.code.slice(0, 12) : undefined} focusJoin={sp.join === "1" || typeof sp.code === "string"} />
     </div>

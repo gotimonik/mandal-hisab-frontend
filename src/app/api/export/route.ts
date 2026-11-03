@@ -6,7 +6,7 @@ import { apiRequest } from "@/lib/server/api";
  * authorization rules apply to exports as to the screens. Only report/statement
  * endpoints with format=csv are allowed.
  */
-const ALLOWED = /^\/orgs\/[a-f0-9]{24}\/(reports\/[a-z-]+|members\/[a-f0-9]{24}\/(statement|ledger)|me\/(statement|ledger)|cashbook|monthly-report)$/;
+const ALLOWED = /^(\/orgs\/[a-f0-9]{24}\/(reports\/[a-z-]+|members\/[a-f0-9]{24}\/(statement|ledger)|me\/(statement|ledger)|cashbook|monthly-report)|\/me\/personal\/entries)$/;
 
 export async function GET(req: NextRequest) {
   const path = req.nextUrl.searchParams.get("path") ?? "";

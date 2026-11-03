@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { APP_START, NATIVE_APP_UA, isWebOnlyPath } from "@/lib/native";
 
-const PROTECTED = ["/org", "/onboarding", "/platform", "/account", "/invite"];
+const PROTECTED = ["/org", "/onboarding", "/platform", "/account", "/invite", "/personal"];
 
 /**
  * 1. Inside the iOS / Android app, the website-only pages (home, features, guides, about,
@@ -26,5 +26,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/features", "/download", "/about", "/faq", "/benefits", "/how-it-works", "/glossary", "/guides", "/guides/:path*", "/org/:path*", "/onboarding/:path*", "/platform/:path*", "/account/:path*", "/invite/:path*"],
+  matcher: ["/", "/features", "/download", "/about", "/faq", "/benefits", "/how-it-works", "/glossary", "/guides", "/guides/:path*", "/org/:path*", "/onboarding/:path*", "/platform/:path*", "/account/:path*", "/invite/:path*", "/personal", "/personal/:path*"],
 };

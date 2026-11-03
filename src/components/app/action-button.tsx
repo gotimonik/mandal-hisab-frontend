@@ -12,7 +12,7 @@ import { apiMutate } from "@/lib/api-client";
 
 export interface ActionButtonProps {
   path: string;
-  method?: "POST" | "PATCH";
+  method?: "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
   children: ReactNode;
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link";

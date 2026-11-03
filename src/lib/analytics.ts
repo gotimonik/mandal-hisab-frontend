@@ -131,6 +131,13 @@ const NAMES: Record<string, string> = {
   settlement_start: "settlement_started",
   settlement_payouts: "settlement_payout_made",
   settlement_close: "mandal_closed",
+  // Personal Hisab (only the action and its type are sent — never amounts or notes)
+  me_personal_entries: "personal_entry_added",
+  me_personal_entries_update: "personal_entry_updated",
+  me_personal_entries_delete: "personal_entry_deleted",
+  me_personal_wallets: "personal_wallet_added",
+  me_personal_categories: "personal_category_added",
+  me_personal_settings_update: "personal_budget_set",
 };
 
 /** Calculations that don't change anything — not worth an event. */

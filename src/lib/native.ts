@@ -34,7 +34,7 @@ export const APP_IDS = {
  * notifications in emails …), invitations and sign-in / email links. Website-only pages
  * (home, guides …) stay in the browser. Keep in sync with android/app/src/main/AndroidManifest.xml.
  */
-export const APP_LINK_PREFIXES = ["/org", "/invite", "/onboarding", "/account", "/login", "/register", "/verify-email", "/reset-password", "/forgot-password", "/check-email"];
+export const APP_LINK_PREFIXES = ["/org", "/invite", "/onboarding", "/account", "/personal", "/login", "/register", "/verify-email", "/reset-password", "/forgot-password", "/check-email"];
 
 const LINK_HOSTS = ["mandalhisab.com", "www.mandalhisab.com"];
 
