@@ -9,7 +9,8 @@ import { getT } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { WalletDialog } from "@/features/personal/manage-dialogs";
 import { WALLET_TONE, WalletIcon } from "@/features/personal/icons";
-import { walletName, type PWalletWithBalance } from "@/features/personal/types";
+import { walletName, type MandalSync, type PWalletWithBalance } from "@/features/personal/types";
+import { MandalSyncCard } from "@/features/personal/mandal-sync";
 import type { T } from "@/i18n/core";
 
 export const metadata = { title: "Personal Hisab · Wallets" };
@@ -33,7 +34,7 @@ function WalletCard({ w, t }: { w: PWalletWithBalance; t: T }) {
 }
 
 export default async function PersonalWalletsPage() {
-  const [{ wallets }, { t }] = await Promise.all([api<{ wallets: PWalletWithBalance[] }>("/me/personal/wallets"), getT()]);
+  const [{ wallets }, sync, { t }] = await Promise.all([api<{ wallets: PWalletWithBalance[] }>("/me/personal/wallets"), api<MandalSync>("/me/personal/mandal-sync"), getT()]);
   const active = wallets.filter((w) => !w.isArchived);
   const hidden = wallets.filter((w) => w.isArchived);
   return (
@@ -44,6 +45,9 @@ export default async function PersonalWalletsPage() {
         {active.map((w) => (
           <WalletCard key={w._id} w={w} t={t} />
         ))}
+      </div>
+      <div className="mt-6">
+        <MandalSyncCard sync={sync} wallets={wallets} />
       </div>
       {hidden.length > 0 && (
         <section className="mt-6">

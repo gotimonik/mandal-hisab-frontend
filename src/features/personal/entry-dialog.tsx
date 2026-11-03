@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, CheckCircle2, Loader2, Settings2, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CheckCircle2, Loader2, Settings2, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,15 @@ import { rupees } from "@/lib/schemas";
 import { TONE_CHIP, TONE_TEXT, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import { useT } from "@/i18n/client";
-import { categoryName, walletName, type EntryType, type PCategory, type PEntry, type PWallet } from "./types";
+import { categoryName, mandalLabel, walletName, type EntryType, type ManualType, type PCategory, type PEntry, type PWallet } from "./types";
 import { CategoryIcon } from "./icons";
 
 export const TYPE_LOOK: Record<EntryType, { tone: Tone; icon: ReactNode }> = {
   expense: { tone: "rose", icon: <ArrowUpFromLine /> },
   income: { tone: "emerald", icon: <ArrowDownToLine /> },
   transfer: { tone: "sky", icon: <ArrowLeftRight /> },
+  in: { tone: "violet", icon: <Building2 /> },
+  out: { tone: "violet", icon: <Building2 /> },
 };
 
 export interface Book {
@@ -58,7 +60,7 @@ export interface EntryDefaults {
   walletId?: string;
 }
 
-function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: Book; type: EntryType; entry?: PEntry; defaults?: EntryDefaults; onDone: () => void }) {
+function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: Book; type: ManualType; entry?: PEntry; defaults?: EntryDefaults; onDone: () => void }) {
   const t = useT();
   const router = useRouter();
   const { wallets: allWallets, categories: allCategories } = book;
@@ -68,7 +70,7 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
     const last = typeof window === "undefined" ? null : readLast(startType);
     return wallets.find((w) => w._id === last && !w.isArchived)?._id ?? wallets.find((w) => !w.isArchived)?._id ?? "";
   };
-  const [type, setType] = useState<EntryType>(entry?.type ?? startType);
+  const [type, setType] = useState<ManualType>((entry?.type as ManualType | undefined) ?? startType);
   const [amount, setAmount] = useState(entry ? paiseToRupeeInput(entry.amountPaise) : "");
   const [date, setDate] = useState(entry?.date ?? todayISO());
   const [categoryId, setCategoryId] = useState(entry?.category?._id ?? defaults?.categoryId ?? "");
@@ -252,6 +254,67 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
   );
 }
 
+/** An entry copied from a Mandal: what it was (read-only), and the wallet / note the person may change. */
+function MandalEntryForm({ book, entry, onDone }: { book: Book; entry: PEntry; onDone: () => void }) {
+  const t = useT();
+  const router = useRouter();
+  const wallets = book.wallets.filter((w) => !w.isArchived || w._id === entry.wallet?._id);
+  const [walletId, setWalletId] = useState(entry.wallet?._id ?? wallets[0]?._id ?? "");
+  const [note, setNote] = useState(entry.note ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const m = entry.mandal!;
+  return (
+    <form
+      noValidate
+      className="grid grid-cols-1 gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        start(async () => {
+          setError(null);
+          const res = await apiMutate({ path: `/me/personal/entries/${entry._id}`, method: "PATCH", body: { walletId, note: note.trim() || undefined } });
+          if (!res.ok) return setError(res.error);
+          toast.success(t("ph.entry.updated"));
+          onDone();
+          router.refresh();
+        });
+      }}
+    >
+      <FormError message={error} />
+      <div className="rounded-2xl bg-violet-500/8 p-3.5 ring-1 ring-violet-500/20">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-semibold">{mandalLabel(t, m)}</p>
+            <p className="text-xs text-muted-foreground">
+              {m.name ?? t("ph.mandal.aMandal")} · {formatDate(entry.date)}
+            </p>
+          </div>
+          <EntryAmount entry={entry} />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{entry.type === "in" ? t("ph.mandal.inNote") : entry.type === "out" ? t("ph.mandal.outNote") : t("ph.mandal.spendNote")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("ph.mandal.lockedNote")}</p>
+      </div>
+      {wallets.length > 1 && (
+        <Field label={entry.type === "in" ? t("ph.entry.receivedIn") : t("ph.entry.paidFrom")} htmlFor="pm-wallet">
+          <NativeSelect id="pm-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+            {wallets.map((w) => (
+              <option key={w._id} value={w._id}>
+                {walletName(t, w)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+      )}
+      <Field label={t("ph.entry.note")} htmlFor="pm-note">
+        <Input id="pm-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+      </Field>
+      <SubmitButton pending={pending} icon={<CheckCircle2 />}>
+        {t("ph.entry.save")}
+      </SubmitButton>
+    </form>
+  );
+}
+
 function EntryDialogShell({ open, onOpenChange, title, description, tone, icon, children }: { open: boolean; onOpenChange: (o: boolean) => void; title: string; description?: string; tone: Tone; icon: ReactNode; children: ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -276,7 +339,7 @@ const NEW_DESC = { expense: "ph.entry.newExpenseDesc", income: "ph.entry.newInco
 const HINT = { expense: "ph.add.expenseHint", income: "ph.add.incomeHint", transfer: "ph.add.transferHint" } as const;
 
 /** "Add an entry" dialog, opened by whoever holds `type` (tiles, the phone bottom bar, a category page …). */
-export function NewEntryDialog({ book, type, onClose, defaults }: { book: Book; type: EntryType | null; onClose: () => void; defaults?: EntryDefaults }) {
+export function NewEntryDialog({ book, type, onClose, defaults }: { book: Book; type: ManualType | null; onClose: () => void; defaults?: EntryDefaults }) {
   const t = useT();
   return (
     <EntryDialogShell open={type !== null} onOpenChange={(o) => !o && onClose()} title={type ? t(NEW_TITLE[type]) : ""} description={type ? t(NEW_DESC[type]) : undefined} tone={type ? TYPE_LOOK[type].tone : "slate"} icon={type ? TYPE_LOOK[type].icon : null}>
@@ -286,10 +349,10 @@ export function NewEntryDialog({ book, type, onClose, defaults }: { book: Book; 
 }
 
 /** The three big "Spent / Received / Move money" buttons. `?add=expense` opens one straight away. */
-export function AddEntryTiles({ book, openType, compact = false, only, defaults, className }: { book: Book; openType?: string; compact?: boolean; only?: EntryType[]; defaults?: EntryDefaults; className?: string }) {
+export function AddEntryTiles({ book, openType, compact = false, only, defaults, className }: { book: Book; openType?: string; compact?: boolean; only?: ManualType[]; defaults?: EntryDefaults; className?: string }) {
   const t = useT();
   const initial = openType === "expense" || openType === "income" || openType === "transfer" ? openType : null;
-  const [open, setOpen] = useState<EntryType | null>(initial);
+  const [open, setOpen] = useState<ManualType | null>(initial);
   const types = only ?? (["expense", "income", "transfer"] as const);
   const close = () => {
     setOpen(null);
@@ -325,13 +388,13 @@ export function EntryRow({ entry, book, showDate = false }: { entry: PEntry; boo
   const t = useT();
   const [open, setOpen] = useState(false);
   const look = TYPE_LOOK[entry.type];
-  const title = entry.type === "transfer" ? t("ph.entry.transferLine", { from: walletName(t, entry.wallet), to: walletName(t, entry.toWallet) }) : categoryName(t, entry.category);
-  const sub = [showDate ? formatDate(entry.date) : null, entry.note, entry.type !== "transfer" && book.wallets.filter((w) => !w.isArchived).length > 1 ? walletName(t, entry.wallet) : null].filter(Boolean).join(" · ");
+  const title = entry.mandal ? mandalLabel(t, entry.mandal) : entry.type === "transfer" ? t("ph.entry.transferLine", { from: walletName(t, entry.wallet), to: walletName(t, entry.toWallet) }) : categoryName(t, entry.category);
+  const sub = [showDate ? formatDate(entry.date) : null, entry.mandal ? (entry.mandal.name ?? t("ph.mandal.aMandal")) : null, entry.note, entry.type !== "transfer" && book.wallets.filter((w) => !w.isArchived).length > 1 ? walletName(t, entry.wallet) : null].filter(Boolean).join(" · ");
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-muted/60 active:bg-muted">
         <IconChip tone={entry.type === "transfer" ? look.tone : (entry.category?.tone ?? look.tone)} size="sm">
-          {entry.type === "transfer" ? look.icon : <CategoryIcon category={entry.category} />}
+          {entry.type === "transfer" || entry.type === "in" || entry.type === "out" || (entry.mandal && !entry.category) ? look.icon : <CategoryIcon category={entry.category} />}
         </IconChip>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{title}</span>
@@ -339,17 +402,17 @@ export function EntryRow({ entry, book, showDate = false }: { entry: PEntry; boo
         </span>
         <EntryAmount entry={entry} />
       </button>
-      <EntryDialogShell open={open} onOpenChange={setOpen} title={t("ph.entry.edit")} description={t("ph.entry.editDesc")} tone={look.tone} icon={look.icon}>
-        <EntryForm book={book} type={entry.type} entry={entry} onDone={() => setOpen(false)} />
+      <EntryDialogShell open={open} onOpenChange={setOpen} title={entry.mandal ? t("ph.mandal.entryTitle") : t("ph.entry.edit")} description={entry.mandal ? t("ph.mandal.entryDesc") : t("ph.entry.editDesc")} tone={entry.mandal ? "violet" : look.tone} icon={entry.mandal ? <Building2 /> : look.icon}>
+        {entry.mandal ? <MandalEntryForm book={book} entry={entry} onDone={() => setOpen(false)} /> : <EntryForm book={book} type={entry.type as ManualType} entry={entry} onDone={() => setOpen(false)} />}
       </EntryDialogShell>
     </>
   );
 }
 
 function EntryAmount({ entry }: { entry: PEntry }) {
-  const sign = entry.type === "income" ? "+ " : entry.type === "expense" ? "− " : "";
+  const sign = entry.type === "income" || entry.type === "in" ? "+ " : entry.type === "expense" || entry.type === "out" ? "− " : "";
   return (
-    <span className={cn("shrink-0 text-sm font-bold tabular-nums", entry.type === "income" && "text-success", entry.type === "expense" && "text-foreground", entry.type === "transfer" && "text-muted-foreground")}>
+    <span className={cn("shrink-0 text-sm font-bold tabular-nums", entry.type === "income" && "text-success", entry.type === "expense" && "text-foreground", (entry.type === "transfer" || entry.type === "in" || entry.type === "out") && "text-muted-foreground")}>
       {sign}
       <Money paise={entry.amountPaise} />
     </span>

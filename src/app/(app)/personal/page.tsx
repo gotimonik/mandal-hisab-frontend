@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, NotebookPen, PiggyBank, Target } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, NotebookPen, PiggyBank, Target } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import { PageHeader } from "@/components/app/page-header";
 import { SummaryBand } from "@/components/app/summary-band";
@@ -19,7 +19,7 @@ import { CategoryIcon, WALLET_TONE, WalletIcon } from "@/features/personal/icons
 import { SectionTiles } from "@/features/personal/personal-nav";
 import { BudgetBar, Card } from "@/features/personal/server-bits";
 import { ReminderCard } from "@/features/personal/reminders";
-import type { ReminderList } from "@/features/personal/types";
+import type { MandalSync, ReminderList } from "@/features/personal/types";
 import type { T } from "@/i18n/core";
 
 export const metadata = { title: "Personal Hisab" };
@@ -62,7 +62,7 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
   const sp = await searchParams;
   const month = typeof sp.month === "string" && /^\d{4}-\d{2}$/.test(sp.month) ? sp.month : undefined;
   // wallets and categories include hidden ones, so an old entry that uses one can still be edited
-  const [o, w, c, rem, { t, lang }] = await Promise.all([api<Overview>(`/me/personal/overview${qs({ month })}`), api<{ wallets: PWallet[] }>("/me/personal/wallets"), api<{ categories: PCategory[] }>("/me/personal/categories"), api<ReminderList>("/me/personal/reminders"), getT()]);
+  const [o, w, c, rem, sync, { t, lang }] = await Promise.all([api<Overview>(`/me/personal/overview${qs({ month })}`), api<{ wallets: PWallet[] }>("/me/personal/wallets"), api<{ categories: PCategory[] }>("/me/personal/categories"), api<ReminderList>("/me/personal/reminders"), api<MandalSync>("/me/personal/mandal-sync").catch(() => null), getT()]);
   const comingUp = rem.reminders.filter((r) => r.status === "overdue" || r.status === "today" || r.status === "soon").slice(0, 4);
   const book = { wallets: w.wallets, categories: c.categories };
   const m = o.monthTotals;
@@ -99,6 +99,19 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
           }}
         />
       </div>
+
+      {sync && !sync.enabled && sync.mandals.some((x) => x.supported) && (
+        <Link href="/personal/wallets#mandal" className="mb-5 flex items-center gap-3 rounded-2xl bg-violet-500/8 p-3.5 ring-1 ring-violet-500/20 transition-colors hover:bg-violet-500/12">
+          <IconChip tone="violet" size="sm">
+            <Building2 />
+          </IconChip>
+          <span className="min-w-0 flex-1 text-sm">
+            <b>{t("ph.mandal.nudgeTitle")}</b>
+            <span className="block text-xs text-muted-foreground">{t("ph.mandal.nudgeDesc")}</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        </Link>
+      )}
 
       {comingUp.length > 0 && (
         <section className="mb-5" aria-label={t("ph.rem.comingUp")}>

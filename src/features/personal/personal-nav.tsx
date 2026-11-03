@@ -12,7 +12,7 @@ import type { Tone } from "@/lib/tones";
 import { useT } from "@/i18n/client";
 import type { Key } from "@/i18n/core";
 import { NewEntryDialog, TYPE_LOOK, type Book } from "./entry-dialog";
-import type { EntryType } from "./types";
+import type { ManualType } from "./types";
 
 /** Every Personal Hisab page, in menu order. */
 export const SECTIONS: { href: string; key: string; icon: typeof Wallet; tone: Tone }[] = [
@@ -75,7 +75,7 @@ export function BottomBar({ book }: { book: Book }) {
   const path = usePathname();
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [entryType, setEntryType] = useState<EntryType | null>(null);
+  const [entryType, setEntryType] = useState<ManualType | null>(null);
   const tab = (href: string, key: string, Icon: typeof Wallet) => {
     const active = isActive(path, href);
     return (

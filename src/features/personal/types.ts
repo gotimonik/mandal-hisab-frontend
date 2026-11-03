@@ -3,7 +3,10 @@ import type { Tone } from "@/lib/tones";
 
 /** Personal Hisab — shapes returned by /me/personal/* */
 
-export type EntryType = "expense" | "income" | "transfer";
+/** in / out: money that moved without being income or spending (only from the Mandal sync) */
+export type EntryType = "expense" | "income" | "transfer" | "in" | "out";
+/** what a person can add by hand */
+export type ManualType = "expense" | "income" | "transfer";
 export type WalletKind = "cash" | "bank" | "upi" | "card" | "other";
 
 export interface PWallet {
@@ -40,6 +43,15 @@ export interface PEntry {
   wallet: PWallet | null;
   toWallet: PWallet | null;
   category: PCategory | null;
+  /** copied from one of the person's Mandals: read-only except wallet and note */
+  mandal: { organizationId: string; name: string | null; kind: string; part: "main" | "spend" } | null;
+}
+
+export interface MandalSync {
+  enabled: boolean;
+  walletId: string | null;
+  fromDate: string | null;
+  mandals: { organizationId: string; name: string; memberName: string; supported: boolean; entries: number }[];
 }
 
 export interface CategoryTotal {
@@ -69,7 +81,7 @@ export interface EntryList {
   total: number;
   page: number;
   pageSize: number;
-  totals: { incomePaise: number; expensePaise: number; transferPaise: number; netPaise: number };
+  totals: { incomePaise: number; expensePaise: number; transferPaise: number; inPaise: number; outPaise: number; netPaise: number };
 }
 
 export interface Summary {
@@ -114,4 +126,21 @@ export interface PReminder {
 export interface ReminderList {
   reminders: PReminder[];
   alerts: { _id: string; type: string; title: string; body: string; createdAt: string; unread: boolean }[];
+}
+
+const MANDAL_KIND: Record<string, string> = {
+  hapta_collection: "hapta",
+  other_income: "paid",
+  member_joining: "joining",
+  fund_loan_given: "upadIn",
+  withdrawal: "withdrawal",
+  loan_disbursement: "loanIn",
+  upad_advance_return: "advanceBack",
+};
+/** "Hapta paid", "Upad received", "Upad interest" … for an entry copied from a Mandal. */
+export function mandalLabel(t: T, m: NonNullable<PEntry["mandal"]>) {
+  if (m.kind === "fund_loan_payment") return t(m.part === "spend" ? "ph.mandal.kinds.upadInterest" : "ph.mandal.kinds.upadRepaid");
+  if (m.kind === "loan_repayment") return t(m.part === "spend" ? "ph.mandal.kinds.loanInterest" : "ph.mandal.kinds.loanRepaid");
+  const k = MANDAL_KIND[m.kind];
+  return k ? t(`ph.mandal.kinds.${k}` as Key) : t("ph.mandal.kinds.other");
 }

@@ -19,9 +19,11 @@ export default async function PersonalEntriesPage({ searchParams }: PageProps<"/
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const f = { from: str("from"), to: str("to"), type: str("type"), walletId: str("walletId"), categoryId: str("categoryId"), q: str("q") };
+  // "From my Mandals" is a source, not a type
+  const apiF = f.type === "mandal" ? { ...f, type: "", mandal: "1" } : f;
   const page = Math.max(1, Number(str("page")) || 1);
   const [list, w, c, { t }] = await Promise.all([
-    api<EntryList>(`/me/personal/entries${qs({ ...f, page, pageSize: 50 })}`),
+    api<EntryList>(`/me/personal/entries${qs({ ...apiF, page, pageSize: 50 })}`),
     api<{ wallets: PWallet[] }>("/me/personal/wallets"),
     api<{ categories: PCategory[] }>("/me/personal/categories"),
     getT(),
@@ -34,13 +36,13 @@ export default async function PersonalEntriesPage({ searchParams }: PageProps<"/
     let d = days.at(-1);
     if (!d || d.date !== e.date) days.push((d = { date: e.date, items: [], in: 0, out: 0 }));
     d.items.push(e);
-    if (e.type === "income") d.in += e.amountPaise;
-    if (e.type === "expense") d.out += e.amountPaise;
+    if (e.type === "income" || e.type === "in") d.in += e.amountPaise;
+    if (e.type === "expense" || e.type === "out") d.out += e.amountPaise;
   }
 
   return (
     <>
-      <PageHeader title={t("ph.list.title")} description={t("ph.list.desc")} actions={<ExportCsvButton href={`/api/export${qs({ path: "/me/personal/entries", ...f })}`}>{t("common.downloadCsv")}</ExportCsvButton>} />
+      <PageHeader title={t("ph.list.title")} description={t("ph.list.desc")} actions={<ExportCsvButton href={`/api/export${qs({ path: "/me/personal/entries", ...apiF })}`}>{t("common.downloadCsv")}</ExportCsvButton>} />
       <AddEntryTiles book={book} compact className="hidden lg:grid" />
       <div className="lg:mt-4">
         <FilterBar resetHref="/personal/entries">
@@ -56,6 +58,7 @@ export default async function PersonalEntriesPage({ searchParams }: PageProps<"/
               <option value="expense">{t("ph.entry.type.expense")}</option>
               <option value="income">{t("ph.entry.type.income")}</option>
               <option value="transfer">{t("ph.entry.type.transfer")}</option>
+              <option value="mandal">{t("ph.mandal.filter")}</option>
             </NativeSelect>
           </FilterField>
           <FilterField label={t("ph.list.category")}>
@@ -86,20 +89,32 @@ export default async function PersonalEntriesPage({ searchParams }: PageProps<"/
         </FilterBar>
       </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2">
-        <div className="rounded-2xl bg-card px-3 py-2.5 shadow-card ring-1 ring-foreground/[0.06]">
-          <p className="text-xs text-muted-foreground">{t("ph.moneyIn")}</p>
-          <Money paise={list.totals.incomePaise} className="font-bold text-success" />
-        </div>
-        <div className="rounded-2xl bg-card px-3 py-2.5 shadow-card ring-1 ring-foreground/[0.06]">
-          <p className="text-xs text-muted-foreground">{t("ph.spent")}</p>
-          <Money paise={list.totals.expensePaise} className="font-bold" />
-        </div>
-        <div className="rounded-2xl bg-card px-3 py-2.5 shadow-card ring-1 ring-foreground/[0.06]">
-          <p className="text-xs text-muted-foreground">{list.totals.netPaise < 0 ? t("ph.overspent") : t("ph.saved")}</p>
-          <Money paise={list.totals.netPaise} colored className="font-bold" />
-        </div>
-      </div>
+      {(() => {
+        const tt = list.totals;
+        // Mandal money (in / out) moves the balance without being income or spending
+        const moved = tt.inPaise > 0 || tt.outPaise > 0;
+        const boxes = moved
+          ? [
+              { label: t("ph.moneyIn"), paise: tt.incomePaise + tt.inPaise, cls: "text-success" },
+              { label: t("ph.list.moneyOut"), paise: tt.expensePaise + tt.outPaise, cls: "" },
+              { label: t("ph.list.net"), paise: tt.incomePaise + tt.inPaise - tt.expensePaise - tt.outPaise, colored: true, cls: "" },
+            ]
+          : [
+              { label: t("ph.moneyIn"), paise: tt.incomePaise, cls: "text-success" },
+              { label: t("ph.spent"), paise: tt.expensePaise, cls: "" },
+              { label: tt.netPaise < 0 ? t("ph.overspent") : t("ph.saved"), paise: tt.netPaise, colored: true, cls: "" },
+            ];
+        return (
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {boxes.map((b) => (
+              <div key={b.label} className="rounded-2xl bg-card px-3 py-2.5 shadow-card ring-1 ring-foreground/[0.06]">
+                <p className="truncate text-xs text-muted-foreground">{b.label}</p>
+                <Money paise={b.paise} colored={b.colored} className={`font-bold ${b.cls}`} />
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {days.length === 0 ? (
         <EmptyState icon={<ListOrdered />} title={t("ph.list.none")} description={t("ph.list.noneDesc")} />
