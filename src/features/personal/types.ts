@@ -105,8 +105,12 @@ export const REMIND_BEFORE = [0, 15, 30, 60, 120, 180, 360, 720, 1440, 2880, 432
 
 export interface PReminder {
   _id: string;
+  /** "pay": rent, bills. "receive": money someone promised to give. */
+  kind: "pay" | "receive";
   title: string;
   note: string | null;
+  person: string | null;
+  phone: string | null;
   amountPaise: number | null;
   category: Pick<PCategory, "_id" | "name" | "key" | "tone" | "icon" | "kind"> | null;
   wallet: Pick<PWallet, "_id" | "name" | "key" | "kind"> | null;

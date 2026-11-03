@@ -1,4 +1,4 @@
-import { BellOff, BellRing, Smartphone } from "lucide-react";
+import { BellOff, BellRing, HandCoins, Smartphone } from "lucide-react";
 import { api } from "@/lib/server/api";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -27,7 +27,13 @@ export default async function PersonalRemindersPage({ searchParams }: PageProps<
 
   return (
     <>
-      <PageHeader title={t("ph.tabs.reminders")} description={t("ph.rem.desc")} actions={<ReminderDialog categories={c.categories} wallets={w.wallets} defaultOpen={sp.new === "1"} />} />
+      <PageHeader title={t("ph.tabs.reminders")} description={t("ph.rem.desc")} actions={
+          <div className="flex flex-wrap gap-2">
+            <ReminderDialog kind="receive" categories={c.categories} wallets={w.wallets} defaultOpen={sp.new === "receive"} />
+            <ReminderDialog categories={c.categories} wallets={w.wallets} defaultOpen={sp.new === "1"} />
+          </div>
+        }
+      />
 
       <div className="mb-5 flex items-start gap-3 rounded-2xl bg-amber-500/8 p-3.5 ring-1 ring-amber-500/20">
         <IconChip tone="amber" size="sm">
@@ -73,8 +79,8 @@ export default async function PersonalRemindersPage({ searchParams }: PageProps<
             <ul className="flex flex-col divide-y divide-border/60">
               {list.alerts.map((a) => (
                 <li key={a._id} className="flex items-start gap-3 py-2.5">
-                  <IconChip tone={a.type.startsWith("personal.budget") ? (a.type.endsWith("over") ? "rose" : "amber") : "sky"} size="sm">
-                    <BellRing />
+                  <IconChip tone={a.type.startsWith("personal.budget") ? (a.type.endsWith("over") ? "rose" : "amber") : a.type === "personal.collect" ? "emerald" : "sky"} size="sm">
+                    {a.type === "personal.collect" ? <HandCoins /> : <BellRing />}
                   </IconChip>
                   <div className="min-w-0 flex-1">
                     <p className={cn("text-sm", a.unread ? "font-bold" : "font-medium")}>{a.title}</p>
