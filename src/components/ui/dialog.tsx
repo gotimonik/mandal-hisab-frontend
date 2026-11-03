@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button"
 import { isTouchDevice, mergeRefs } from "@/lib/touch"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+/**
+ * Dialogs hold forms, so a stray tap outside must not close them and lose what was typed:
+ * they close only with ✕, Cancel / Save, or Esc. Pass `disablePointerDismissal={false}`
+ * for a dialog that has nothing to lose.
+ */
+function Dialog({ disablePointerDismissal = true, ...props }: DialogPrimitive.Root.Props) {
+  return <DialogPrimitive.Root data-slot="dialog" disablePointerDismissal={disablePointerDismissal} {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
