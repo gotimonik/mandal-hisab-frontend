@@ -3,6 +3,7 @@ import { Building2, ChevronLeft, ChevronRight, NotebookPen, PiggyBank, Target } 
 import { api, qs } from "@/lib/server/api";
 import { PageHeader } from "@/components/app/page-header";
 import { SummaryBand } from "@/components/app/summary-band";
+import { KeepScrollLink, RestoreScroll } from "@/components/app/keep-scroll";
 import { Money } from "@/components/app/money";
 import { EmptyState } from "@/components/app/empty-state";
 import { IconChip, ProgressBar, SectionTitle } from "@/components/app/bits";
@@ -71,6 +72,7 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
 
   return (
     <>
+      <RestoreScroll />
       <PageHeader title={t("ph.title")} description={t("ph.desc")} />
 
       <SummaryBand
@@ -135,9 +137,9 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
           {/* month switcher + today */}
           <Card className="lg:col-span-2">
             <div className="flex items-center justify-between gap-2">
-              <Link href={`/personal?month=${shiftMonth(o.month, -1)}`} aria-label={t("ph.prevMonth")} className={buttonVariants({ variant: "ghost", size: "icon-sm" })}>
+              <KeepScrollLink href={`/personal?month=${shiftMonth(o.month, -1)}`} aria-label={t("ph.prevMonth")} className={buttonVariants({ variant: "ghost", size: "icon-sm" })}>
                 <ChevronLeft />
-              </Link>
+              </KeepScrollLink>
               <div className="text-center">
                 <p className="font-bold">{monthName(lang, o.month)}</p>
                 {m.previousExpensePaise > 0 && <p className="text-xs text-muted-foreground">{t("ph.lastMonthSpent", { amount: formatINR(m.previousExpensePaise) })}</p>}
@@ -145,9 +147,9 @@ export default async function PersonalPage({ searchParams }: PageProps<"/persona
               {isThisMonth ? (
                 <span className="size-9" />
               ) : (
-                <Link href={`/personal?month=${shiftMonth(o.month, 1)}`} aria-label={t("ph.nextMonth")} className={buttonVariants({ variant: "ghost", size: "icon-sm" })}>
+                <KeepScrollLink href={`/personal?month=${shiftMonth(o.month, 1)}`} aria-label={t("ph.nextMonth")} className={buttonVariants({ variant: "ghost", size: "icon-sm" })}>
                   <ChevronRight />
-                </Link>
+                </KeepScrollLink>
               )}
             </div>
             {isThisMonth && (
