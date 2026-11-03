@@ -195,7 +195,7 @@ export default function HowItWorksPage() {
           </div>
           <ol className="flex flex-col gap-2.5 text-sm">
             {[
-              ["Open Personal Hisab", "From the menu, or from Your Mandals after you sign in. Starter wallets and categories are ready."],
+              ["Open Personal Hisab", "From the menu, or from Your Mandals after you sign in. Starter wallets and categories are ready — wallets are just names for where your money is, not real bank accounts."],
               ["Add entries as they happen", "Tap + and choose Spent, Received or Move money. Pick a category and wallet — or let your defaults fill them in."],
               ["Set budgets and reminders", "A monthly limit for groceries or fuel, a reminder for rent on the 1st. Notifications arrive on the app."],
               ["Check your month", "The overview shows what came in, what went out and what's left in each wallet; Reports show any period."],

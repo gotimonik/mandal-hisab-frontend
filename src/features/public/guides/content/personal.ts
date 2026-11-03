@@ -21,7 +21,7 @@ export const PERSONAL_GUIDES: Guide[] = [
         items: [
           { title: "Sign in or create a free account", text: "Use the same account you use for your Mandal, or [create one](/register) — no Mandal needed." },
           { title: "Tap “Personal Hisab”", text: "It's on the **Your Mandals** screen after you sign in, and in the menu inside any Mandal." },
-          { title: "Start with the ready-made wallets and categories", text: "A Cash and a Bank / UPI wallet and common categories like groceries, rent and fuel are already there, in your language. Rename, add or hide them whenever you like." },
+          { title: "Start with the ready-made wallets and categories", text: "A Cash and a Bank / UPI wallet and common categories like groceries, rent and fuel are already there, in your language. Wallets are just names, not real bank accounts — rename, add or hide them whenever you like." },
         ],
       },
       { type: "h2", text: "Add an entry" },
@@ -41,6 +41,21 @@ export const PERSONAL_GUIDES: Guide[] = [
         type: "p",
         text: "Type the amount, pick a category and the wallet it came from (or went into), add a note if you like, and save. Your balances, the month's totals and the charts update straight away. Made a mistake? Tap the entry to change or delete it.",
       },
+      { type: "h2", text: "Scan a bill instead of typing" },
+      {
+        type: "steps",
+        items: [
+          { title: "Tap “Scan a bill”", text: "It's in the **+** menu and at the top of the Add spending form. Take a photo of the bill, or pick a photo, a screenshot (a UPI payment, for example) or a PDF — up to 5 MB." },
+          { title: "Check what was filled in", text: "MandalHisab reads the **total**, the **date** and the **shop** right on your phone, and suggests a category (and the wallet, when the bill shows UPI or card). Correct anything that's wrong." },
+          { title: "Save", text: "The bill stays attached to the entry. Tap the entry any time and choose **View** to see it again — only you can open it." },
+        ],
+      },
+      {
+        type: "tip",
+        tone: "note",
+        title: "10 bills a month, for now",
+        text: "You can scan 10 bills each month; the count starts again on the 1st, and removing a bill doesn't give the scan back. The bill is read on your own phone — free, and never sent to an AI service. The first scan takes a little longer while the reader downloads. For best results, take a flat, clear photo in good light; printed bills and payment screenshots read best, handwritten bills often need the amount typed in, and PDFs are kept with the entry but not read yet.",
+      },
       {
         type: "tip",
         title: "Make everyday entries quicker",
@@ -49,13 +64,13 @@ export const PERSONAL_GUIDES: Guide[] = [
       { type: "h2", text: "Wallets: where your money is" },
       {
         type: "p",
-        text: "A wallet is any place you keep money — **cash**, a **bank** account, **UPI** or a **card**. Each wallet shows its own balance, and the overview shows the total across all of them. Enter what each one holds today as its starting balance and carry on from there.",
+        text: "A wallet is a name for any place you keep money — **cash**, a **bank** account, **UPI** or a **card**. Each wallet shows its own balance, and the overview shows the total across all of them. Enter what each one holds today as its starting balance and carry on from there.",
       },
       {
         type: "tip",
         tone: "note",
-        title: "Wallets are only names",
-        text: "Personal Hisab never connects to your bank or UPI app, never reads your SMS, and never asks for account or card numbers. You add entries yourself, so you decide exactly what's recorded.",
+        title: "Wallets aren't real bank accounts",
+        text: "A wallet is just a name that helps you keep your hisab tidy and track every transaction yourself. It isn't linked to any bank and holds no money: Personal Hisab never connects to your bank or UPI app, never reads your SMS, and never asks for account or card numbers. You add entries yourself, so you decide exactly what's recorded.",
       },
       { type: "h2", text: "Categories with icons" },
       {

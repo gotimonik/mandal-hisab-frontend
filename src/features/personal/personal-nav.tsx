@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { BarChart3, BellRing, Building2, ChevronRight, LayoutDashboard, ListOrdered, Lock, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
+import { BarChart3, BellRing, Building2, Camera, ChevronRight, LayoutDashboard, ListOrdered, Lock, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
@@ -76,6 +76,7 @@ export function BottomBar({ book }: { book: Book }) {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [entryType, setEntryType] = useState<ManualType | null>(null);
+  const [billFile, setBillFile] = useState<File | undefined>(undefined);
   const tab = (href: string, key: string, Icon: typeof Wallet) => {
     const active = isActive(path, href);
     return (
@@ -129,6 +130,30 @@ export function BottomBar({ book }: { book: Book }) {
             </button>
           ))}
         </div>
+        {/* a bill photo / PDF: read it, then open "Add spending" filled in */}
+        <label className="mt-2 flex cursor-pointer items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06] active:scale-[0.99] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (!f) return;
+              setAddOpen(false);
+              setBillFile(f);
+              setEntryType("expense");
+            }}
+          />
+          <IconChip tone="amber">
+            <Camera />
+          </IconChip>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold">{t("ph.bill.scan")}</span>
+            <span className="block text-xs text-muted-foreground">{t("ph.bill.sheetHint")}</span>
+          </span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </label>
       </SheetFrame>
 
       <SheetFrame open={moreOpen} onOpenChange={setMoreOpen} title={t("ph.title")}>
@@ -159,7 +184,15 @@ export function BottomBar({ book }: { book: Book }) {
         </ul>
       </SheetFrame>
 
-      <NewEntryDialog book={book} type={entryType} onClose={() => setEntryType(null)} />
+      <NewEntryDialog
+        book={book}
+        type={entryType}
+        initialBill={billFile}
+        onClose={() => {
+          setEntryType(null);
+          setBillFile(undefined);
+        }}
+      />
     </>
   );
 }

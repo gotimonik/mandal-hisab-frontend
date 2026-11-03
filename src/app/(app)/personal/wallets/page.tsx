@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Wallet } from "lucide-react";
+import { ChevronRight, Info, Wallet } from "lucide-react";
 import { api } from "@/lib/server/api";
 import { PageHeader } from "@/components/app/page-header";
 import { SummaryBand } from "@/components/app/summary-band";
@@ -44,6 +44,10 @@ export default async function PersonalWalletsPage() {
     <>
       <PageHeader title={t("ph.tabs.wallets")} description={t("ph.settings.walletsDesc")} actions={<WalletDialog />} />
       <SummaryBand tone="green" icon={<Wallet />} label={t("ph.walletPage.total")} value={<Money paise={wallets.reduce((a, w) => a + w.balancePaise, 0)} />} sub={t("ph.walletPage.count", { n: active.length })} />
+      <p className="mb-3 flex items-start gap-2 rounded-2xl bg-sky-500/[0.07] p-3 text-xs text-muted-foreground ring-1 ring-sky-500/15">
+        <Info className="mt-0.5 size-4 shrink-0 text-sky-600 dark:text-sky-400" />
+        <span>{t("ph.settings.walletsNote")}</span>
+      </p>
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {active.map((w) => (
           <WalletCard key={w._id} w={w} t={t} />

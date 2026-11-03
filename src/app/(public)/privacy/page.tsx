@@ -39,7 +39,8 @@ export default function PrivacyPage() {
             <li>
               <b>Your Personal Hisab</b>, which you enter for yourself: the amounts, dates, notes and categories of what you spend and receive, the names and starting balances of your wallets,
               your budgets, and your reminders (including, if you add them, the name and phone number of someone who is to pay you). If you turn on &quot;Add my Mandal money to Personal
-              Hisab&quot;, copies of your own transactions from your Mandals are added to it.
+              Hisab&quot;, copies of your own transactions from your Mandals are added to it. If you scan a bill, we keep the photo or PDF (up to 5 MB) with the entry. The total, date and
+              shop name are read off the photo on your own phone or computer — the bill is not sent to any AI or text-reading service.
             </li>
           </ul>
           <p>
@@ -166,7 +167,7 @@ export default function PrivacyPage() {
           <p>We use a small number of trusted providers to run {site.name}. They process data only to provide their service to us:</p>
           <ul>
             <li>
-              <b>Vercel</b> — hosts the website and app pages, and stores files you upload such as expense bills (Vercel Blob).
+              <b>Vercel</b> — hosts the website and app pages, and stores files you upload such as Mandal expense bills and Personal Hisab bills (Vercel Blob).
             </li>
             <li>
               <b>Render</b> — hosts the server (API) that processes requests.
@@ -179,6 +180,10 @@ export default function PrivacyPage() {
             </li>
             <li>
               <b>Google Analytics and Firebase</b> (Google) — measure how the website and apps are used, as described in section 2.
+            </li>
+            <li>
+              <b>jsDelivr</b> (a public file network) — the first time you scan a bill, your phone or browser downloads the free, open-source bill-reading software (Tesseract) and its
+              language files from jsDelivr. Like any download, jsDelivr sees your IP address. Your bill is never sent to it.
             </li>
             <li>
               <b>Firebase Cloud Messaging</b> (Google), and Apple&apos;s push service on iPhones — deliver notifications to the Android and iOS apps. The text of a notification passes through
@@ -204,7 +209,8 @@ export default function PrivacyPage() {
             We keep account information while your account is active. Mandal records are kept while the Mandal uses {site.name}, because financial records must stay complete and auditable. When a
             Mandal is closed or asks us to delete its data, we delete or anonymise it within a reasonable time, except where we must keep some records to meet legal, tax or dispute-resolution
             obligations. Your Personal Hisab is kept while your account is active; entries, wallets, categories and reminders you delete are removed, and if you ask us to delete your
-            account, your Personal Hisab is deleted with it. Security logs and expired sessions are removed automatically after they are no longer needed.
+            account, your Personal Hisab is deleted with it. A bill&apos;s file is deleted when you remove it from its entry or delete the entry, and a bill you scanned but never saved
+            is deleted within a day. Security logs and expired sessions are removed automatically after they are no longer needed.
           </p>
 
           <h2>8. Your choices and rights</h2>

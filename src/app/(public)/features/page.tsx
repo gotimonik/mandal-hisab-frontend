@@ -181,7 +181,8 @@ const GROUPS: Group[] = [
     intro: "New: a private book for your own income and spending — separate from every Mandal, and seen only by you. No Mandal needed to use it.",
     points: [
       "Add spending, money received, or money moved between your wallets in a few taps",
-      "Wallets for cash, bank, UPI and card, each with its own balance and a total across all of them",
+      "Scan a bill: take a photo or screenshot and the amount, date, shop and category are filled in for you to check — read right on your phone, free and private. Photos, screenshots and PDFs up to 5 MB, 10 a month, kept with the entry",
+      "Wallets for cash, bank, UPI and card, each with its own balance and a total across all of them — just names to keep your hisab tidy, not real bank accounts, so no bank details are needed",
       "Categories with icons and colours — suggested from the name, in English, ગુજરાતી and हिन्दी",
       "Monthly budget overall and per category, with a notification at 80% and when you go over",
       "Reminders for rent, bills and EMIs to pay — weekly, monthly or yearly — sent as a notification at the time you choose",

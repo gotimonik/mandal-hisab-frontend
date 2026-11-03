@@ -96,7 +96,7 @@ function WalletForm({ wallet }: { wallet?: PWalletWithBalance }) {
       }}
     >
       <FormError message={error} />
-      <Field label={t("ph.settings.name")} htmlFor="pw-name">
+      <Field label={t("ph.settings.name")} htmlFor="pw-name" hint={t("ph.settings.walletsNote")}>
         <Input id="pw-name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("ph.settings.walletPh")} />
       </Field>
       <Field label={t("ph.settings.kind")} htmlFor="pw-kind">

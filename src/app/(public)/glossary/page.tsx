@@ -40,7 +40,7 @@ const TERMS: Term[] = [
   { term: "Part payment", def: "Paying less than the full amount due. The rest stays due and is carried forward." },
   { term: "Personal Hisab", def: "Your own private money book in MandalHisab: what you spend and receive, wallets, budgets and reminders. Only you can see it — it's separate from every Mandal.", link: { href: "/guides/personal-hisab-track-your-own-money", label: "Personal Hisab guide" } },
   { term: "Budget", def: "In Personal Hisab, a monthly spending limit — overall or for one category. It starts again every month, and you can get an alert at 80% and when you go over." },
-  { term: "Wallet", def: "In Personal Hisab, a place you keep money — cash, a bank account, UPI or a card — with its own balance. It's only a name: MandalHisab never asks for account numbers." },
+  { term: "Wallet", def: "In Personal Hisab, a name for a place you keep money — cash, bank, UPI or a card — with its own balance. Wallets aren't real bank accounts: they're just names that help you keep your hisab tidy and track every transaction yourself. MandalHisab never asks for bank, UPI or card details." },
   { term: "Passbook", def: "A member's savings statement: each hapta, interest credit and withdrawal with a running balance." },
   { term: "Pahonch (receipt)", local: "પહોંચ · रसीद", def: "Proof that money was received. MandalHisab gives every payment a numbered receipt." },
   { term: "Pramukh", local: "પ્રમુખ · अध्यक्ष", def: "The president or head of the Mandal, who chairs meetings." },

@@ -33,6 +33,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>MandalHisab uses the camera only when you choose to take a photo of a bill, so its total, date and shop can be filled in for you in Personal Hisab.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MandalHisab opens your photos only when you choose a bill or payment screenshot to add to your Personal Hisab.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>MandalHisab uses Face ID to unlock the app, so only you can see your Mandal's hisab on this phone.</string>
 	<key>UIApplicationSceneManifest</key>

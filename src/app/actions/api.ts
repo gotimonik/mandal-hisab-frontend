@@ -3,6 +3,7 @@
 import { ApiError, apiCall } from "@/lib/server/api";
 import { rememberOrg } from "@/lib/server/session";
 import type { ActionResult } from "@/lib/action-result";
+import type { BillScan } from "@/features/personal/types";
 
 /**
  * Generic mutation proxy used by client components. The browser never sees the API
@@ -10,7 +11,7 @@ import type { ActionResult } from "@/lib/action-result";
  * call. Paths are restricted to the user-facing API surface; authorization is enforced
  * by the API itself for every request.
  */
-const ALLOWED = /^\/(orgs\/[a-f0-9]{24}(\/[A-Za-z0-9_\-/.]*)?|organizations(\/[a-z-]+)?|invitations\/(accept|mine|[a-f0-9]{24}\/(accept|decline))|notifications(\/read)?|auth\/(me|change-password|resend-verification|logout-all)|me\/push-devices|me\/personal\/[a-z-]+(\/[a-f0-9]{24}(\/(paid|skip|later))?)?|platform\/[A-Za-z0-9_\-/]+)$/;
+const ALLOWED = /^\/(orgs\/[a-f0-9]{24}(\/[A-Za-z0-9_\-/.]*)?|organizations(\/[a-z-]+)?|invitations\/(accept|mine|[a-f0-9]{24}\/(accept|decline))|notifications(\/read)?|auth\/(me|change-password|resend-verification|logout-all)|me\/push-devices|me\/personal\/[a-z-]+(\/[a-f0-9]{24}(\/(paid|skip|later))?)?|me\/personal\/bills\/usage|platform\/[A-Za-z0-9_\-/]+)$/;
 
 export async function apiMutate<T = unknown>(input: { path: string; method?: "POST" | "PATCH" | "DELETE"; body?: unknown }): Promise<ActionResult<T>> {
   const pathOnly = input.path.split("?")[0];
@@ -66,6 +67,28 @@ export async function uploadAttachment(orgId: string, formData: FormData): Promi
     const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/orgs/${orgId}/uploads`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd, cache: "no-store" });
     const json = (await res.json().catch(() => ({}))) as { data?: { url: string; name: string; contentType: string; size: number }; error?: { message: string } };
     if (!res.ok || !json.data) return { ok: false, error: json.error?.message ?? "Upload failed" };
+    return { ok: true, data: json.data };
+  } catch {
+    return { ok: false, error: "Upload failed" };
+  }
+}
+
+/**
+ * Personal Hisab: send a bill photo / PDF (max 5 MB) to be kept and read. The API checks the
+ * owner, the type, the size and the monthly limit, and returns what it read off the bill.
+ */
+export async function scanPersonalBill(formData: FormData): Promise<ActionResult<BillScan>> {
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { ok: false, error: "Choose a bill" };
+  if (file.size > 5 * 1024 * 1024) return { ok: false, error: "The bill must be 5 MB or smaller", code: "BILL_TOO_BIG" };
+  const { getSessionToken } = await import("@/lib/server/session");
+  const token = await getSessionToken();
+  const fd = new FormData();
+  fd.set("file", file);
+  try {
+    const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/me/personal/bills`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd, cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as { data?: BillScan; error?: { message: string; details?: { code?: string } } };
+    if (!res.ok || !json.data) return { ok: false, error: json.error?.message ?? "Upload failed", code: json.error?.details?.code };
     return { ok: true, data: json.data };
   } catch {
     return { ok: false, error: "Upload failed" };

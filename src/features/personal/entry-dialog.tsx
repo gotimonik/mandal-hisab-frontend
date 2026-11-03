@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CheckCircle2, Loader2, Settings2, Star, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, Camera, CheckCircle2, ExternalLink, FileText, Loader2, Paperclip, Settings2, Star, Trash2, X } from "lucide-react";
 import { useSetDefault } from "./manage-dialogs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,17 @@ import { IconChip } from "@/components/app/bits";
 import { Money } from "@/components/app/money";
 import { dropQueryParam } from "@/components/app/form-dialog";
 import { apiMutate } from "@/lib/api-client";
+import { apiRead, scanPersonalBill } from "@/app/actions/api";
+import { track } from "@/lib/analytics";
+import { prepareBill } from "./bill-image";
+import { canReadOnDevice, readBillOnDevice, type OcrStage } from "./bill-ocr";
+import { parseBillText } from "./bill-text";
 import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { TONE_CHIP, TONE_TEXT, type Tone } from "@/lib/tones";
 import { cn } from "@/lib/utils";
-import { useT } from "@/i18n/client";
-import { categoryName, mandalLabel, walletName, type EntryType, type ManualType, type PCategory, type PEntry, type PWallet } from "./types";
+import { useLang, useT } from "@/i18n/client";
+import { BILL_MAX_BYTES, categoryName, mandalLabel, walletName, type BillScan, type BillUsage, type EntryType, type ManualType, type PBill, type PCategory, type PEntry, type PWallet } from "./types";
 import { CategoryIcon } from "./icons";
 
 export const TYPE_LOOK: Record<EntryType, { tone: Tone; icon: ReactNode }> = {
@@ -61,7 +66,7 @@ export interface EntryDefaults {
   walletId?: string;
 }
 
-function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: Book; type: ManualType; entry?: PEntry; defaults?: EntryDefaults; onDone: () => void }) {
+function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone }: { book: Book; type: ManualType; entry?: PEntry; defaults?: EntryDefaults; initialBill?: File; onDone: () => void }) {
   const t = useT();
   const router = useRouter();
   const { wallets: allWallets, categories: allCategories } = book;
@@ -88,6 +93,40 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [key] = useState(() => newIdempotencyKey("pe"));
   const [pending, start] = useTransition();
+  const [bill, setBill] = useState<PBill | null>(entry?.bill ?? null);
+  const billSaved = useRef(false);
+
+  /** Fill the form from what was read off a bill (new entries only — an existing one keeps its details). */
+  const applyScan = (s: BillScan) => {
+    const r = s.reading;
+    if (!r) {
+      if (s.readError === "unavailable") toast.warning(t("ph.bill.unavailable"));
+      else if (s.readError === "too_big") toast.message(t("ph.bill.tooBigToRead"));
+      else if (s.readError === "pdf") toast.message(t("ph.bill.pdfAttached"));
+      else if (s.readError === "local_failed") toast.warning(t("ph.bill.couldntRead"));
+      else toast.success(t("ph.bill.attached"));
+      return;
+    }
+    if (!r.isBill) return void toast.warning(t("ph.bill.notBill"));
+    if (entry) return void toast.success(t("ph.bill.attached"));
+    const k: ManualType = r.type;
+    if (k !== type) setType(k);
+    const kindCats = allCategories.filter((c) => c.kind === k && !c.isArchived);
+    setCategoryId(r.categoryId && kindCats.some((c) => c._id === r.categoryId) ? r.categoryId : k !== type ? (defaultCategory(k) ?? "") : categoryId);
+    if (r.amount) setAmount(r.amount);
+    if (r.date) setDate(r.date);
+    if (r.walletKind) {
+      const live = wallets.filter((w) => !w.isArchived);
+      // UPI money usually sits in a bank account: fall back to a bank wallet
+      const match = live.find((w) => w.kind === r.walletKind) ?? (r.walletKind === "upi" ? live.find((w) => w.kind === "bank") : undefined);
+      if (match) setWalletId(match._id);
+    }
+    if (r.merchant && !note.trim()) setNote(r.merchant);
+    setError(null);
+    setAmountError(null);
+    if (r.amount) toast.success(t("ph.bill.filled"));
+    else toast.warning(t("ph.bill.noTotal"));
+  };
 
   const cats = allCategories.filter((c) => c.kind === (type === "income" ? "income" : "expense") && (!c.isArchived || c._id === entry?.category?._id));
   const selectedCat = cats.find((c) => c._id === categoryId && !c.isArchived);
@@ -109,11 +148,13 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
         toWalletId: type === "transfer" ? toWalletId : null,
         categoryId: type === "transfer" ? null : categoryId,
         note: note.trim() || undefined,
+        billId: bill?._id ?? (entry ? null : undefined),
       };
       const res = entry
         ? await apiMutate({ path: `/me/personal/entries/${entry._id}`, method: "PATCH", body })
         : await apiMutate({ path: "/me/personal/entries", body: { ...body, idempotencyKey: key } });
       if (!res.ok) return setError(res.error);
+      billSaved.current = true;
       if (type !== "transfer") saveLast(type, walletId);
       toast.success(entry ? t("ph.entry.updated") : t("ph.entry.saved"));
       onDone();
@@ -140,6 +181,7 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
       }}
     >
       <FormError message={error} />
+      <BillBox bill={bill} originalBillId={entry?.bill?._id ?? null} initialFile={initialBill} categories={allCategories} onChange={setBill} onScanned={applyScan} savedRef={billSaved} />
       {/* spent / received / moved */}
       <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-muted p-1" role="radiogroup" aria-label={t("ph.list.type")}>
         {(["expense", "income", "transfer"] as const).map((k) => (
@@ -281,6 +323,157 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
   );
 }
 
+const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+/**
+ * The bill on this entry: "Scan a bill" (photo, screenshot or PDF, up to 5 MB, a few a month),
+ * or the attached bill with View / Remove. A bill scanned here but never saved is removed when
+ * the form closes (and by the daily job, if the phone went away first).
+ */
+function BillBox({ bill, originalBillId, initialFile, categories, onChange, onScanned, savedRef }: { bill: PBill | null; originalBillId: string | null; initialFile?: File; categories: PCategory[]; onChange: (b: PBill | null) => void; onScanned: (s: BillScan) => void; savedRef: RefObject<boolean> }) {
+  const t = useT();
+  const lang = useLang();
+  const [usage, setUsage] = useState<BillUsage | null>(null);
+  const [busy, setBusy] = useState(false);
+  // on-phone reading: getting the reader ready (first time downloads it) → reading, with progress
+  const [stage, setStage] = useState<{ s: OcrStage; p: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  // bills scanned in this form and not (yet) saved with the entry
+  const fresh = useRef<Set<string>>(new Set());
+  const started = useRef(false);
+
+  const discard = (id: string) => {
+    fresh.current.delete(id);
+    void apiMutate({ path: `/me/personal/bills/${id}`, method: "DELETE" });
+  };
+
+  useEffect(() => {
+    void apiRead<BillUsage>("/me/personal/bills/usage").then((r) => r.ok && setUsage(r.data));
+    const pending = fresh.current;
+    return () => {
+      // closed without saving: don't leave the scanned bill behind (the value at close time is the one we want)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (!savedRef.current) for (const id of pending) void apiMutate({ path: `/me/personal/bills/${id}`, method: "DELETE" });
+    };
+  }, [savedRef]);
+
+  const scan = async (file: File) => {
+    setError(null);
+    setBusy(true);
+    try {
+      const prepared = await prepareBill(file);
+      if (prepared.size > BILL_MAX_BYTES) return setError(t("ph.bill.tooBig"));
+      const fd = new FormData();
+      fd.set("file", prepared);
+      // read it right here on the phone (free, private) while it uploads — unless the server reads bills
+      const local = usage?.reads !== true && canReadOnDevice(prepared) ? readBillOnDevice(prepared, lang, (s, p) => setStage({ s, p })) : null;
+      const res = await scanPersonalBill(fd);
+      if (!res.ok) return setError(res.code === "BILL_LIMIT" ? t("ph.bill.limitReached", { n: usage?.limit ?? 10 }) : res.code === "BILL_TOO_BIG" ? t("ph.bill.tooBig") : res.error);
+      let result: BillScan = res.data;
+      if (!result.reading && result.readError !== "unavailable") {
+        const text = local ? await local : null;
+        if (text && text.trim().length >= 4) {
+          // whatever the phone found is a suggestion to check, so never "not a bill" here
+          result = { ...result, reading: { ...parseBillText(text, { today: todayISO(), categories }), isBill: true }, readError: null };
+        } else {
+          result = { ...result, readError: prepared.type === "application/pdf" ? "pdf" : "local_failed" };
+        }
+      }
+      if (bill && bill._id !== originalBillId) discard(bill._id);
+      fresh.current.add(result.bill._id);
+      onChange(result.bill);
+      setUsage(result.usage);
+      track("personal_bill_scanned", { result: result.reading ? (result.reading.isBill ? (result.reading.amount ? "read" : "no_total") : "not_bill") : (result.readError ?? "none"), where: local ? "phone" : "server" });
+      onScanned(result);
+    } finally {
+      setBusy(false);
+      setStage(null);
+    }
+  };
+
+  useEffect(() => {
+    if (initialFile && !started.current) {
+      started.current = true;
+      // a file chosen before the form opened (from the "Scan a bill" button in the add sheet)
+      void scan(initialFile);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile]);
+
+  const remove = () => {
+    if (bill && bill._id !== originalBillId) discard(bill._id);
+    onChange(null);
+  };
+
+  const none = usage !== null && usage.left <= 0;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {bill ? (
+        <div className="flex items-center gap-3 rounded-2xl bg-muted/60 p-2.5 ring-1 ring-foreground/[0.06]">
+          <IconChip tone="sky" size="sm">
+            {bill.contentType === "application/pdf" ? <FileText /> : <Paperclip />}
+          </IconChip>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">{t("ph.bill.attachedTitle")}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {bill.name} · {kb(bill.size)}
+            </span>
+          </span>
+          {busy ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          ) : (
+            <>
+              <a href={`/api/personal-bill/${bill._id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+                <ExternalLink className="size-3.5" /> {t("ph.bill.view")}
+              </a>
+              <Button type="button" variant="ghost" size="icon-sm" className="rounded-full" aria-label={t("ph.bill.remove")} onClick={remove}>
+                <X />
+              </Button>
+            </>
+          )}
+        </div>
+      ) : (
+        <label
+          className={cn(
+            "flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-foreground/20 p-2.5 transition-colors hover:bg-muted/50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+            (busy || none) && "pointer-events-none opacity-70",
+          )}
+        >
+          <input
+            ref={input}
+            type="file"
+            accept="image/*,application/pdf"
+            className="sr-only"
+            disabled={busy || none}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void scan(f);
+            }}
+          />
+          <IconChip tone="amber" size="sm">
+            {busy ? <Loader2 className="animate-spin" /> : <Camera />}
+          </IconChip>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">
+              {!busy ? t("ph.bill.scan") : stage?.s === "loading" ? t("ph.bill.preparing") : stage?.s === "reading" ? t("ph.bill.readingPct", { pct: Math.round(stage.p * 100) }) : t("ph.bill.reading")}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {none ? t("ph.bill.noneLeft", { n: usage.limit }) : usage ? t("ph.bill.hintLeft", { left: usage.left, n: usage.limit }) : t("ph.bill.hint")}
+            </span>
+          </span>
+        </label>
+      )}
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** "☆ Always start with Food" / "★ Food is your default — remove" under a picker. */
 function DefaultLine({ isDefault, label, pending, onClick }: { isDefault: boolean; label: string; pending: boolean; onClick: () => void }) {
   return (
@@ -375,11 +568,11 @@ const NEW_DESC = { expense: "ph.entry.newExpenseDesc", income: "ph.entry.newInco
 const HINT = { expense: "ph.add.expenseHint", income: "ph.add.incomeHint", transfer: "ph.add.transferHint" } as const;
 
 /** "Add an entry" dialog, opened by whoever holds `type` (tiles, the phone bottom bar, a category page …). */
-export function NewEntryDialog({ book, type, onClose, defaults }: { book: Book; type: ManualType | null; onClose: () => void; defaults?: EntryDefaults }) {
+export function NewEntryDialog({ book, type, onClose, defaults, initialBill }: { book: Book; type: ManualType | null; onClose: () => void; defaults?: EntryDefaults; initialBill?: File }) {
   const t = useT();
   return (
     <EntryDialogShell open={type !== null} onOpenChange={(o) => !o && onClose()} title={type ? t(NEW_TITLE[type]) : ""} description={type ? t(NEW_DESC[type]) : undefined} tone={type ? TYPE_LOOK[type].tone : "slate"} icon={type ? TYPE_LOOK[type].icon : null}>
-      {type && <EntryForm key={type} book={book} type={type} defaults={defaults} onDone={onClose} />}
+      {type && <EntryForm key={type} book={book} type={type} defaults={defaults} initialBill={initialBill} onDone={onClose} />}
     </EntryDialogShell>
   );
 }
@@ -433,7 +626,10 @@ export function EntryRow({ entry, book, showDate = false }: { entry: PEntry; boo
           {entry.type === "transfer" || entry.type === "in" || entry.type === "out" || (entry.mandal && !entry.category) ? look.icon : <CategoryIcon category={entry.category} />}
         </IconChip>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">{title}</span>
+          <span className="flex items-center gap-1 truncate text-sm font-semibold">
+            <span className="truncate">{title}</span>
+            {entry.bill && <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("ph.bill.hasBill")} />}
+          </span>
           {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
         </span>
         <EntryAmount entry={entry} />

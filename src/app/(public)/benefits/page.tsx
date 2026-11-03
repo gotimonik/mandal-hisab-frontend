@@ -74,12 +74,12 @@ const AUDIENCES: Audience[] = [
     headline: "Know where your own money goes",
     intro: "Personal Hisab is a private book for your household money, in the same app — whether or not you're in a Mandal.",
     points: [
-      { title: "Every rupee noted in seconds", text: "Tap +, choose Spent or Received, type the amount. Your wallets and monthly totals update by themselves." },
+      { title: "Every rupee noted in seconds", text: "Tap +, choose Spent or Received, type the amount — or scan the bill and let the amount, date and shop fill in. Your wallets and monthly totals update by themselves." },
       { title: "See where it went", text: "Spending by category with icons, day by day, and month by month — no more guessing at the end of the month." },
       { title: "Budgets that warn you", text: "Set a monthly limit overall or per category and get a notification at 80% and when you cross it." },
       { title: "Never miss rent or a bill", text: "Reminders for rent, bills and EMIs arrive before they're due, at the time you pick. Mark paid and it's added to your spending." },
       { title: "Collect what you're owed", text: "Lent money to someone? Get reminded on the day they promised, with Call and WhatsApp buttons ready." },
-      { title: "Completely private", text: "Only you can see your Personal Hisab. It's never shared with any Mandal, its admins or its members." },
+      { title: "Completely private", text: "Only you can see your Personal Hisab. It's never shared with any Mandal, its admins or its members — and its wallets are just names, not real bank accounts, so no bank details are ever needed." },
     ],
   },
 ];

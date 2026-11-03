@@ -49,7 +49,50 @@ export interface PEntry {
   category: PCategory | null;
   /** copied from one of the person's Mandals: read-only except wallet and note */
   mandal: { organizationId: string; name: string | null; kind: string; part: "main" | "spend" } | null;
+  /** a scanned bill kept with the entry */
+  bill?: PBill | null;
 }
+
+/** A bill photo / PDF kept with an entry (opened through /api/personal-bill/:id). */
+export interface PBill {
+  _id: string;
+  name: string;
+  contentType: string;
+  size: number;
+}
+
+/** What was read off a scanned bill — a suggestion the person checks before saving. */
+export interface BillReading {
+  isBill: boolean;
+  amount: string | null;
+  date: string | null;
+  merchant: string | null;
+  type: "expense" | "income";
+  categoryId: string | null;
+  walletKind: "cash" | "upi" | "card" | "bank" | null;
+}
+
+export interface BillUsage {
+  used: number;
+  limit: number;
+  left: number;
+  /** false = bills are kept but not read on this server */
+  reads: boolean;
+}
+
+export interface BillScan {
+  bill: PBill;
+  reading: BillReading | null;
+  /**
+   * why nothing was read: "off" (no reader on the server), "too_big", "unavailable" (try again
+   * later); on the phone: "pdf" (PDFs aren't read on the phone), "local_failed" (no text found)
+   */
+  readError: "off" | "too_big" | "unavailable" | "pdf" | "local_failed" | null;
+  usage: BillUsage;
+}
+
+/** Bills up to 5 MB, 10 a month (the API is the one that counts). */
+export const BILL_MAX_BYTES = 5 * 1024 * 1024;
 
 export interface MandalSync {
   enabled: boolean;
