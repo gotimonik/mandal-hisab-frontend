@@ -97,6 +97,8 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
   const [pending, start] = useTransition();
   const [bill, setBill] = useState<PBill | null>(entry?.bill ?? null);
   const billSaved = useRef(false);
+  // while a bill is uploading / being read, the form waits (its fields are about to be filled in)
+  const [billBusy, setBillBusy] = useState(false);
 
   /** Fill the form from what was read off a bill (new entries only — an existing one keeps its details). */
   const applyScan = (s: BillScan) => {
@@ -135,6 +137,7 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
   const selectedWallet = wallets.find((w) => w._id === walletId);
 
   const save = () => {
+    if (billBusy) return;
     const a = rupees.safeParse(amount);
     setAmountError(a.success ? null : a.error.issues[0].message);
     if (!a.success) return;
@@ -183,152 +186,154 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
       }}
     >
       <FormError message={error} />
-      <BillBox bill={bill} originalBillId={entry?.bill?._id ?? null} initialFile={initialBill} categories={allCategories} onChange={setBill} onScanned={applyScan} savedRef={billSaved} />
-      {/* spent / received / moved */}
-      <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-muted p-1" role="radiogroup" aria-label={t("ph.list.type")}>
-        {(["expense", "income", "transfer"] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={type === k}
-            onClick={() => {
-              setType(k);
-              setCategoryId(defaultCategory(k) ?? "");
-              setError(null);
-            }}
-            className={cn("flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold transition-colors [&_svg]:size-4", type === k ? cn("bg-card shadow-sm", k === "expense" ? "text-rose-600 dark:text-rose-400" : k === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-sky-600 dark:text-sky-400") : "text-muted-foreground hover:text-foreground")}
-          >
-            {TYPE_LOOK[k].icon}
-            {t(`ph.entry.type.${k}`)}
-          </button>
-        ))}
-      </div>
-
-      <Field label={t("ph.entry.amount")} htmlFor="pe-amt" error={amountError ?? undefined}>
-        <AmountInput id="pe-amt" autoFocus={!entry} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-      </Field>
-
-      {type !== "transfer" && (
-        <fieldset className="flex min-w-0 flex-col gap-1.5">
-          <legend className="mb-1.5 text-sm font-medium">{t("ph.entry.category")}</legend>
-          <div className="flex flex-wrap gap-1.5">
-            {cats.map((c) => (
-              <button
-                key={c._id}
-                type="button"
-                aria-pressed={categoryId === c._id}
-                onClick={() => {
-                  setCategoryId(c._id);
-                  setError(null);
-                }}
-                className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-colors", categoryId === c._id ? cn(TONE_CHIP[c.tone], "ring-2 ring-current") : "bg-card ring-foreground/10 hover:bg-muted")}
-              >
-                <CategoryIcon category={c} className={cn("size-3.5", categoryId === c._id ? "" : TONE_TEXT[c.tone])} aria-hidden />
-                {categoryName(t, c)}
-              </button>
-            ))}
-            <Link href="/personal/categories" className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground ring-1 ring-dashed ring-foreground/15 hover:bg-muted">
-              <Settings2 className="size-3" /> {t("ph.entry.moreCategories")}
-            </Link>
-          </div>
-          {selectedCat && (
-            <DefaultLine
-              isDefault={!!selectedCat.isDefault}
-              pending={settingDefault}
-              label={selectedCat.isDefault ? t(type === "income" ? "ph.def.catIsDefaultIn" : "ph.def.catIsDefault", { name: categoryName(t, selectedCat) }) : t(type === "income" ? "ph.def.makeCatIn" : "ph.def.makeCat", { name: categoryName(t, selectedCat) })}
-              onClick={() => setDefault(type === "income" ? "defaultIncomeCategoryId" : "defaultExpenseCategoryId", selectedCat.isDefault ? null : selectedCat._id)}
-            />
-          )}
-        </fieldset>
-      )}
-
-      {type === "transfer" ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t("ph.entry.from")} htmlFor="pe-from">
-            <NativeSelect id="pe-from" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
-              {wallets.map((w) => (
-                <option key={w._id} value={w._id}>
-                  {walletName(t, w)}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Field label={t("ph.entry.to")} htmlFor="pe-to">
-            <NativeSelect id="pe-to" value={toWalletId} onChange={(e) => setToWalletId(e.target.value)}>
-              {wallets.map((w) => (
-                <option key={w._id} value={w._id}>
-                  {walletName(t, w)}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
+      <BillBox bill={bill} originalBillId={entry?.bill?._id ?? null} initialFile={initialBill} categories={allCategories} onChange={setBill} onScanned={applyScan} savedRef={billSaved} onBusy={setBillBusy} />
+      <fieldset disabled={billBusy} aria-busy={billBusy} className={cn("grid min-w-0 grid-cols-1 gap-3 transition-opacity", billBusy && "pointer-events-none opacity-50 select-none")}>
+        {/* spent / received / moved */}
+        <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-muted p-1" role="radiogroup" aria-label={t("ph.list.type")}>
+          {(["expense", "income", "transfer"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={type === k}
+              onClick={() => {
+                setType(k);
+                setCategoryId(defaultCategory(k) ?? "");
+                setError(null);
+              }}
+              className={cn("flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold transition-colors [&_svg]:size-4", type === k ? cn("bg-card shadow-sm", k === "expense" ? "text-rose-600 dark:text-rose-400" : k === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-sky-600 dark:text-sky-400") : "text-muted-foreground hover:text-foreground")}
+            >
+              {TYPE_LOOK[k].icon}
+              {t(`ph.entry.type.${k}`)}
+            </button>
+          ))}
         </div>
-      ) : (
-        wallets.length > 1 && (
-          <div className="flex flex-col gap-1">
-            <Field label={type === "income" ? t("ph.entry.receivedIn") : t("ph.entry.paidFrom")} htmlFor="pe-wallet">
-              <NativeSelect id="pe-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+
+        <Field label={t("ph.entry.amount")} htmlFor="pe-amt" error={amountError ?? undefined}>
+          <AmountInput id="pe-amt" autoFocus={!entry && !initialBill} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+        </Field>
+
+        {type !== "transfer" && (
+          <fieldset className="flex min-w-0 flex-col gap-1.5">
+            <legend className="mb-1.5 text-sm font-medium">{t("ph.entry.category")}</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {cats.map((c) => (
+                <button
+                  key={c._id}
+                  type="button"
+                  aria-pressed={categoryId === c._id}
+                  onClick={() => {
+                    setCategoryId(c._id);
+                    setError(null);
+                  }}
+                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-colors", categoryId === c._id ? cn(TONE_CHIP[c.tone], "ring-2 ring-current") : "bg-card ring-foreground/10 hover:bg-muted")}
+                >
+                  <CategoryIcon category={c} className={cn("size-3.5", categoryId === c._id ? "" : TONE_TEXT[c.tone])} aria-hidden />
+                  {categoryName(t, c)}
+                </button>
+              ))}
+              <Link href="/personal/categories" className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground ring-1 ring-dashed ring-foreground/15 hover:bg-muted">
+                <Settings2 className="size-3" /> {t("ph.entry.moreCategories")}
+              </Link>
+            </div>
+            {selectedCat && (
+              <DefaultLine
+                isDefault={!!selectedCat.isDefault}
+                pending={settingDefault}
+                label={selectedCat.isDefault ? t(type === "income" ? "ph.def.catIsDefaultIn" : "ph.def.catIsDefault", { name: categoryName(t, selectedCat) }) : t(type === "income" ? "ph.def.makeCatIn" : "ph.def.makeCat", { name: categoryName(t, selectedCat) })}
+                onClick={() => setDefault(type === "income" ? "defaultIncomeCategoryId" : "defaultExpenseCategoryId", selectedCat.isDefault ? null : selectedCat._id)}
+              />
+            )}
+          </fieldset>
+        )}
+
+        {type === "transfer" ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t("ph.entry.from")} htmlFor="pe-from">
+              <NativeSelect id="pe-from" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
                 {wallets.map((w) => (
                   <option key={w._id} value={w._id}>
                     {walletName(t, w)}
-                    {w.isDefault ? ` ★` : ""}
                   </option>
                 ))}
               </NativeSelect>
             </Field>
-            {selectedWallet && !selectedWallet.isArchived && (
-              <DefaultLine
-                isDefault={!!selectedWallet.isDefault}
-                pending={settingDefault}
-                label={selectedWallet.isDefault ? t("ph.def.walletIsDefault", { name: walletName(t, selectedWallet) }) : t("ph.def.makeWallet", { name: walletName(t, selectedWallet) })}
-                onClick={() => setDefault("defaultWalletId", selectedWallet.isDefault ? null : selectedWallet._id)}
-              />
-            )}
-          </div>
-        )
-      )}
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_1fr]">
-        <Field label={t("common.date")} htmlFor="pe-date">
-          <Input id="pe-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field label={t("ph.entry.note")} htmlFor="pe-note">
-          <Input id="pe-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t(type === "expense" ? "ph.entry.notePhExpense" : type === "income" ? "ph.entry.notePhIncome" : "ph.entry.notePhTransfer")} />
-        </Field>
-      </div>
-
-      {/* spending / income dated in another month doesn't show in this month's totals — say so */}
-      {type !== "transfer" && (!entry || date !== entry.date) && /^\d{4}-\d{2}-\d{2}$/.test(date) && date.slice(0, 7) !== todayISO().slice(0, 7) && (
-        <p className="flex items-start gap-2 rounded-2xl bg-amber-500/10 p-3 text-xs text-amber-900 ring-1 ring-amber-500/25 dark:text-amber-200">
-          <CalendarClock className="mt-0.5 size-4 shrink-0" />
-          <span>{t(type === "income" ? "ph.entry.otherMonthIncome" : "ph.entry.otherMonthExpense", { date: formatDate(date), month: monthName(lang, date.slice(0, 7)) })}</span>
-        </p>
-      )}
-
-      <SubmitButton pending={pending} icon={<CheckCircle2 />}>
-        {t("ph.entry.save")}
-      </SubmitButton>
-
-      {entry &&
-        (confirmDelete ? (
-          <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 p-3 ring-1 ring-destructive/20" role="alert">
-            <p className="text-sm font-semibold">{t("ph.entry.deleteTitle")}</p>
-            <p className="text-xs text-muted-foreground">{t("ph.entry.deleteDesc")}</p>
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={pending}>
-                {t("common.cancel")}
-              </Button>
-              <Button type="button" variant="destructive" size="sm" className="flex-1" onClick={remove} disabled={pending}>
-                {pending ? <Loader2 className="animate-spin" /> : <Trash2 />} {t("ph.entry.delete")}
-              </Button>
-            </div>
+            <Field label={t("ph.entry.to")} htmlFor="pe-to">
+              <NativeSelect id="pe-to" value={toWalletId} onChange={(e) => setToWalletId(e.target.value)}>
+                {wallets.map((w) => (
+                  <option key={w._id} value={w._id}>
+                    {walletName(t, w)}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
           </div>
         ) : (
-          <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-            <Trash2 /> {t("ph.entry.delete")}
-          </Button>
-        ))}
+          wallets.length > 1 && (
+            <div className="flex flex-col gap-1">
+              <Field label={type === "income" ? t("ph.entry.receivedIn") : t("ph.entry.paidFrom")} htmlFor="pe-wallet">
+                <NativeSelect id="pe-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+                  {wallets.map((w) => (
+                    <option key={w._id} value={w._id}>
+                      {walletName(t, w)}
+                      {w.isDefault ? ` ★` : ""}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              {selectedWallet && !selectedWallet.isArchived && (
+                <DefaultLine
+                  isDefault={!!selectedWallet.isDefault}
+                  pending={settingDefault}
+                  label={selectedWallet.isDefault ? t("ph.def.walletIsDefault", { name: walletName(t, selectedWallet) }) : t("ph.def.makeWallet", { name: walletName(t, selectedWallet) })}
+                  onClick={() => setDefault("defaultWalletId", selectedWallet.isDefault ? null : selectedWallet._id)}
+                />
+              )}
+            </div>
+          )
+        )}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_1fr]">
+          <Field label={t("common.date")} htmlFor="pe-date">
+            <Input id="pe-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </Field>
+          <Field label={t("ph.entry.note")} htmlFor="pe-note">
+            <Input id="pe-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t(type === "expense" ? "ph.entry.notePhExpense" : type === "income" ? "ph.entry.notePhIncome" : "ph.entry.notePhTransfer")} />
+          </Field>
+        </div>
+
+        {/* spending / income dated in another month doesn't show in this month's totals — say so */}
+        {type !== "transfer" && (!entry || date !== entry.date) && /^\d{4}-\d{2}-\d{2}$/.test(date) && date.slice(0, 7) !== todayISO().slice(0, 7) && (
+          <p className="flex items-start gap-2 rounded-2xl bg-amber-500/10 p-3 text-xs text-amber-900 ring-1 ring-amber-500/25 dark:text-amber-200">
+            <CalendarClock className="mt-0.5 size-4 shrink-0" />
+            <span>{t(type === "income" ? "ph.entry.otherMonthIncome" : "ph.entry.otherMonthExpense", { date: formatDate(date), month: monthName(lang, date.slice(0, 7)) })}</span>
+          </p>
+        )}
+
+        <SubmitButton pending={pending} icon={<CheckCircle2 />}>
+          {t("ph.entry.save")}
+        </SubmitButton>
+
+        {entry &&
+          (confirmDelete ? (
+            <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 p-3 ring-1 ring-destructive/20" role="alert">
+              <p className="text-sm font-semibold">{t("ph.entry.deleteTitle")}</p>
+              <p className="text-xs text-muted-foreground">{t("ph.entry.deleteDesc")}</p>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={pending}>
+                  {t("common.cancel")}
+                </Button>
+                <Button type="button" variant="destructive" size="sm" className="flex-1" onClick={remove} disabled={pending}>
+                  {pending ? <Loader2 className="animate-spin" /> : <Trash2 />} {t("ph.entry.delete")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
+              <Trash2 /> {t("ph.entry.delete")}
+            </Button>
+          ))}
+      </fieldset>
     </form>
   );
 }
@@ -340,7 +345,7 @@ const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} M
  * or the attached bill with View / Remove. A bill scanned here but never saved is removed when
  * the form closes (and by the daily job, if the phone went away first).
  */
-function BillBox({ bill, originalBillId, initialFile, categories, onChange, onScanned, savedRef }: { bill: PBill | null; originalBillId: string | null; initialFile?: File; categories: PCategory[]; onChange: (b: PBill | null) => void; onScanned: (s: BillScan) => void; savedRef: RefObject<boolean> }) {
+function BillBox({ bill, originalBillId, initialFile, categories, onChange, onScanned, savedRef, onBusy }: { bill: PBill | null; originalBillId: string | null; initialFile?: File; categories: PCategory[]; onChange: (b: PBill | null) => void; onScanned: (s: BillScan) => void; savedRef: RefObject<boolean>; onBusy?: (busy: boolean) => void }) {
   const t = useT();
   const lang = useLang();
   const [usage, setUsage] = useState<BillUsage | null>(null);
@@ -371,6 +376,7 @@ function BillBox({ bill, originalBillId, initialFile, categories, onChange, onSc
   const scan = async (file: File) => {
     setError(null);
     setBusy(true);
+    onBusy?.(true);
     try {
       const prepared = await prepareBill(file);
       if (prepared.size > BILL_MAX_BYTES) return setError(t("ph.bill.tooBig"));
@@ -398,6 +404,7 @@ function BillBox({ bill, originalBillId, initialFile, categories, onChange, onSc
       onScanned(result);
     } finally {
       setBusy(false);
+      onBusy?.(false);
       setStage(null);
     }
   };
