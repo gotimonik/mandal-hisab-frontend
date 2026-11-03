@@ -15,6 +15,8 @@ export interface PWallet {
   key: string | null;
   kind: WalletKind;
   isArchived: boolean;
+  /** new entries start with this wallet */
+  isDefault?: boolean;
 }
 export interface PWalletWithBalance extends PWallet {
   openingBalancePaise: number;
@@ -32,6 +34,8 @@ export interface PCategory {
   icon: string | null;
   monthlyBudgetPaise: number | null;
   isArchived: boolean;
+  /** new spending (or income) entries start with this category */
+  isDefault?: boolean;
 }
 
 export interface PEntry {

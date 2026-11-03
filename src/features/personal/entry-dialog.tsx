@@ -4,7 +4,8 @@ import { useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CheckCircle2, Loader2, Settings2, Trash2 } from "lucide-react";
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Building2, CheckCircle2, Loader2, Settings2, Star, Trash2 } from "lucide-react";
+import { useSetDefault } from "./manage-dialogs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,14 +67,19 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
   const { wallets: allWallets, categories: allCategories } = book;
   // hidden wallets / categories can only stay on an entry that already uses them
   const wallets = allWallets.filter((w) => !w.isArchived || w._id === entry?.wallet?._id || w._id === entry?.toWallet?._id);
+  const defaultWallet = allWallets.find((w) => w.isDefault && !w.isArchived)?._id;
+  const defaultCategory = (k: ManualType) => (k === "transfer" ? undefined : allCategories.find((c) => c.isDefault && !c.isArchived && c.kind === k)?._id);
+  // the default wallet, else the one last used on this device, else the first
   const firstWallet = () => {
+    if (defaultWallet) return defaultWallet;
     const last = typeof window === "undefined" ? null : readLast(startType);
     return wallets.find((w) => w._id === last && !w.isArchived)?._id ?? wallets.find((w) => !w.isArchived)?._id ?? "";
   };
+  const { set: setDefault, pending: settingDefault } = useSetDefault();
   const [type, setType] = useState<ManualType>((entry?.type as ManualType | undefined) ?? startType);
   const [amount, setAmount] = useState(entry ? paiseToRupeeInput(entry.amountPaise) : "");
   const [date, setDate] = useState(entry?.date ?? todayISO());
-  const [categoryId, setCategoryId] = useState(entry?.category?._id ?? defaults?.categoryId ?? "");
+  const [categoryId, setCategoryId] = useState(entry?.category?._id ?? defaults?.categoryId ?? (entry ? "" : (defaultCategory(startType) ?? "")));
   const [walletId, setWalletId] = useState(entry?.wallet?._id ?? (defaults?.walletId && wallets.some((w) => w._id === defaults.walletId && !w.isArchived) ? defaults.walletId : firstWallet()));
   const [toWalletId, setToWalletId] = useState(entry?.toWallet?._id ?? wallets.find((w) => !w.isArchived && w._id !== (entry?.wallet?._id ?? firstWallet()))?._id ?? "");
   const [note, setNote] = useState(entry?.note ?? "");
@@ -84,6 +90,8 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
   const [pending, start] = useTransition();
 
   const cats = allCategories.filter((c) => c.kind === (type === "income" ? "income" : "expense") && (!c.isArchived || c._id === entry?.category?._id));
+  const selectedCat = cats.find((c) => c._id === categoryId && !c.isArchived);
+  const selectedWallet = wallets.find((w) => w._id === walletId);
 
   const save = () => {
     const a = rupees.safeParse(amount);
@@ -142,7 +150,7 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
             aria-checked={type === k}
             onClick={() => {
               setType(k);
-              setCategoryId("");
+              setCategoryId(defaultCategory(k) ?? "");
               setError(null);
             }}
             className={cn("flex items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-semibold transition-colors [&_svg]:size-4", type === k ? cn("bg-card shadow-sm", k === "expense" ? "text-rose-600 dark:text-rose-400" : k === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-sky-600 dark:text-sky-400") : "text-muted-foreground hover:text-foreground")}
@@ -180,6 +188,14 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
               <Settings2 className="size-3" /> {t("ph.entry.moreCategories")}
             </Link>
           </div>
+          {selectedCat && (
+            <DefaultLine
+              isDefault={!!selectedCat.isDefault}
+              pending={settingDefault}
+              label={selectedCat.isDefault ? t(type === "income" ? "ph.def.catIsDefaultIn" : "ph.def.catIsDefault", { name: categoryName(t, selectedCat) }) : t(type === "income" ? "ph.def.makeCatIn" : "ph.def.makeCat", { name: categoryName(t, selectedCat) })}
+              onClick={() => setDefault(type === "income" ? "defaultIncomeCategoryId" : "defaultExpenseCategoryId", selectedCat.isDefault ? null : selectedCat._id)}
+            />
+          )}
         </fieldset>
       )}
 
@@ -206,15 +222,26 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
         </div>
       ) : (
         wallets.length > 1 && (
-          <Field label={type === "income" ? t("ph.entry.receivedIn") : t("ph.entry.paidFrom")} htmlFor="pe-wallet">
-            <NativeSelect id="pe-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
-              {wallets.map((w) => (
-                <option key={w._id} value={w._id}>
-                  {walletName(t, w)}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
+          <div className="flex flex-col gap-1">
+            <Field label={type === "income" ? t("ph.entry.receivedIn") : t("ph.entry.paidFrom")} htmlFor="pe-wallet">
+              <NativeSelect id="pe-wallet" value={walletId} onChange={(e) => setWalletId(e.target.value)}>
+                {wallets.map((w) => (
+                  <option key={w._id} value={w._id}>
+                    {walletName(t, w)}
+                    {w.isDefault ? ` ★` : ""}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            {selectedWallet && !selectedWallet.isArchived && (
+              <DefaultLine
+                isDefault={!!selectedWallet.isDefault}
+                pending={settingDefault}
+                label={selectedWallet.isDefault ? t("ph.def.walletIsDefault", { name: walletName(t, selectedWallet) }) : t("ph.def.makeWallet", { name: walletName(t, selectedWallet) })}
+                onClick={() => setDefault("defaultWalletId", selectedWallet.isDefault ? null : selectedWallet._id)}
+              />
+            )}
+          </div>
         )
       )}
 
@@ -251,6 +278,15 @@ function EntryForm({ book, type: startType, entry, defaults, onDone }: { book: B
           </Button>
         ))}
     </form>
+  );
+}
+
+/** "☆ Always start with Food" / "★ Food is your default — remove" under a picker. */
+function DefaultLine({ isDefault, label, pending, onClick }: { isDefault: boolean; label: string; pending: boolean; onClick: () => void }) {
+  return (
+    <button type="button" disabled={pending} onClick={onClick} className={cn("inline-flex w-fit items-center gap-1 rounded-full px-1 py-0.5 text-xs font-medium transition-colors disabled:opacity-60", isDefault ? "text-amber-700 hover:text-amber-800 dark:text-amber-300" : "text-muted-foreground hover:text-foreground")}>
+      {pending ? <Loader2 className="size-3 animate-spin" /> : <Star className={cn("size-3", isDefault && "fill-current")} />} {label}
+    </button>
   );
 }
 

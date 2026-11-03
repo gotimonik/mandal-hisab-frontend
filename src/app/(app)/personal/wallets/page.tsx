@@ -7,7 +7,7 @@ import { Money } from "@/components/app/money";
 import { IconChip, SectionTitle } from "@/components/app/bits";
 import { getT } from "@/i18n/server";
 import { cn } from "@/lib/utils";
-import { WalletDialog } from "@/features/personal/manage-dialogs";
+import { DefaultBadge, WalletDialog } from "@/features/personal/manage-dialogs";
 import { WALLET_TONE, WalletIcon } from "@/features/personal/icons";
 import { walletName, type MandalSync, type PWalletWithBalance } from "@/features/personal/types";
 import { MandalSyncCard } from "@/features/personal/mandal-sync";
@@ -22,7 +22,10 @@ function WalletCard({ w, t }: { w: PWalletWithBalance; t: T }) {
         <WalletIcon kind={w.kind} />
       </IconChip>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-semibold">{walletName(t, w)}</span>
+        <span className="flex items-center gap-1.5">
+          <span className="truncate font-semibold">{walletName(t, w)}</span>
+          {w.isDefault && <DefaultBadge label={t("ph.def.badge")} />}
+        </span>
         <span className="block text-xs text-muted-foreground">
           {t(`ph.settings.kinds.${w.kind}`)} · {t("ph.entries", { n: w.entryCount })}
         </span>

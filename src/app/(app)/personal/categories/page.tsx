@@ -8,7 +8,7 @@ import { IconChip, ProgressBar, SectionTitle } from "@/components/app/bits";
 import { getT } from "@/i18n/server";
 import { monthName } from "@/i18n/core";
 import { cn } from "@/lib/utils";
-import { CategoryDialog } from "@/features/personal/manage-dialogs";
+import { CategoryDialog, DefaultBadge } from "@/features/personal/manage-dialogs";
 import { CategoryIcon } from "@/features/personal/icons";
 import { thisMonthRange } from "@/features/personal/server-bits";
 import { categoryName, type PCategory, type Summary } from "@/features/personal/types";
@@ -28,7 +28,10 @@ function CategoryTile({ c, total, t }: { c: PCategory; total: number; t: T }) {
         <ChevronRight className="size-4 text-muted-foreground" />
       </span>
       <span className="min-w-0">
-        <span className="block truncate text-sm font-bold">{categoryName(t, c)}</span>
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-sm font-bold">{categoryName(t, c)}</span>
+          {c.isDefault && <DefaultBadge label={t("ph.def.badge")} />}
+        </span>
         <Money paise={total} className={cn("text-base font-bold", c.kind === "income" && total > 0 && "text-success")} />
       </span>
       {budget ? <ProgressBar value={pct} className="h-1.5" barClassName={pct > 100 ? "bg-destructive" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"} label={categoryName(t, c)} /> : null}

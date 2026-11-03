@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, ChevronDown, Pencil, Plus, Sparkles, Tags, Wallet } from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2, Pencil, Plus, Sparkles, Star, Tags, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { SubmitButton } from "@/components/app/form-bits";
+import { Button } from "@/components/ui/button";
 import { apiMutate } from "@/lib/api-client";
 import { optionalRupees, rupeesOrZero } from "@/lib/schemas";
 import { paiseToRupeeInput } from "@/lib/format";
@@ -17,6 +18,43 @@ import { cn } from "@/lib/utils";
 import { useT } from "@/i18n/client";
 import { categoryName, TONES, WALLET_KINDS, walletName, type PCategory, type PWalletWithBalance, type WalletKind } from "./types";
 import { CATEGORY_ICONS, categoryIconKey, IconByKey, suggestIcons } from "./icons";
+
+export type DefaultField = "defaultWalletId" | "defaultExpenseCategoryId" | "defaultIncomeCategoryId";
+
+/** "★ Default" next to a wallet / category name */
+export function DefaultBadge({ label }: { label: string }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/12 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+      <Star className="size-2.5 fill-current" aria-hidden /> {label}
+    </span>
+  );
+}
+
+/** Make this wallet / category the one new entries start with (or stop it being that). */
+export function useSetDefault() {
+  const t = useT();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const set = (field: DefaultField, id: string | null) =>
+    start(async () => {
+      const res = await apiMutate({ path: "/me/personal/settings", method: "PATCH", body: { [field]: id } });
+      if (!res.ok) return void toast.error(res.error);
+      toast.success(id ? t("ph.def.set") : t("ph.def.cleared"));
+      router.refresh();
+    });
+  return { set, pending };
+}
+
+export function DefaultButton({ field, id, isDefault }: { field: DefaultField; id: string; isDefault: boolean }) {
+  const t = useT();
+  const { set, pending } = useSetDefault();
+  return (
+    <Button variant="outline" size="sm" disabled={pending} aria-pressed={isDefault} onClick={() => set(field, isDefault ? null : id)} className={cn(isDefault && "text-amber-700 dark:text-amber-300")}>
+      {pending ? <Loader2 className="animate-spin" /> : <Star className={cn(isDefault && "fill-current")} />}
+      {isDefault ? t("ph.def.isDefault") : t("ph.def.make")}
+    </Button>
+  );
+}
 
 function useSave() {
   const router = useRouter();

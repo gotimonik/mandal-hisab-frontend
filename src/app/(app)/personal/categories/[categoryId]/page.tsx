@@ -10,7 +10,7 @@ import { ActionButton } from "@/components/app/action-button";
 import { Pagination } from "@/components/app/pagination";
 import { getT } from "@/i18n/server";
 import { formatINR } from "@/lib/format";
-import { CategoryDialog } from "@/features/personal/manage-dialogs";
+import { CategoryDialog, DefaultButton } from "@/features/personal/manage-dialogs";
 import { AddEntryTiles, EntryRow } from "@/features/personal/entry-dialog";
 import { CategoryIcon } from "@/features/personal/icons";
 import { MonthsChart } from "@/features/personal/charts";
@@ -57,6 +57,7 @@ export default async function PersonalCategoryPage({ params, searchParams }: Pag
         </div>
         <div className="flex w-full flex-wrap gap-1.5 sm:w-auto">
           <CategoryDialog category={c} label={t("ph.edit")} />
+          {!c.isArchived && <DefaultButton field={c.kind === "expense" ? "defaultExpenseCategoryId" : "defaultIncomeCategoryId"} id={c._id} isDefault={!!c.isDefault} />}
           <ActionButton path={`/me/personal/categories/${c._id}`} method="PATCH" body={{ isArchived: !c.isArchived }} successMessage={t("ph.settings.saved")}>
             {c.isArchived ? t("ph.settings.show") : t("ph.settings.hide")}
           </ActionButton>
