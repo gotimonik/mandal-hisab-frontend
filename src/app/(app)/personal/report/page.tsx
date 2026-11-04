@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, BookText } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { api, qs } from "@/lib/server/api";
 import { requestToday } from "@/lib/server/today";
 import { PageHeader } from "@/components/app/page-header";
@@ -68,7 +69,15 @@ export default async function PersonalReportPage({ searchParams }: PageProps<"/p
 
   return (
     <>
-      <PageHeader title={t("ph.report.title")} description={t("ph.report.desc")} />
+      <PageHeader
+        title={t("ph.report.title")}
+        description={t("ph.report.desc")}
+        actions={
+          <Link href={`/personal/passbook?from=${from}&to=${to}`} className={buttonVariants({ variant: "outline" })}>
+            <BookText /> {t("ph.passbook.title")}
+          </Link>
+        }
+      />
       <div className="mb-3 flex flex-wrap gap-1.5">
         {presets(today).map((p) => (
           <Link key={p.key} href={`/personal/report?from=${p.from}&to=${p.to}`} className={cn("rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition-colors", p.from === from && p.to === to ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-foreground/10 hover:bg-muted")}>

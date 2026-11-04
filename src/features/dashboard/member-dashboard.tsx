@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarClock, CheckCircle2, AlertTriangle, HandCoins, Wallet } from "lucide-react";
 import type { Org } from "@/lib/types";
+import { PersonalHisabCard } from "@/features/personal/personal-card";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { Money } from "@/components/app/money";
@@ -169,6 +170,7 @@ export async function MemberDashboard({ orgId, data, org }: { orgId: string; dat
           </CardContent>
         </Card>
       </div>
+      <PersonalHisabCard />
     </>
   );
 }

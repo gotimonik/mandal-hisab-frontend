@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { isNativeApp } from "@/lib/native-plugins";
-import { pdfFromJpeg } from "@/lib/pdf-from-jpeg";
+import { pageCuts, pdfFromJpeg, pdfFromJpegPages, type PdfPage } from "@/lib/pdf-from-jpeg";
 import { track } from "@/lib/analytics";
 import { useT } from "@/i18n/client";
 
@@ -27,12 +27,66 @@ async function snapshot(el: HTMLElement) {
 const toBlob = (c: HTMLCanvasElement, type: string, quality?: number) =>
   new Promise<Blob>((ok, fail) => c.toBlob((b) => (b ? ok(b) : fail(new Error("empty"))), type, quality));
 
-async function makeFile(el: HTMLElement, kind: Kind, base: string, title: string): Promise<File> {
+/**
+ * A long document (a passbook) as A4 pages: the picture is cut only between rows — the elements
+ * marked `data-row` — so no line is split across two pages.
+ */
+async function pagedPdf(el: HTMLElement, canvas: HTMLCanvasElement, title: string) {
+  const scale = canvas.height / el.offsetHeight;
+  const top = el.getBoundingClientRect().top;
+  const rowBottoms = [...el.querySelectorAll<HTMLElement>("[data-row]")].map((r) => (r.getBoundingClientRect().bottom - top) * scale);
+  const pageHeight = Math.floor(canvas.width * (841.89 / 595.28));
+  const cuts = [0, ...pageCuts(canvas.height, pageHeight, rowBottoms), canvas.height];
+  const pages: PdfPage[] = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const h = cuts[i + 1] - cuts[i];
+    const part = document.createElement("canvas");
+    part.width = canvas.width;
+    part.height = h;
+    const ctx = part.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, part.width, h);
+    ctx.drawImage(canvas, 0, cuts[i], canvas.width, h, 0, 0, canvas.width, h);
+    pages.push({ jpeg: new Uint8Array(await (await toBlob(part, "image/jpeg", 0.9)).arrayBuffer()), widthPx: part.width, heightPx: h });
+  }
+  return pdfFromJpegPages(pages, title);
+}
+
+/** Width (CSS px) a paged document is drawn at for sharing — about an A4 page, whatever the screen. */
+const PAGE_WIDTH = 760;
+
+/**
+ * Run `fn` on a copy of the document laid out at the page width, off screen — so a passbook
+ * shared from a phone is the same wide, tidy document as one shared from a computer.
+ */
+async function atPageWidth<T>(el: HTMLElement, fn: (copy: HTMLElement) => Promise<T>): Promise<T> {
+  const holder = document.createElement("div");
+  holder.setAttribute("aria-hidden", "true");
+  holder.style.cssText = `position:fixed;left:-20000px;top:0;width:${PAGE_WIDTH}px;pointer-events:none;`;
+  const copy = el.cloneNode(true) as HTMLElement;
+  copy.removeAttribute("id");
+  copy.style.width = `${PAGE_WIDTH}px`;
+  holder.appendChild(copy);
+  document.body.appendChild(holder);
+  try {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return await fn(copy);
+  } finally {
+    holder.remove();
+  }
+}
+
+async function makeFile(el: HTMLElement, kind: Kind, base: string, title: string, paged = false): Promise<File> {
+  if (paged)
+    return atPageWidth(el, async (copy) => {
+      const canvas = await snapshot(copy);
+      if (kind === "image") return new File([await toBlob(canvas, "image/png")], `${base}.png`, { type: "image/png" });
+      return new File([(await pagedPdf(copy, canvas, title)) as BlobPart], `${base}.pdf`, { type: "application/pdf" });
+    });
   const canvas = await snapshot(el);
   if (kind === "image") return new File([await toBlob(canvas, "image/png")], `${base}.png`, { type: "image/png" });
   const jpeg = new Uint8Array(await (await toBlob(canvas, "image/jpeg", 0.92)).arrayBuffer());
-  const pdf = pdfFromJpeg(jpeg, canvas.width, canvas.height, title);
-  return new File([pdf as BlobPart], `${base}.pdf`, { type: "application/pdf" });
+  return new File([pdfFromJpeg(jpeg, canvas.width, canvas.height, title) as BlobPart], `${base}.pdf`, { type: "application/pdf" });
 }
 
 const cancelled = (e: unknown) => /cancel|abort/i.test(String((e as { name?: string; message?: string })?.name ?? "") + String((e as { message?: string })?.message ?? e));
@@ -82,7 +136,7 @@ async function deliver(file: File, title: string, text: string) {
  * Share a receipt / voucher as an image or a PDF, so anyone can see it without signing in —
  * or as a link, for people who use MandalHisab. `targetId` is the element that is the document.
  */
-export function ShareDocument({ targetId, fileName, title, text, path }: { targetId: string; fileName: string; title: string; text: string; path: string }) {
+export function ShareDocument({ targetId, fileName, title, text, path, paged = false, allowLink = true }: { targetId: string; fileName: string; title: string; text: string; path: string; /** long documents: A4 pages in the PDF */ paged?: boolean; /** false for private things nobody else can open */ allowLink?: boolean }) {
   const t = useT();
   const [busy, setBusy] = useState<Kind | null>(null);
   const base = fileName.replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "receipt";
@@ -93,7 +147,7 @@ export function ShareDocument({ targetId, fileName, title, text, path }: { targe
     track("share_document", { kind });
     setBusy(kind);
     try {
-      await deliver(await makeFile(el, kind, base, title), title, text);
+      await deliver(await makeFile(el, kind, base, title, paged), title, text);
     } catch (e) {
       if ((e as { code?: string })?.code === "UNIMPLEMENTED") toast.error(t("share.updateApp"));
       else toast.error(t("share.failed"));
@@ -131,13 +185,15 @@ export function ShareDocument({ targetId, fileName, title, text, path }: { targe
         <DropdownMenuItem onClick={() => void shareFile("pdf")}>
           <FileText /> {t("share.asPdf")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => void shareLink()}>
-          <Link2 />
-          <span className="flex flex-col">
-            {t("share.asLink")}
-            <span className="text-xs text-muted-foreground">{t("share.asLinkHint")}</span>
-          </span>
-        </DropdownMenuItem>
+        {allowLink && (
+          <DropdownMenuItem onClick={() => void shareLink()}>
+            <Link2 />
+            <span className="flex flex-col">
+              {t("share.asLink")}
+              <span className="text-xs text-muted-foreground">{t("share.asLinkHint")}</span>
+            </span>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

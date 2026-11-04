@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useTransition, type ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import { UserAvatar, type AccountUser } from "@/components/app/account-menu";
-import { BarChart3, BellRing, BookOpen, Building2, Camera, ChevronRight, LayoutDashboard, ListOrdered, Loader2, Lock, LogOut, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
+import { BarChart3, BellRing, BookOpen, BookText, Building2, Camera, ChevronRight, LayoutDashboard, ListOrdered, Loader2, Lock, LogOut, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
@@ -186,6 +186,18 @@ export function BottomBar({ book, user }: { book: Book; user?: AccountUser }) {
               </Link>
             </li>
           ))}
+          <li>
+            <Link href="/personal/passbook" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/60 active:bg-muted">
+              <IconChip tone="indigo">
+                <BookText />
+              </IconChip>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{t("ph.passbook.title")}</span>
+                <span className="block truncate text-xs text-muted-foreground">{t("ph.passbook.sheetHint")}</span>
+              </span>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Link>
+          </li>
           <li className="mt-1 border-t pt-1">
             <Link href="/personal/books" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/60 active:bg-muted">
               <IconChip tone="emerald">

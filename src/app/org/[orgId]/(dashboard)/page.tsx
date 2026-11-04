@@ -43,6 +43,7 @@ import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
 import { OrgLogo } from "@/components/app/org-logo";
 import { NextMeeting } from "@/features/meetings/next-meeting";
+import { PersonalHisabCard } from "@/features/personal/personal-card";
 import { PushStatus } from "@/components/app/push-status";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
 
@@ -381,6 +382,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           </CardContent>
         </Card>
       )}
+      <PersonalHisabCard />
     </>
   );
 }

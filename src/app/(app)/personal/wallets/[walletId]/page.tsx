@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookText } from "lucide-react";
 import { api, qs } from "@/lib/server/api";
 import { requestToday } from "@/lib/server/today";
 import { SummaryBand } from "@/components/app/summary-band";
@@ -54,6 +55,9 @@ export default async function PersonalWalletPage({ params, searchParams }: PageP
         </div>
         <div className="flex w-full flex-wrap gap-1.5 sm:w-auto">
           <WalletDialog wallet={w} label={t("ph.edit")} />
+          <Link href={`/personal/passbook?wallet=${w._id}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <BookText /> {t("ph.passbook.title")}
+          </Link>
           {!w.isArchived && <DefaultButton field="defaultWalletId" id={w._id} isDefault={!!w.isDefault} />}
           <ActionButton path={`/me/personal/wallets/${w._id}`} method="PATCH" body={{ isArchived: !w.isArchived }} successMessage={t("ph.settings.saved")}>
             {w.isArchived ? t("ph.settings.show") : t("ph.settings.hide")}

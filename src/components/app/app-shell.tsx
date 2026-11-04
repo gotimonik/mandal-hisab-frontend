@@ -290,6 +290,17 @@ function Bell_({ href, unread, small }: { href: string; unread: number; small?: 
   );
 }
 
+/** Personal Hisab from inside any Mandal: one tap, next to the bell. */
+function PersonalButton({ label = false }: { label?: boolean }) {
+  const t = useT();
+  return (
+    <Link href="/personal" aria-label={t("ph.open")} className="flex items-center gap-1.5 rounded-full p-2.5 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300">
+      <PiggyBank className={label ? "size-4" : "size-5"} />
+      {label && <span className="text-sm font-medium">{t("ph.open")}</span>}
+    </Link>
+  );
+}
+
 export function MobileHeaderContent({ data }: { data: ShellData }) {
   const t = useT();
   return (
@@ -301,6 +312,7 @@ export function MobileHeaderContent({ data }: { data: ShellData }) {
           <span className="block text-[11px] leading-tight text-muted-foreground">{roleLabel(t, data.org.role)}</span>
         </span>
       </Link>
+      <PersonalButton />
       <Bell_ href={`/org/${data.org.id}/notifications`} unread={data.unread} />
     </>
   );
@@ -310,6 +322,7 @@ export function TopbarContent({ data }: { data: ShellData }) {
   return (
     <>
       {data.org.status !== "active" && <span className="mr-auto rounded-md bg-warning/20 px-2 py-0.5 text-xs font-medium capitalize">Organization {data.org.status}</span>}
+      <PersonalButton label />
       <Bell_ href={`/org/${data.org.id}/notifications`} unread={data.unread} small />
     </>
   );
