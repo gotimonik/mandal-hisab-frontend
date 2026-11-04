@@ -6,9 +6,32 @@
     <title>MandalHisab</title>
     <style>
       html, body { height: 100%; margin: 0; }
-      body { display: flex; align-items: center; justify-content: center; font-family: -apple-system, system-ui, sans-serif;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; text-align: center; }
+      body { display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;
+        font-family: -apple-system, system-ui, sans-serif; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; text-align: center; }
+      button { margin-top: 16px; padding: 12px 22px; border: 0; border-radius: 12px; background: #fff; color: #4338ca; font-size: 16px; font-weight: 600; }
+      .off { display: none; }
     </style>
   </head>
-  <body><div><h1>MandalHisab</h1><p>Loading…</p></div></body>
+  <body>
+    <!-- The app's own start page: it normally never shows; if it does, it opens MandalHisab straight away. -->
+    <div>
+      <h1>MandalHisab</h1>
+      <p id="status">Opening…</p>
+      <div id="offline" class="off">
+        <p>You're offline. Check your connection.<br /><span style="opacity:.85;font-size:14px">તમે ઑફલાઇન છો · आप ऑफ़लाइन हैं</span></p>
+        <button id="retry" onclick="mhOpen()">Try again</button>
+        <p id="wait" style="opacity:.75;font-size:13px;margin-top:14px">We'll open by ourselves as soon as you're back online.</p>
+      </div>
+    </div>
+    <script src="app-url.js"></script>
+    <script src="start.js"></script>
+    <script>
+      if (navigator.onLine === false) {
+        document.getElementById("status").style.display = "none";
+        document.getElementById("offline").className = "";
+      } else {
+        mhOpen();
+      }
+    </script>
+  </body>
 </html>

@@ -1,4 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 /**
  * The iOS / Android apps are a native shell around the live web app — the Next.js server stays
@@ -11,6 +13,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *   CAP_SERVER_URL=http://192.168.1.20:3000 npx cap sync   → a real phone on the same Wi-Fi
  */
 const url = process.env.CAP_SERVER_URL || "https://mandalhisab.com";
+
+// The app's built-in start / offline pages hand over to this address (mobile/www/start.js).
+// Written here so it always matches `server.url` — also for the local test builds above.
+writeFileSync(join(process.cwd(), "mobile/www/app-url.js"), `// Written by capacitor.config.ts on every \`cap sync\`: where the app's website lives.\nwindow.MH_APP_URL = ${JSON.stringify(url)};\n`);
 
 const config: CapacitorConfig = {
   // Lets the server tell app requests from website visits (website-only pages are skipped in the app).
