@@ -21,7 +21,13 @@
       <p id="wait" style="opacity:.75;font-size:13px;margin-top:14px">We'll reconnect by ourselves as soon as you're back online.</p>
     </div>
     <script>
-      function retry() { location.href = (window.Capacitor && window.Capacitor.getServerUrl && window.Capacitor.getServerUrl()) || "https://mandalhisab.com/onboarding?auto=1"; }
+      // straight to the app's start page (no detour through the website's front page)
+      function retry() {
+        if (navigator.onLine === false) { document.getElementById("wait").textContent = "Still offline — turn on mobile data or Wi-Fi."; return; }
+        document.getElementById("retry").textContent = "Opening…";
+        var base = (window.Capacitor && window.Capacitor.getServerUrl && window.Capacitor.getServerUrl()) || "https://mandalhisab.com";
+        location.replace(base.replace(/\/+$/, "") + "/onboarding?auto=1");
+      }
       // back online: open MandalHisab again without a tap
       window.addEventListener("online", function () { setTimeout(retry, 600); });
       // Offline page: take down the launch splash so this message is visible.

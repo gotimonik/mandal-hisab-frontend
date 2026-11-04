@@ -1,5 +1,12 @@
 /** English — the source for every key. Keep {placeholders} identical in other languages. */
 export const en = {
+  pageError: {
+    title: "We couldn't load this page",
+    desc: "Something went wrong while talking to the server. Your data has not been changed.",
+    offlineTitle: "You're offline",
+    offlineDesc: "Connect to the internet — this page loads by itself as soon as you're back online.",
+    retry: "Try again",
+  },
   common: {
     save: "Save",
     saveChanges: "Save changes",

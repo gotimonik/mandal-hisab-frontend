@@ -2,6 +2,13 @@ import type { Dict } from "../core";
 
 /** ગુજરાતી — every key from en.ts. Mandal words people already use (હપ્તો, ઉપાડ, મંડળ) are kept. */
 export const gu: Dict = {
+  pageError: {
+    title: "આ પેજ ખૂલી શક્યું નહીં",
+    desc: "સર્વર સાથે વાત કરતાં કંઈક ખોટું થયું. તમારો ડેટા બદલાયો નથી.",
+    offlineTitle: "તમે ઑફલાઇન છો",
+    offlineDesc: "ઇન્ટરનેટ ચાલુ કરો — ઓનલાઇન થતાં જ આ પેજ જાતે ખૂલી જશે.",
+    retry: "ફરી પ્રયત્ન કરો",
+  },
   common: {
     save: "સાચવો",
     saveChanges: "ફેરફાર સાચવો",

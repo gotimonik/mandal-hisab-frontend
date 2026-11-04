@@ -2,6 +2,13 @@ import type { Dict } from "../core";
 
 /** हिन्दी — every key from en.ts. Mandal words people already use (हफ़्ता, उपाड़, मंडल) are kept. */
 export const hi: Dict = {
+  pageError: {
+    title: "यह पेज खुल नहीं सका",
+    desc: "सर्वर से बात करते समय कुछ गड़बड़ हुई। आपका डेटा नहीं बदला है।",
+    offlineTitle: "आप ऑफ़लाइन हैं",
+    offlineDesc: "इंटरनेट चालू करें — ऑनलाइन होते ही यह पेज अपने-आप खुल जाएगा।",
+    retry: "फिर कोशिश करें",
+  },
   common: {
     save: "सेव करें",
     saveChanges: "बदलाव सेव करें",
