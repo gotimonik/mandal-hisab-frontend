@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: site.name,
     short_name: site.name,
     description: site.description,
-    start_url: "/onboarding?auto=1&source=pwa",
+    start_url: "/start?source=pwa",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

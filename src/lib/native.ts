@@ -18,8 +18,12 @@ const WEB_ONLY_PREFIXES = ["/guides/"];
 /** True for a path that must never open inside the iOS / Android app. */
 export const isWebOnlyPath = (pathname: string) => WEB_ONLY_PATHS.includes(pathname) || WEB_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
 
-/** Where the app goes instead: the last Mandal (or the Mandal list), or sign-in if signed out. */
-export const APP_START = "/onboarding?auto=1";
+/**
+ * Where the app goes instead: the last Mandal (or the Mandal list), or sign-in if signed out.
+ * For full page loads only (src/app/start/route.ts redirects before any page is sent); in-app
+ * navigation uses /onboarding?auto=1.
+ */
+export const APP_START = "/start";
 
 /** The store apps, for links that open the app (Universal Links / Android App Links). */
 export const APP_IDS = {

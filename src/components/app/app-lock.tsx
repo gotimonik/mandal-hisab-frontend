@@ -10,6 +10,25 @@ import { useT } from "@/i18n/client";
 export const LOCK_PREF = "mh.appLock";
 /** Mirror of the setting in localStorage, read by the tiny script in the root layout before paint. */
 export const LOCK_LS = "mh.appLock";
+/**
+ * Set for the rest of this app launch once unlocked, so a full page reload (pull to refresh, a
+ * tapped link that opened the app, "Try again") doesn't ask again. Gone when the app is closed.
+ * The root layout's early script reads it too.
+ */
+const UNLOCKED_SS = "mh.unlocked";
+const unlockedThisLaunch = () => {
+  try {
+    return sessionStorage.getItem(UNLOCKED_SS) === "1";
+  } catch {
+    return false;
+  }
+};
+const markUnlocked = (on: boolean) => {
+  try {
+    if (on) sessionStorage.setItem(UNLOCKED_SS, "1");
+    else sessionStorage.removeItem(UNLOCKED_SS);
+  } catch {}
+};
 /** Lock again when the app comes back after this long in the background. */
 const RELOCK_MS = 60_000;
 
@@ -58,6 +77,7 @@ export function AppLock() {
     const ok = await verify(t("native.unlockReason"));
     setBusy(false);
     if (ok) {
+      markUnlocked(true);
       setLocked(false);
       reveal();
     }
@@ -74,7 +94,7 @@ export function AppLock() {
         } catch {}
         return reveal();
       }
-      if (!launchChecked) {
+      if (!launchChecked && !unlockedThisLaunch()) {
         launchChecked = true;
         setLocked(true);
         void unlock();
@@ -84,6 +104,7 @@ export function AppLock() {
         if (!isActive) hiddenAt.current = Date.now();
         else if (hiddenAt.current && Date.now() - hiddenAt.current > RELOCK_MS) {
           hiddenAt.current = null;
+          markUnlocked(false);
           setLocked(true);
           void unlock();
         }

@@ -4,7 +4,7 @@
  * local pages that's the app's own file address, which reopens this page and gets stuck.
  */
 (function () {
-  var START = (window.MH_APP_URL || "https://mandalhisab.com").replace(/\/+$/, "") + "/onboarding?auto=1";
+  var START = (window.MH_APP_URL || "https://mandalhisab.com").replace(/\/+$/, "") + "/start";
   var leaving = false;
   function $(id) { return document.getElementById(id); }
   function say(id, text) { var el = $(id); if (el) el.textContent = text; }

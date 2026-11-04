@@ -60,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Inside the iOS / Android app: mark the page before it paints, so website-only links stay hidden,
             and — when Face ID / fingerprint lock is on — keep the signed-in screens hidden until unlocked (AppLock).
             Lives in the root layout so it is only ever rendered on the server (React won't run scripts it renders on the client). */}
-        <script dangerouslySetInnerHTML={{ __html: `try{var C=window.Capacitor,h=document.documentElement;if(navigator.userAgent.indexOf(${JSON.stringify(NATIVE_APP_UA)})>-1||(C&&C.isNativePlatform&&C.isNativePlatform())){h.classList.add("native-app");if(localStorage.getItem("mh.appLock")==="1"&&/^[/](org|onboarding|account|platform|invite)([/]|$)/.test(location.pathname)){h.classList.add("app-locking");setTimeout(function(){if(!document.getElementById("app-lock"))h.classList.remove("app-locking")},10000)}}}catch(e){}` }} />
+        <script dangerouslySetInnerHTML={{ __html: `try{var C=window.Capacitor,h=document.documentElement;if(navigator.userAgent.indexOf(${JSON.stringify(NATIVE_APP_UA)})>-1||(C&&C.isNativePlatform&&C.isNativePlatform())){h.classList.add("native-app");if(localStorage.getItem("mh.appLock")==="1"&&sessionStorage.getItem("mh.unlocked")!=="1"&&/^[/](org|onboarding|account|platform|invite)([/]|$)/.test(location.pathname)){h.classList.add("app-locking");setTimeout(function(){if(!document.getElementById("app-lock"))h.classList.remove("app-locking")},10000)}}}catch(e){}` }} />
       </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
