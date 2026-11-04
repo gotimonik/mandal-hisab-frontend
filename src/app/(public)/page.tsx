@@ -3,9 +3,11 @@ import Link from "next/link";
 import {
   ArrowRight,
   BellRing,
+  BookOpen,
   BookOpenCheck,
   CalendarDays,
   Camera,
+  FileText,
   Check,
   ChevronDown,
   ClipboardList,
@@ -127,10 +129,12 @@ const FEATURES: {
 
 /** The person's own money book — shown in its own band on the home page. */
 const PERSONAL: { icon: React.ReactNode; tone: Tone; title: string; text: string }[] = [
+  { icon: <BookOpen />, tone: "indigo", title: "Separate books for home and office", text: "Keep more than one hisab under one login — Personal, Office, Shop — each with its own wallets, categories and budgets." },
   { icon: <Wallet />, tone: "emerald", title: "Wallets", text: "Cash, bank, UPI and card — see what's left in each. Just names to keep your hisab tidy, not real bank accounts: no bank details needed." },
   { icon: <Tags />, tone: "orange", title: "Categories with icons", text: "Groceries, fuel, rent, school fees… see where your money went, month by month, with CSV export." },
   { icon: <Target />, tone: "rose", title: "Monthly budgets", text: "Set a limit overall or per category. Get an alert at 80% and when you go over." },
   { icon: <BellRing />, tone: "amber", title: "Reminders", text: "Rent, bills and EMIs to pay, or money someone promised you — a notification before it's due." },
+  { icon: <FileText />, tone: "slate", title: "Passbook to share", text: "Every entry with the balance after it, for any period — share it as a PDF on WhatsApp, or print it." },
   { icon: <Camera />, tone: "violet", title: "Scan a bill", text: "Snap a bill or UPI screenshot — the amount, date and shop are read on your phone and filled in for you to check." },
   { icon: <RefreshCw />, tone: "sky", title: "Mandal money, added for you", text: "Optional: the hapta you pay and upad you take can be copied in automatically." },
 ];
@@ -207,7 +211,7 @@ const FAQ_TEASER = [
   },
   {
     q: "What is Personal Hisab?",
-    a: "A private income and expense book for your own money, inside the same app. Add what you spend and receive, keep wallets for cash, bank and UPI, set monthly budgets and get reminders for bills. Wallets aren't real bank accounts — just names to keep your hisab tidy and track every transaction yourself, with no bank details needed. Only you can see it — never your Mandal — and you can use it even if you're not in a Mandal.",
+    a: "A private income and expense book for your own money, inside the same app. Add what you spend and receive, keep wallets for cash, bank and UPI, set monthly budgets and get reminders for bills. Wallets aren't real bank accounts — just names to keep your hisab tidy and track every transaction yourself, with no bank details needed. Keep separate books for home and office, and share a passbook as a PDF. Only you can see it — never your Mandal — and you can use it even if you're not in a Mandal.",
   },
   {
     q: "Does MandalHisab handle our money?",
@@ -347,8 +351,8 @@ export default function HomePage() {
               </p>
               <h2 className="text-[1.5rem] leading-tight font-extrabold tracking-tight text-balance sm:text-4xl">Your own money, in the same app</h2>
               <p className="text-sm text-pretty text-muted-foreground sm:text-base">
-                Note what you spend and receive each day, and see where it goes. Personal Hisab is a private book just for you — separate from every Mandal. You don&apos;t even need to be in a Mandal
-                to use it.
+                Note what you spend and receive each day, and see where it goes. Keep your home and office money in separate books, all under one login. Personal Hisab is private — separate from
+                every Mandal — and you don&apos;t even need to be in a Mandal to use it.
               </p>
               <p className="flex items-start gap-2 rounded-2xl bg-emerald-500/[0.07] p-3 text-sm">
                 <Lock className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />

@@ -192,6 +192,7 @@ const GROUPS: Group[] = [
       "Optional: copy your own Mandal hapta, upad and withdrawals in automatically so your balance stays right",
       "Search and filter every entry, and download them as CSV",
       "Separate books under one login — for example Personal and Office — each with its own wallets, categories, budgets and reminders",
+      "Passbook for any period — every entry with the balance after it — to share as a PDF or picture, or print",
     ],
   },
   {

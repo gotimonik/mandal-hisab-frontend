@@ -46,6 +46,11 @@ export const PERSONAL_GUIDES: Guide[] = [
         type: "p",
         text: "Keep more than one hisab under the same login. Tap the book's name at the top of Personal Hisab and choose **New book** — for example **Office**. Each book has its own wallets, categories, entries, budgets and reminders, so office spending never mixes with home spending. Switch books from the same menu, and rename or delete them under **Manage books**. Your Mandal money is only ever added to your main book.",
       },
+      { type: "h2", text: "Share a passbook" },
+      {
+        type: "p",
+        text: "Open **Passbook** (from **Reports**, a wallet, or the **More** menu), pick a period and all wallets or one, and tap **Share** to send it as a PDF or picture — on WhatsApp, for example — or **Print**. It lists every entry with the balance after it, the opening and closing balance, and spending by category.",
+      },
       { type: "h2", text: "Scan a bill instead of typing" },
       {
         type: "steps",

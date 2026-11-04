@@ -8,7 +8,7 @@ export const site = {
   name: "MandalHisab",
   tagline: "Transparent hisab for your Mandal.",
   description:
-    "Hapta, savings, upad, interest, cash book and reports for Mandals and community groups — plus Personal Hisab, a private book for your own income, spending and budgets. In English, ગુજરાતી and हिन्दी.",
+    "Hapta, savings, upad, interest, cash book and reports for Mandals and community groups — plus Personal Hisab, private books for your home and office income, spending and budgets. In English, ગુજરાતી and हिन्दी.",
   url: "https://mandalhisab.com",
 
   /** Shown in the footer and on Contact us. Set a channel to null to hide it. */
