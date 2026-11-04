@@ -35,6 +35,13 @@ export async function apiRead<T = unknown>(path: string): Promise<ActionResult<T
   }
 }
 
+/** Personal Hisab: switch this device to another of the person's books (main book: its own id or null). */
+export async function selectBook(bookId: string | null, mainId?: string) {
+  const { rememberBook } = await import("@/lib/server/session");
+  const valid = bookId && /^[a-f0-9]{24}$/.test(bookId) ? bookId : null;
+  await rememberBook(valid && valid !== mainId ? valid : null);
+}
+
 export async function selectOrg(orgId: string) {
   if (/^[a-f0-9]{24}$/.test(orgId)) await rememberOrg(orgId);
 }
@@ -81,12 +88,15 @@ export async function scanPersonalBill(formData: FormData): Promise<ActionResult
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "Choose a bill" };
   if (file.size > 5 * 1024 * 1024) return { ok: false, error: "The bill must be 5 MB or smaller", code: "BILL_TOO_BIG" };
-  const { getSessionToken } = await import("@/lib/server/session");
-  const token = await getSessionToken();
+  const { currentBook, getSessionToken } = await import("@/lib/server/session");
+  const [token, book] = await Promise.all([getSessionToken(), currentBook()]);
   const fd = new FormData();
   fd.set("file", file);
   try {
-    const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/me/personal/bills`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd, cache: "no-store" });
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (book) headers["X-Personal-Book"] = book;
+    const res = await fetch(`${process.env.API_URL ?? "http://localhost:4000/api/v1"}/me/personal/bills`, { method: "POST", headers, body: fd, cache: "no-store" });
     const json = (await res.json().catch(() => ({}))) as { data?: BillScan; error?: { message: string; details?: { code?: string } } };
     if (!res.ok || !json.data) return { ok: false, error: json.error?.message ?? "Upload failed", code: json.error?.details?.code };
     return { ok: true, data: json.data };

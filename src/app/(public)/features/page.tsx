@@ -191,6 +191,7 @@ const GROUPS: Group[] = [
       "Default wallet and categories so everyday entries are quicker",
       "Optional: copy your own Mandal hapta, upad and withdrawals in automatically so your balance stays right",
       "Search and filter every entry, and download them as CSV",
+      "Separate books under one login — for example Personal and Office — each with its own wallets, categories, budgets and reminders",
     ],
   },
   {

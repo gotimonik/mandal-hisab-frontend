@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Building2, HandCoins, PiggyBank } from "lucide-react";
 
-import { logoutAction } from "@/app/actions/auth";
 import { LanguageMenu } from "@/i18n/switcher";
-import { LogoutButton } from "@/components/app/logout-button";
 import { useT } from "@/i18n/client";
 
-export function SimpleHeader() {
+/** `account`: the signed-in person's menu (name, email, account & settings, sign out). */
+export function SimpleHeader({ account }: { account?: ReactNode }) {
   const t = useT();
   const inPersonal = usePathname().startsWith("/personal");
   return (
@@ -27,9 +27,7 @@ export function SimpleHeader() {
           <span className="hidden sm:inline">{inPersonal ? t("ph.backToMandals") : t("ph.open")}</span>
         </Link>
         <LanguageMenu />
-        <form action={logoutAction} data-track="logout">
-          <LogoutButton showLabelFrom="sm" />
-        </form>
+        {account}
       </div>
     </header>
   );

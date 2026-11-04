@@ -23,9 +23,10 @@ export function SummaryBand({ tone = "indigo", label, value, sub, stats, statsLa
       {stats && stats.length > 0 && (
         <div className={cn("relative mt-4 grid gap-2", stats.length >= 3 ? "grid-cols-3" : "grid-cols-2")}>
           {stats.map((s, i) => (
-            <div key={i} className="min-w-0 rounded-2xl bg-white/15 px-3 py-2">
-              <p className="truncate text-[11px] text-white/85">{s.label}</p>
-              <p className="truncate text-base font-bold tabular-nums">{s.value}</p>
+            <div key={i} className="min-w-0 rounded-2xl bg-white/15 px-2.5 py-2 sm:px-3">
+              <p className="line-clamp-2 text-[11px] leading-tight text-white/85">{s.label}</p>
+              {/* never cut an amount off: shrink with the screen, and wrap a very long one */}
+              <p className="text-[clamp(0.8rem,3.6vw,1rem)] leading-tight font-bold tracking-tight tabular-nums [overflow-wrap:anywhere] sm:text-base">{s.value}</p>
             </div>
           ))}
         </div>

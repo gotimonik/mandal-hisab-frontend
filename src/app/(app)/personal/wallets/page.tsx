@@ -54,7 +54,7 @@ export default async function PersonalWalletsPage() {
         ))}
       </div>
       <div className="mt-6">
-        <MandalSyncCard sync={sync} wallets={wallets} />
+        {sync.available !== false && <MandalSyncCard sync={sync} wallets={wallets} />}
       </div>
       {hidden.length > 0 && (
         <section className="mt-6">

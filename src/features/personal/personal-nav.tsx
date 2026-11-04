@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
-import { BarChart3, BellRing, Building2, Camera, ChevronRight, LayoutDashboard, ListOrdered, Lock, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
+import { useState, useTransition, type ReactNode } from "react";
+import { logoutAction } from "@/app/actions/auth";
+import { UserAvatar, type AccountUser } from "@/components/app/account-menu";
+import { BarChart3, BellRing, BookOpen, Building2, Camera, ChevronRight, LayoutDashboard, ListOrdered, Loader2, Lock, LogOut, Menu, Plus, Tags, Target, Wallet, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
@@ -70,7 +72,7 @@ function SheetFrame({ open, onOpenChange, title, children }: { open: boolean; on
 }
 
 /** Phones: Home · Entries · ＋ · Reports · More, always at the bottom. */
-export function BottomBar({ book }: { book: Book }) {
+export function BottomBar({ book, user }: { book: Book; user?: AccountUser }) {
   const t = useT();
   const path = usePathname();
   const [addOpen, setAddOpen] = useState(false);
@@ -157,6 +159,18 @@ export function BottomBar({ book }: { book: Book }) {
       </SheetFrame>
 
       <SheetFrame open={moreOpen} onOpenChange={setMoreOpen} title={t("ph.title")}>
+        {/* who is signed in → their account & settings */}
+        {user && (
+          <Link href="/account" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl bg-muted/60 p-3 hover:bg-muted active:bg-muted">
+            <UserAvatar name={user.name} className="size-10 text-sm" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold">{user.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+              <span className="block text-xs font-medium text-primary">{t("shell.account")}</span>
+            </span>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Link>
+        )}
         <ul className="flex flex-col gap-1">
           {SECTIONS.filter((s) => ["wallets", "categories", "budgets", "reminders"].includes(s.key)).map((s) => (
             <li key={s.href}>
@@ -173,6 +187,18 @@ export function BottomBar({ book }: { book: Book }) {
             </li>
           ))}
           <li className="mt-1 border-t pt-1">
+            <Link href="/personal/books" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/60 active:bg-muted">
+              <IconChip tone="emerald">
+                <BookOpen />
+              </IconChip>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">{t("ph.books.title")}</span>
+                <span className="block truncate text-xs text-muted-foreground">{t("ph.books.sheetHint")}</span>
+              </span>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Link>
+          </li>
+          <li>
             <Link href="/onboarding" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-2xl px-2 py-2.5 hover:bg-muted/60 active:bg-muted">
               <IconChip tone="slate">
                 <Building2 />
@@ -180,6 +206,9 @@ export function BottomBar({ book }: { book: Book }) {
               <span className="min-w-0 flex-1 text-sm font-semibold">{t("ph.backToMandals")}</span>
               <ChevronRight className="size-4 text-muted-foreground" />
             </Link>
+          </li>
+          <li>
+            <SignOutRow />
           </li>
         </ul>
       </SheetFrame>
@@ -197,11 +226,23 @@ export function BottomBar({ book }: { book: Book }) {
   );
 }
 
+function SignOutRow() {
+  const t = useT();
+  const [pending, start] = useTransition();
+  return (
+    <button type="button" disabled={pending} data-track="logout" onClick={() => start(() => logoutAction())} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-left text-destructive hover:bg-destructive/5 active:bg-destructive/10 disabled:opacity-60">
+      <IconChip tone="rose">{pending ? <Loader2 className="animate-spin" /> : <LogOut />}</IconChip>
+      <span className="min-w-0 flex-1 text-sm font-semibold">{pending ? t("shell.signingOut") : t("shell.signOut")}</span>
+    </button>
+  );
+}
+
 /** Around every Personal Hisab page: tabs (desktop) or the bottom bar (phones), and the privacy note. */
-export function PersonalShell({ bottomBar, children }: { bottomBar: ReactNode; children: ReactNode }) {
+export function PersonalShell({ switcher, bottomBar, children }: { switcher?: ReactNode; bottomBar: ReactNode; children: ReactNode }) {
   const t = useT();
   return (
     <div className="pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">
+      {switcher}
       <TopTabs />
       <p className="no-print mb-4 flex items-center gap-1.5 px-1 text-xs text-muted-foreground">
         <Lock className="size-3.5 shrink-0" /> {t("ph.private")}

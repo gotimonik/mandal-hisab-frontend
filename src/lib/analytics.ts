@@ -138,6 +138,9 @@ const NAMES: Record<string, string> = {
   me_personal_wallets: "personal_wallet_added",
   me_personal_categories: "personal_category_added",
   me_personal_settings_update: "personal_budget_set",
+  me_personal_books: "personal_book_created",
+  me_personal_books_update: "personal_book_renamed",
+  me_personal_books_delete: "personal_book_deleted",
 };
 
 /** Calculations that don't change anything — not worth an event. */

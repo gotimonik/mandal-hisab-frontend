@@ -19,6 +19,7 @@ import { apiMutate } from "@/lib/api-client";
 import { apiRead, scanPersonalBill } from "@/app/actions/api";
 import { track } from "@/lib/analytics";
 import { prepareBill } from "./bill-image";
+import { SwipeRow } from "@/components/app/swipe-row";
 import { canReadOnDevice, readBillOnDevice, type OcrStage } from "./bill-ocr";
 import { parseBillText } from "./bill-text";
 import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
@@ -186,6 +187,26 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
       }}
     >
       <FormError message={error} />
+      {/* existing entry: Delete right at the top, not below the fold */}
+      {entry &&
+        (confirmDelete ? (
+          <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 p-3 ring-1 ring-destructive/20" role="alert">
+            <p className="text-sm font-semibold">{t("ph.entry.deleteTitle")}</p>
+            <p className="text-xs text-muted-foreground">{t("ph.entry.deleteDesc")}</p>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={pending}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="button" variant="destructive" size="sm" className="flex-1" onClick={remove} disabled={pending || billBusy}>
+                {pending ? <Loader2 className="animate-spin" /> : <Trash2 />} {t("ph.entry.delete")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button type="button" variant="outline" size="sm" className="-mt-1 justify-self-end text-destructive" onClick={() => setConfirmDelete(true)} disabled={billBusy}>
+            <Trash2 /> {t("ph.entry.delete")}
+          </Button>
+        ))}
       <BillBox bill={bill} originalBillId={entry?.bill?._id ?? null} initialFile={initialBill} categories={allCategories} onChange={setBill} onScanned={applyScan} savedRef={billSaved} onBusy={setBillBusy} />
       <fieldset disabled={billBusy} aria-busy={billBusy} className={cn("grid min-w-0 grid-cols-1 gap-3 transition-opacity", billBusy && "pointer-events-none opacity-50 select-none")}>
         {/* spent / received / moved */}
@@ -314,25 +335,6 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
           {t("ph.entry.save")}
         </SubmitButton>
 
-        {entry &&
-          (confirmDelete ? (
-            <div className="flex flex-col gap-2 rounded-2xl bg-destructive/5 p-3 ring-1 ring-destructive/20" role="alert">
-              <p className="text-sm font-semibold">{t("ph.entry.deleteTitle")}</p>
-              <p className="text-xs text-muted-foreground">{t("ph.entry.deleteDesc")}</p>
-              <div className="flex gap-2">
-                <Button type="button" variant="ghost" size="sm" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={pending}>
-                  {t("common.cancel")}
-                </Button>
-                <Button type="button" variant="destructive" size="sm" className="flex-1" onClick={remove} disabled={pending}>
-                  {pending ? <Loader2 className="animate-spin" /> : <Trash2 />} {t("ph.entry.delete")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmDelete(true)}>
-              <Trash2 /> {t("ph.entry.delete")}
-            </Button>
-          ))}
       </fieldset>
     </form>
   );
@@ -629,28 +631,91 @@ export function AddEntryTiles({ book, openType, compact = false, only, defaults,
   );
 }
 
-/** One entry in a list; tapping it opens the edit form. */
+/**
+ * Deleting from a list: the row disappears at once and an Undo toast shows; the entry (and its
+ * bill) is only deleted on the server when the toast runs out — or straight away if the app is
+ * put in the background meanwhile, so nothing is left half-done.
+ */
+const UNDO_MS = 5000;
+const pendingDeletes = new Map<string, () => void>();
+let flushHooked = false;
+function hookFlush() {
+  if (flushHooked || typeof document === "undefined") return;
+  flushHooked = true;
+  const flush = () => {
+    for (const run of [...pendingDeletes.values()]) run();
+  };
+  document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && flush());
+  window.addEventListener("pagehide", flush);
+}
+
+function useDeleteWithUndo(entry: PEntry) {
+  const t = useT();
+  const router = useRouter();
+  const [hidden, setHidden] = useState(false);
+  const del = () => {
+    hookFlush();
+    setHidden(true);
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      pendingDeletes.delete(entry._id);
+      void apiMutate({ path: `/me/personal/entries/${entry._id}`, method: "DELETE" }).then((res) => {
+        if (!res.ok) {
+          setHidden(false);
+          toast.error(res.error);
+        }
+        router.refresh();
+      });
+    };
+    const timer = setTimeout(run, UNDO_MS);
+    pendingDeletes.set(entry._id, run);
+    toast(t("ph.entry.deleted"), {
+      duration: UNDO_MS,
+      action: {
+        label: t("ph.entry.undo"),
+        onClick: () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          pendingDeletes.delete(entry._id);
+          setHidden(false);
+        },
+      },
+    });
+  };
+  return { hidden, del };
+}
+
+/** One entry in a list; tapping it opens the edit form, swiping it left (or the hover trash) deletes it. */
 export function EntryRow({ entry, book, showDate = false }: { entry: PEntry; book: Book; showDate?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
+  const { hidden, del } = useDeleteWithUndo(entry);
   const look = TYPE_LOOK[entry.type];
   const title = entry.mandal ? mandalLabel(t, entry.mandal) : entry.type === "transfer" ? t("ph.entry.transferLine", { from: walletName(t, entry.wallet), to: walletName(t, entry.toWallet) }) : categoryName(t, entry.category);
   const sub = [showDate ? formatDate(entry.date) : null, entry.mandal ? (entry.mandal.name ?? t("ph.mandal.aMandal")) : null, entry.note, entry.type !== "transfer" && book.wallets.filter((w) => !w.isArchived).length > 1 ? walletName(t, entry.wallet) : null].filter(Boolean).join(" · ");
+  if (hidden) return null;
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-muted/60 active:bg-muted">
-        <IconChip tone={entry.type === "transfer" ? look.tone : (entry.category?.tone ?? look.tone)} size="sm">
-          {entry.type === "transfer" || entry.type === "in" || entry.type === "out" || (entry.mandal && !entry.category) ? look.icon : <CategoryIcon category={entry.category} />}
-        </IconChip>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1 truncate text-sm font-semibold">
-            <span className="truncate">{title}</span>
-            {entry.bill && <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("ph.bill.hasBill")} />}
+      {/* entries copied from a Mandal can't be deleted here (they follow the Mandal) */}
+      <SwipeRow onDelete={del} label={t("ph.entry.delete")} disabled={!!entry.mandal}>
+        <button type="button" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors hover:bg-muted/60 active:bg-muted">
+          <IconChip tone={entry.type === "transfer" ? look.tone : (entry.category?.tone ?? look.tone)} size="sm">
+            {entry.type === "transfer" || entry.type === "in" || entry.type === "out" || (entry.mandal && !entry.category) ? look.icon : <CategoryIcon category={entry.category} />}
+          </IconChip>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1 truncate text-sm font-semibold">
+              <span className="truncate">{title}</span>
+              {entry.bill && <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("ph.bill.hasBill")} />}
+            </span>
+            {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
           </span>
-          {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
-        </span>
-        <EntryAmount entry={entry} />
-      </button>
+          <EntryAmount entry={entry} />
+        </button>
+      </SwipeRow>
       <EntryDialogShell open={open} onOpenChange={setOpen} title={entry.mandal ? t("ph.mandal.entryTitle") : t("ph.entry.edit")} description={entry.mandal ? t("ph.mandal.entryDesc") : t("ph.entry.editDesc")} tone={entry.mandal ? "violet" : look.tone} icon={entry.mandal ? <Building2 /> : look.icon}>
         {entry.mandal ? <MandalEntryForm book={book} entry={entry} onDone={() => setOpen(false)} /> : <EntryForm book={book} type={entry.type as ManualType} entry={entry} onDone={() => setOpen(false)} />}
       </EntryDialogShell>

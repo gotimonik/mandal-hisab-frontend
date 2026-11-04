@@ -37,6 +37,16 @@ describe("sign in / create account when already signed in", () => {
     expect(cleared).toMatch(/mh_org=;/);
   });
 
+  it("a link to a particular Personal Hisab book switches this device to it", () => {
+    const r = proxy(req("/personal/reminders?book=6aeab3065d2296a1b2c3d4e5", true));
+    expect(goesTo(r)).toBe("/personal/reminders");
+    expect(r.headers.getSetCookie().join("; ")).toMatch(/mh_book=6aeab3065d2296a1b2c3d4e5/);
+    // junk is dropped, not stored
+    const j = proxy(req("/personal?book=..%2Fx", true));
+    expect(goesTo(j)).toBe("/personal");
+    expect(j.headers.getSetCookie().join("; ")).not.toMatch(/mh_book/);
+  });
+
   it("private pages still need a session", () => {
     expect(goesTo(proxy(req("/personal", false)))).toBe("/login?next=%2Fpersonal");
     expect(goesTo(proxy(req("/personal", true)))).toBeNull();

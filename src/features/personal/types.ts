@@ -95,6 +95,8 @@ export interface BillScan {
 export const BILL_MAX_BYTES = 5 * 1024 * 1024;
 
 export interface MandalSync {
+  /** false in an extra book ("Office" …): Mandal money only goes into the main book */
+  available?: boolean;
   enabled: boolean;
   walletId: string | null;
   fromDate: string | null;

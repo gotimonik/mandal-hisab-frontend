@@ -37,6 +37,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // a Personal Hisab link for a particular book (e.g. a reminder from "Office"): switch this
+  // device to that book, then show the page without the parameter. The API checks it's theirs.
+  const book = request.nextUrl.searchParams.get("book");
+  if (hasSession && (pathname === "/personal" || pathname.startsWith("/personal/")) && book !== null) {
+    const clean = request.nextUrl.clone();
+    clean.searchParams.delete("book");
+    const res = NextResponse.redirect(clean);
+    if (/^[a-f0-9]{24}$/.test(book)) res.cookies.set("mh_book", book, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+    return res;
+  }
+
   if (PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`)) && !hasSession) {
     const url = new URL("/login", request.url);
     url.searchParams.set("next", pathname + search);

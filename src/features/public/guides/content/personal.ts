@@ -41,6 +41,11 @@ export const PERSONAL_GUIDES: Guide[] = [
         type: "p",
         text: "Type the amount, pick a category and the wallet it came from (or went into), add a note if you like, and save. Your balances, the month's totals and the charts update straight away. Made a mistake? Tap the entry to change or delete it.",
       },
+      { type: "h2", text: "Separate books: personal, office, shop" },
+      {
+        type: "p",
+        text: "Keep more than one hisab under the same login. Tap the book's name at the top of Personal Hisab and choose **New book** — for example **Office**. Each book has its own wallets, categories, entries, budgets and reminders, so office spending never mixes with home spending. Switch books from the same menu, and rename or delete them under **Manage books**. Your Mandal money is only ever added to your main book.",
+      },
       { type: "h2", text: "Scan a bill instead of typing" },
       {
         type: "steps",

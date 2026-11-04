@@ -1,6 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
-import { getSessionToken } from "./session";
+import { currentBook, getSessionToken } from "./session";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
 
@@ -22,6 +22,11 @@ export async function apiRequest(path: string, init: Init = {}): Promise<Respons
   const token = init.token === undefined ? await getSessionToken() : init.token;
   const headers: Record<string, string> = { Accept: "application/json", ...(init.headers ?? {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
+  // Personal Hisab: which of the person's books this device is looking at (the API checks it's theirs)
+  if (path.startsWith("/me/personal")) {
+    const book = await currentBook();
+    if (book) headers["X-Personal-Book"] = book;
+  }
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
   return fetch(`${API_URL}${path}`, {
     method: init.method ?? "GET",
