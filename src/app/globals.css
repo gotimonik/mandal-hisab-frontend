@@ -170,11 +170,26 @@
   body {
     @apply bg-background text-foreground;
     -webkit-tap-highlight-color: transparent;
+    /* Feels like an app: long-press / double-tap doesn't select text or pop up the copy menu.
+       Text boxes stay selectable (below); add `select-text` to anything else that should be. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input,
+  textarea,
+  [contenteditable="true"],
+  .select-text {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
   }
   h1, h2, h3 {
     letter-spacing: -0.015em;
   }
   html {
+    /* No double-tap zoom (taps also respond without the 300 ms wait); pinch-to-zoom still works. */
+    touch-action: manipulation;
     /* Geist for Latin; Noto Sans Gujarati / Devanagari fill in Gujarati and Hindi letters */
     font-family: var(--font-sans), var(--font-gujarati), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   }
