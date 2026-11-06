@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeftRight, ArrowRight, Landmark, Minus, Plus, Scale } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, Banknote, Landmark, Minus, Plus, Scale, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -18,28 +18,58 @@ import { useMoney } from "@/components/app/currency";
 
 type Acc = { _id: string; name: string };
 
-const NewSchema = z.object({
-  name: z.string().trim().min(2, "Name the account").max(80),
-  type: z.literal("cash"),
-  openingBalance: rupeesOrZero,
-  openingDate: z.string().min(10),
-});
+/** Same rule as the server: name@bank, e.g. gotimandal@okaxis or 9876543210@ybl. */
+const UPI_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,255}@[a-zA-Z][a-zA-Z0-9]{1,63}$/;
+
+const NewSchema = z
+  .object({
+    name: z.string().trim().min(2, "Name the account").max(80),
+    type: z.enum(["cash", "upi"]),
+    upiId: z.string().trim(),
+    openingBalance: rupeesOrZero,
+    openingDate: z.string().min(10),
+  })
+  .superRefine((v, ctx) => {
+    if (v.type === "upi" && !UPI_ID.test(v.upiId)) ctx.addIssue({ code: "custom", path: ["upiId"], message: "Enter the Mandal's UPI ID, like mandal@okaxis" });
+  });
 
 function NewAccountForm() {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
-  const form = useForm<z.input<typeof NewSchema>, unknown, z.output<typeof NewSchema>>({ resolver: zodResolver(NewSchema), defaultValues: { name: "", type: "cash", openingBalance: "0", openingDate: todayISO() } });
+  const form = useForm<z.input<typeof NewSchema>, unknown, z.output<typeof NewSchema>>({ resolver: zodResolver(NewSchema), defaultValues: { name: "", type: "cash", upiId: "", openingBalance: "0", openingDate: todayISO() } });
   const { submit, pending, error } = useApiSubmit(form);
   const e = form.formState.errors;
+  const type = useWatch({ control: form.control, name: "type" });
   return (
-    <form noValidate className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/accounts`, body: v }, { success: "Account created", onSuccess: close }))}>
+    <form
+      noValidate
+      className="grid grid-cols-1 gap-3"
+      onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/accounts`, body: { ...v, upiId: v.type === "upi" ? v.upiId : undefined } }, { success: "Account created", onSuccess: close }))}
+    >
       <FormError message={error} />
-      <input type="hidden" {...form.register("type")} />
-      <FormNote tone="good">Cash only for now — add one account for each place the Mandal keeps cash, e.g. the cash box or the treasurer.</FormNote>
+      <ChoicePills
+        label="Account type"
+        value={type}
+        onChange={(v) => form.setValue("type", v, { shouldValidate: false })}
+        options={[
+          { value: "cash", label: "Cash", icon: <Banknote /> },
+          { value: "upi", label: "UPI", icon: <Smartphone /> },
+        ]}
+      />
+      {type === "cash" ? (
+        <FormNote tone="good">Add one cash account for each place the Mandal keeps cash, e.g. the cash box or the treasurer.</FormNote>
+      ) : (
+        <FormNote>The Mandal&apos;s own UPI ID. Turn on UPI in Settings and members can pay it from PhonePe, Google Pay or any UPI app — the money goes straight to it, never through MandalHisab.</FormNote>
+      )}
       <Field label="Account name" htmlFor="a-name" error={e.name?.message}>
-        <Input id="a-name" placeholder="e.g. Cash box" {...form.register("name")} />
+        <Input id="a-name" placeholder={type === "upi" ? "e.g. Mandal UPI" : "e.g. Cash box"} {...form.register("name")} />
       </Field>
+      {type === "upi" && (
+        <Field label="UPI ID" htmlFor="a-upi" error={e.upiId?.message} hint="Shown to members when they pay. Check it carefully.">
+          <Input id="a-upi" placeholder="mandal@okaxis" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="email" {...form.register("upiId")} />
+        </Field>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label={`Opening balance (${money.symbol})`} htmlFor="a-open" error={e.openingBalance?.message}>
           <Input id="a-open" inputMode="decimal" {...form.register("openingBalance")} />

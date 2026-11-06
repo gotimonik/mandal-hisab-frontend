@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
-import { SubmitButton } from "@/components/app/form-bits";
+import { ChoicePills, SubmitButton } from "@/components/app/form-bits";
 import { Button } from "@/components/ui/button";
 import { apiMutate } from "@/lib/api-client";
 import { optionalRupees, rupeesOrZero } from "@/lib/schemas";
@@ -16,7 +16,7 @@ import { paiseToRupeeInput } from "@/lib/format";
 import { TONE_CHIP, TONE_SOLID } from "@/lib/tones";
 import { cn } from "@/lib/utils";
 import { useT } from "@/i18n/client";
-import { categoryName, TONES, WALLET_KINDS, walletName, type PCategory, type PWalletWithBalance, type WalletKind } from "./types";
+import { categoryName, TONES, UPI_APPS, upiAppName, WALLET_KINDS, walletName, type PCategory, type PWalletWithBalance, type UpiApp, type WalletKind } from "./types";
 import { CATEGORY_ICONS, categoryIconKey, IconByKey, suggestIcons } from "./icons";
 
 export type DefaultField = "defaultWalletId" | "defaultExpenseCategoryId" | "defaultIncomeCategoryId";
@@ -79,6 +79,7 @@ function WalletForm({ wallet }: { wallet?: PWalletWithBalance }) {
   const { run, pending, error, setError } = useSave();
   const [name, setName] = useState(wallet ? walletName(t, wallet) : "");
   const [kind, setKind] = useState<WalletKind>(wallet?.kind ?? "cash");
+  const [upiApp, setUpiApp] = useState<UpiApp | null>(wallet?.upiApp ?? null);
   const [opening, setOpening] = useState(wallet ? paiseToRupeeInput(wallet.openingBalancePaise) : "");
   return (
     <form
@@ -91,7 +92,7 @@ function WalletForm({ wallet }: { wallet?: PWalletWithBalance }) {
         if (!name.trim()) return setError(t("ph.settings.vName"));
         // a starter wallet keeps its translated name unless the person actually changed it
         const nameChanged = !wallet || name.trim() !== walletName(t, wallet);
-        const body = { ...(nameChanged ? { name: name.trim() } : {}), kind, openingBalance: o.data };
+        const body = { ...(nameChanged ? { name: name.trim() } : {}), kind, upiApp: kind === "upi" ? upiApp : null, openingBalance: o.data };
         run(wallet ? { path: `/me/personal/wallets/${wallet._id}`, method: "PATCH", body } : { path: "/me/personal/wallets", body });
       }}
     >
@@ -108,6 +109,13 @@ function WalletForm({ wallet }: { wallet?: PWalletWithBalance }) {
           ))}
         </NativeSelect>
       </Field>
+      {kind === "upi" && (
+        <fieldset>
+          <legend className="mb-1.5 text-sm font-medium">{t("ph.settings.upiApp")}</legend>
+          <ChoicePills label={t("ph.settings.upiApp")} value={upiApp} onChange={(a) => setUpiApp(a === upiApp ? null : a)} options={UPI_APPS.map((a) => ({ value: a, label: upiAppName(t, a) }))} />
+          <p className="mt-1.5 text-xs text-muted-foreground">{t("ph.settings.upiAppHint")}</p>
+        </fieldset>
+      )}
       <Field label={t("ph.settings.opening")} htmlFor="pw-open" hint={t("ph.settings.openingHint")}>
         <Input id="pw-open" inputMode="decimal" value={opening} onChange={(e) => setOpening(e.target.value)} placeholder="0" />
       </Field>

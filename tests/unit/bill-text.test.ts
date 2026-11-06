@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBillText, type BillCategory } from "@/features/personal/bill-text";
+import { findUpiApp, parseBillText, type BillCategory } from "@/features/personal/bill-text";
 
 const today = "2026-11-03";
 const cats: BillCategory[] = [
@@ -93,5 +93,14 @@ PhonePe UPI Ref 123456789012`);
 
   it("text with nothing bill-like", () => {
     expect(read(`Happy Diwali to all my friends`)).toMatchObject({ isBill: false, amount: null });
+  });
+
+  it("says which UPI app a screenshot is from, by the app's name (not the payee's UPI handle)", () => {
+    expect(read(`₹450\nPaid to Rameshbhai\nrameshbhai@okaxis\nPowered by PhonePe\nUPI Ref No. 630712345678`)).toMatchObject({ walletKind: "upi", upiApp: "phonepe" });
+    expect(findUpiApp(`Google Pay\nPayment successful\nUPI transaction ID 630712345678`)).toBe("gpay");
+    expect(findUpiApp(`Paytm\nPaid Successfully\nUPI Ref No: 630712345678`)).toBe("paytm");
+    // a UPI payment that doesn't name the app, and a bill that only mentions an app
+    expect(findUpiApp(`Paid to Ramesh\nramesh@ybl\nUPI Ref 630712345678`)).toBeNull();
+    expect(read(`DMART\nTotal 250\nPaid by card`).upiApp).toBeNull();
   });
 });

@@ -19,7 +19,7 @@ import { apiMutate } from "@/lib/api-client";
 import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
-import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton, MethodController } from "@/components/app/form-bits";
 
 type Acc = { _id: string; name: string };
 
@@ -228,8 +228,7 @@ function RepayForm({ loanId, accounts, methods, nextDuePaise, allowPrepay }: { l
         <Field label="Date" htmlFor="rp-date">
           <Input id="rp-date" type="date" {...form.register("date", { onChange: (ev) => (closeLoan ? fetchQuote(ev.target.value) : setPreview(null)) })} />
         </Field>
-        <input type="hidden" {...form.register("method")} />
-        <PaidInCash />
+        <MethodController control={form.control} methods={methods} />
         <Field label="Into account" htmlFor="rp-acc">
           <NativeSelect id="rp-acc" {...form.register("accountId")}>
             {accounts.map((a) => (

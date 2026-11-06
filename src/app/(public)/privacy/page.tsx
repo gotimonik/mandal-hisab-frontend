@@ -33,11 +33,13 @@ export default function PrivacyPage() {
               we can never see it).
             </li>
             <li>
-              <b>Mandal records</b>, which a Mandal&apos;s admins and managers enter: members&apos; names, membership numbers and contact details, and the cash the Mandal collects and pays out —
-              hapta, savings balances, upad and loans, interest, withdrawals, donations, expenses (including photos or PDFs of bills), receipts and notes.
+              <b>Mandal records</b>, which a Mandal&apos;s admins and managers enter: members&apos; names, membership numbers and contact details, and the money the Mandal collects and pays out —
+              hapta, savings balances, upad and loans, interest, withdrawals, donations, expenses (including photos or PDFs of bills), receipts and notes. If the Mandal accepts UPI, this also
+              includes the Mandal&apos;s own UPI ID and the UPI transaction IDs (UTR) of the payments members report.
             </li>
             <li>
-              <b>Your Personal Hisab</b>, which you enter for yourself: the amounts, dates, notes and categories of what you spend and receive, the names and starting balances of your wallets,
+              <b>Your Personal Hisab</b>, which you enter for yourself: the amounts, dates, notes and categories of what you spend and receive, the names and starting balances of your wallets
+              (and, for a UPI wallet, which UPI app it is),
               your budgets, and your reminders (including, if you add them, the name and phone number of someone who is to pay you). If you turn on &quot;Add my Mandal money to Personal
               Hisab&quot;, copies of your own transactions from your Mandals are added to it. If you scan a bill, we keep the photo or PDF (up to 5 MB) with the entry. The total, date and
               shop name are read off the photo on your own phone or computer — the bill is not sent to any AI or text-reading service.
@@ -54,11 +56,15 @@ export default function PrivacyPage() {
 
           <h3>What we don&apos;t collect</h3>
           <p>
-            {site.name} is for keeping hisab — a Mandal&apos;s own savings hisab, where it records <b>cash only</b>, and your Personal Hisab, where you note your own money yourself. It does
-            not take or process payments of any kind, and it never connects to your bank, UPI app or SMS. So we never ask for, and never store:
+            {site.name} is for keeping hisab — a Mandal&apos;s own savings hisab, where it records cash and, if the Mandal turns it on, UPI payments made straight to the Mandal&apos;s own
+            UPI ID, and your Personal Hisab, where you note your own money yourself. It does <b>not take or process payments of any kind</b>: a UPI payment goes from the member&apos;s own UPI
+            app to the Mandal, and {site.name} only records it. It never connects to your bank, UPI app or SMS. So we never ask for, and never store:
           </p>
           <ul>
-            <li>bank account numbers, IFSC codes, debit or credit card details, UPI IDs or wallet details;</li>
+            <li>
+              bank account numbers, IFSC codes, debit or credit card details, UPI PINs, or your own UPI ID or wallet details (the only UPI ID kept is the one a Mandal adds for itself, to be
+              paid on);
+            </li>
             <li>PAN, Aadhaar or any other government ID number;</li>
             <li>any payment-gateway or online-banking information.</li>
           </ul>

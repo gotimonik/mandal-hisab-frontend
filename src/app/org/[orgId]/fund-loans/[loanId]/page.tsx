@@ -88,7 +88,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
         actions={
           <>
             {staffView && l.status === "active" && can(org, "payments.record") && live && (
-              <LoanPaymentDialog loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} />
+              <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} />
             )}
             {staffView && l.status === "active" && payments.every((p) => p.status === "reversed") && can(org, "transactions.adjust") && live && (
               <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/cancel`} variant="ghost" successMessage="Upad cancelled" confirm={{ title: `Cancel ${l.number}?`, description: "Only for an upad recorded by mistake. The cash goes back into the fund.", reason: "required", destructive: true, confirmLabel: "Cancel upad" }}>

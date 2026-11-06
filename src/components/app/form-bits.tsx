@@ -1,7 +1,8 @@
 "use client";
 
 import type { ComponentProps, ReactNode } from "react";
-import { Banknote, ChevronDown, Info, Loader2, TriangleAlert } from "lucide-react";
+import { useController, type Control, type FieldValues, type Path } from "react-hook-form";
+import { Banknote, ChevronDown, Info, Loader2, Smartphone, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconChip } from "@/components/app/bits";
@@ -112,10 +113,7 @@ export function SubmitButton({ pending, icon, children, page = false, className,
   );
 }
 
-/**
- * Shown where a payment-method picker used to be: MandalHisab records cash only for now.
- * Pair it with a hidden "method" input (value "cash") in register()-based forms.
- */
+/** "Cash", shown where there is no method to choose (cash-only Mandals, and cash-only steps). */
 export function PaidInCash({ label = "Method", value = "Cash", className }: { label?: ReactNode; value?: ReactNode; className?: string }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
@@ -125,4 +123,49 @@ export function PaidInCash({ label = "Method", value = "Cash", className }: { la
       </span>
     </div>
   );
+}
+
+/**
+ * How the money moved: just "Cash" while the Mandal is cash-only, Cash / UPI pills once UPI is
+ * turned on in settings (methods = org.settings.paymentMethods).
+ */
+export function MethodField({
+  methods,
+  value,
+  onChange,
+  label = "Method",
+  cashLabel = "Cash",
+  upiLabel = "UPI",
+  className,
+}: {
+  methods: string[];
+  value: string;
+  onChange: (method: string) => void;
+  label?: ReactNode;
+  cashLabel?: ReactNode;
+  upiLabel?: ReactNode;
+  className?: string;
+}) {
+  if (!methods.includes("upi")) return <PaidInCash label={label} value={cashLabel} className={className} />;
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <span className="text-sm font-medium">{label}</span>
+      <ChoicePills
+        label={typeof label === "string" ? label : "Method"}
+        value={value}
+        onChange={onChange}
+        className="min-h-11 items-center md:min-h-9"
+        options={[
+          { value: "cash", label: cashLabel, icon: <Banknote /> },
+          { value: "upi", label: upiLabel, icon: <Smartphone /> },
+        ]}
+      />
+    </div>
+  );
+}
+
+/** MethodField bound to a react-hook-form field called "method". */
+export function MethodController<T extends FieldValues>({ control, methods, label }: { control: Control<T>; methods: string[]; label?: ReactNode }) {
+  const { field } = useController({ control, name: "method" as Path<T> });
+  return <MethodField methods={methods} value={String(field.value ?? "cash")} onChange={field.onChange} label={label} />;
 }

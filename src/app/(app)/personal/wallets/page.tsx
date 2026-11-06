@@ -9,7 +9,7 @@ import { getT } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 import { DefaultBadge, WalletDialog } from "@/features/personal/manage-dialogs";
 import { WALLET_TONE, WalletIcon } from "@/features/personal/icons";
-import { walletName, type MandalSync, type PWalletWithBalance } from "@/features/personal/types";
+import { upiAppName, walletName, type MandalSync, type PWalletWithBalance } from "@/features/personal/types";
 import { MandalSyncCard } from "@/features/personal/mandal-sync";
 import type { T } from "@/i18n/core";
 
@@ -27,7 +27,7 @@ function WalletCard({ w, t }: { w: PWalletWithBalance; t: T }) {
           {w.isDefault && <DefaultBadge label={t("ph.def.badge")} />}
         </span>
         <span className="block text-xs text-muted-foreground">
-          {t(`ph.settings.kinds.${w.kind}`)} · {t("ph.entries", { n: w.entryCount })}
+          {w.kind === "upi" && w.upiApp ? upiAppName(t, w.upiApp) : t(`ph.settings.kinds.${w.kind}`)} · {t("ph.entries", { n: w.entryCount })}
         </span>
       </span>
       <Money paise={w.balancePaise} colored={w.balancePaise < 0} className="text-base font-bold" />

@@ -9,11 +9,20 @@ export type EntryType = "expense" | "income" | "transfer" | "in" | "out";
 export type ManualType = "expense" | "income" | "transfer";
 export type WalletKind = "cash" | "bank" | "upi" | "card" | "other";
 
+/** Which app a UPI wallet is: only a label (and to match scanned screenshots from that app). */
+export const UPI_APPS = ["phonepe", "gpay", "paytm", "bhim", "amazonpay", "other"] as const;
+export type UpiApp = (typeof UPI_APPS)[number];
+/** App names stay as the apps write them in every language; "other" is translated. */
+export const UPI_APP_NAME: Record<Exclude<UpiApp, "other">, string> = { phonepe: "PhonePe", gpay: "Google Pay", paytm: "Paytm", bhim: "BHIM", amazonpay: "Amazon Pay" };
+export const upiAppName = (t: T, app: UpiApp) => (app === "other" ? t("ph.settings.upiOther") : UPI_APP_NAME[app]);
+
 export interface PWallet {
   _id: string;
   name: string;
   key: string | null;
   kind: WalletKind;
+  /** kind "upi": which app (null = not said) */
+  upiApp?: UpiApp | null;
   isArchived: boolean;
   /** new entries start with this wallet */
   isDefault?: boolean;
@@ -70,6 +79,8 @@ export interface BillReading {
   type: "expense" | "income";
   categoryId: string | null;
   walletKind: "cash" | "upi" | "card" | "bank" | null;
+  /** a UPI screenshot: the app it came from, when it shows */
+  upiApp?: UpiApp | null;
 }
 
 export interface BillUsage {
