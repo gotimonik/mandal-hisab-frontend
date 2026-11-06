@@ -122,8 +122,12 @@ function EntryForm({ book, type: startType, entry, defaults, initialBill, onDone
     if (r.date) setDate(r.date);
     if (r.walletKind) {
       const live = wallets.filter((w) => !w.isArchived);
-      // UPI money usually sits in a bank account: fall back to a bank wallet
-      const match = live.find((w) => w.kind === r.walletKind) ?? (r.walletKind === "upi" ? live.find((w) => w.kind === "bank") : undefined);
+      // a screenshot from PhonePe → the PhonePe wallet, then any UPI wallet; UPI money usually
+      // sits in a bank account, so a bank wallet after that
+      const match =
+        (r.walletKind === "upi" && r.upiApp ? live.find((w) => w.kind === "upi" && w.upiApp === r.upiApp) : undefined) ??
+        live.find((w) => w.kind === r.walletKind) ??
+        (r.walletKind === "upi" ? live.find((w) => w.kind === "bank") : undefined);
       if (match) setWalletId(match._id);
     }
     if (r.merchant && !note.trim()) setNote(r.merchant);

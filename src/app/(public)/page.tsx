@@ -215,7 +215,7 @@ const FAQ_TEASER = [
   },
   {
     q: "Does MandalHisab handle our money?",
-    a: "No. Members pay in cash as usual and the treasurer records it. MandalHisab never takes payments or asks for bank details — it only keeps the hisab.",
+    a: "No. Members pay in cash as usual — or by UPI straight to the Mandal's own UPI ID, if the Mandal turns that on — and the treasurer records it. MandalHisab never takes or holds payments or asks for bank details — it only keeps the hisab.",
   },
 ];
 
@@ -270,7 +270,7 @@ export default function HomePage() {
             <p className="mt-5 flex items-start gap-2.5 rounded-2xl bg-black/10 p-3 text-sm text-white/90 ring-1 ring-white/15 sm:mt-8 sm:max-w-md sm:items-center">
               <Lock className="mt-0.5 size-4 shrink-0 text-amber-200 sm:mt-0" />
               <span>
-                <b className="font-semibold text-white">Cash stays cash.</b> No bank details, no online payments — MandalHisab only keeps the hisab.
+                <b className="font-semibold text-white">Your money never passes through us.</b> Cash or UPI straight to the Mandal, no bank details — MandalHisab only keeps the hisab.
               </span>
             </p>
           </div>

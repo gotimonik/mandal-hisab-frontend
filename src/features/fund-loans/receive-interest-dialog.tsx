@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/app/field";
 import { IconChip } from "@/components/app/bits";
-import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, FormNote, MethodField, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 import { apiRead } from "@/app/actions/api";
 import { apiMutate } from "@/lib/api-client";
 import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
@@ -34,7 +34,7 @@ const roundUp = (paise: number, step: number) => Math.ceil(paise / step) * step;
  * Receive interest for all of a member's upads at once: oldest month first, one receipt.
  * A round amount is fine — anything above what's due is kept as their advance.
  */
-export function ReceiveInterestDialog({ memberId, memberName, size = "sm", variant = "outline", label }: { memberId: string; memberName: string; size?: "xs" | "sm" | "default"; variant?: "default" | "outline"; label?: string }) {
+export function ReceiveInterestDialog({ memberId, memberName, size = "sm", variant = "outline", label, methods = ["cash"] }: { memberId: string; memberName: string; size?: "xs" | "sm" | "default"; variant?: "default" | "outline"; label?: string; methods?: string[] }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -45,6 +45,7 @@ export function ReceiveInterestDialog({ memberId, memberName, size = "sm", varia
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
+  const [method, setMethod] = useState("cash");
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(() => newIdempotencyKey("ui"));
   const [pending, start] = useTransition();
@@ -80,6 +81,7 @@ export function ReceiveInterestDialog({ memberId, memberName, size = "sm", varia
     setAmount("");
     setDate(todayISO());
     setNote("");
+    setMethod("cash");
     setError(null);
     setKey(newIdempotencyKey("ui"));
   };
@@ -89,7 +91,7 @@ export function ReceiveInterestDialog({ memberId, memberName, size = "sm", varia
     if (!a.success) return setError(a.error.issues[0].message);
     start(async () => {
       setError(null);
-      const res = await apiMutate({ path: `/orgs/${orgId}/members/${memberId}/upad-interest`, body: { amount: a.data, date, note: note || undefined, idempotencyKey: key } });
+      const res = await apiMutate({ path: `/orgs/${orgId}/members/${memberId}/upad-interest`, body: { amount: a.data, date, method, note: note || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.fieldErrors?.amount ?? res.error);
       toast.success(t("upad.interestRecorded", { name: memberName }));
       setOpen(false);
@@ -175,6 +177,7 @@ export function ReceiveInterestDialog({ memberId, memberName, size = "sm", varia
               <Field label={t("common.dateReceived")} htmlFor="ri-date">
                 <Input id="ri-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
+              <MethodField methods={methods} value={method} onChange={setMethod} label={t("pay.paidBy")} cashLabel={t("pay.method.cash")} upiLabel={t("pay.method.upi")} />
               <MoreOptions bare icon={<NotebookPen />} title={t("common.noteOptional")}>
                 <Field label={t("common.noteOptional")} htmlFor="ri-note">
                   <Input id="ri-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />

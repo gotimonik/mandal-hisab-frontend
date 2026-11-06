@@ -1,4 +1,4 @@
-import type { BillReading } from "./types";
+import type { BillReading, UpiApp } from "./types";
 
 /**
  * Turns the raw text read off a bill (by the on-phone reader, see ./bill-ocr) into a suggested
@@ -201,6 +201,20 @@ function findWallet(text: string): BillReading["walletKind"] {
   return null;
 }
 
+/** The app a UPI screenshot was taken in, from its name on the screen (not the UPI handle: that's the payee's bank). */
+const UPI_APP_WORDS: [UpiApp, RegExp][] = [
+  ["phonepe", /phone\s?pe/i],
+  ["gpay", /(google\s?pay|\bg\s?pay\b)/i],
+  ["paytm", /\bpaytm\b/i],
+  ["amazonpay", /amazon\s?pay/i],
+  ["bhim", /\bbhim\b/i],
+];
+
+export function findUpiApp(text: string): UpiApp | null {
+  if (!UPI.test(text)) return null;
+  return UPI_APP_WORDS.find(([, re]) => re.test(text))?.[0] ?? null;
+}
+
 /* ------------------------------------------------------------------ all together */
 
 export function parseBillText(rawText: string, opts: { today: string; categories: BillCategory[] }): BillReading {
@@ -240,5 +254,6 @@ export function parseBillText(rawText: string, opts: { today: string; categories
     type,
     categoryId: findCategory(text, name, type, opts.categories),
     walletKind: findWallet(text),
+    upiApp: findUpiApp(text),
   };
 }

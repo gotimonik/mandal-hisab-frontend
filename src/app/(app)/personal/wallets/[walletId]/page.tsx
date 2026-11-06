@@ -15,7 +15,7 @@ import { DefaultButton, WalletDialog } from "@/features/personal/manage-dialogs"
 import { AddEntryTiles, EntryRow } from "@/features/personal/entry-dialog";
 import { WALLET_TONE, WalletIcon } from "@/features/personal/icons";
 import { Card, thisMonthRange } from "@/features/personal/server-bits";
-import { walletName, type EntryList, type PCategory, type PWalletWithBalance, type Summary } from "@/features/personal/types";
+import { upiAppName, walletName, type EntryList, type PCategory, type PWalletWithBalance, type Summary } from "@/features/personal/types";
 
 export const metadata = { title: "Personal Hisab · Wallet" };
 
@@ -49,7 +49,7 @@ export default async function PersonalWalletPage({ params, searchParams }: PageP
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-bold tracking-tight">{name}</h1>
           <p className="text-sm text-muted-foreground">
-            {t(`ph.settings.kinds.${w.kind}`)}
+            {w.kind === "upi" && w.upiApp ? upiAppName(t, w.upiApp) : t(`ph.settings.kinds.${w.kind}`)}
             {w.isArchived && ` · ${t("ph.settings.hidden")}`}
           </p>
         </div>

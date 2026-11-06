@@ -76,7 +76,10 @@ export interface OrgSettings {
   overdueReminderEveryDays: number;
   managerPermissions: ManagerPermissions;
   expenseCategories: ExpenseCategory[];
+  /** ["cash"], or ["cash", "upi"] when UPI is on (follows `upi`) */
   paymentMethods: string[];
+  /** UPI: members pay the Mandal's own UPI ID (accountId = that UPI account) */
+  upi?: { enabled: boolean; accountId: string | null };
   installmentHorizonMonths: number;
   monthlyHapta: MonthlyHaptaSettings | null;
   haptaTreatment: "member_savings" | "income";
