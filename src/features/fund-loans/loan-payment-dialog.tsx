@@ -14,7 +14,7 @@ import { rupeesOrZero } from "@/lib/schemas";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";
 import { IconChip } from "@/components/app/bits";
-import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, FormNote, MethodField, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 
 /**
  * Record money received on a fund loan: the interest (oldest unpaid month first) and/or part of
@@ -30,6 +30,7 @@ export function LoanPaymentDialog({
   size = "sm",
   variant = "default",
   reported = [],
+  methods = ["cash"],
 }: {
   loanId: string;
   number: string;
@@ -41,6 +42,8 @@ export function LoanPaymentDialog({
   variant?: "default" | "outline";
   /** payments the member reported with "I have paid" that are waiting for verification */
   reported?: { interestPaise: number; principalPaise: number; method: string; date: string }[];
+  /** org.settings.paymentMethods: offers UPI when the Mandal has it on */
+  methods?: string[];
 }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
@@ -52,6 +55,7 @@ export function LoanPaymentDialog({
   const [principal, setPrincipal] = useState("");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
+  const [method, setMethod] = useState("cash");
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(() => newIdempotencyKey("flp"));
   const [pending, start] = useTransition();
@@ -68,6 +72,7 @@ export function LoanPaymentDialog({
     setPrincipal("");
     setDate(todayISO());
     setNote("");
+    setMethod("cash");
     setError(null);
     setKey(newIdempotencyKey("flp"));
   };
@@ -80,7 +85,7 @@ export function LoanPaymentDialog({
     if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError(t("upad.vEnterAny"));
     start(async () => {
       setError(null);
-      const res = await apiMutate<{ settledClaimId: string | null }>({ path: `/orgs/${orgId}/fund-loans/${loanId}/payments`, body: { interestAmount: i.data, principalAmount: p.data, date, note: note || undefined, idempotencyKey: key } });
+      const res = await apiMutate<{ settledClaimId: string | null }>({ path: `/orgs/${orgId}/fund-loans/${loanId}/payments`, body: { interestAmount: i.data, principalAmount: p.data, date, method, note: note || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.fieldErrors?.interestAmount ?? res.error);
       toast.success(t("upad.paymentRecorded", { name: memberName }), res.data.settledClaimId ? { description: t("upad.matchedClaim") } : undefined);
       setOpen(false);
@@ -156,6 +161,7 @@ export function LoanPaymentDialog({
                 <Input id="lp-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
               </Field>
             </div>
+            <MethodField methods={methods} value={method} onChange={setMethod} label={t("pay.paidBy")} cashLabel={t("pay.method.cash")} upiLabel={t("pay.method.upi")} />
             {outstandingPaise > 0 && <ChoicePills label={t("upad.returnedRs")} value={principal} onChange={setPrincipal} options={[{ value: paiseToRupeeInput(outstandingPaise), label: `${t("collect.full")} · ${money.short(outstandingPaise)}` }]} />}
             <MoreOptions bare icon={<NotebookPen />} title={t("common.noteOptional")}>
               <Field label={t("common.noteOptional")} htmlFor="lp-note" className="sm:col-span-2">

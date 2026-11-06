@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
-import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, FormNote, MoreOptions, SubmitButton, MethodController } from "@/components/app/form-bits";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { uploadAttachment } from "@/app/actions/api";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
@@ -111,8 +111,7 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
             </NativeSelect>
           </Field>
         )}
-        <input type="hidden" {...form.register("method")} />
-        <PaidInCash />
+        <MethodController control={form.control} methods={methods} />
       </div>
       {paidBy === "out_of_pocket" && <FormNote>Saved as owed to the payer. Use “Reimburse” on the expense when the Mandal pays them back.</FormNote>}
       <MoreOptions bare icon={<SlidersHorizontal />} title="Bill, reference & event" description={atts.length > 0 ? `${atts.length} file${atts.length === 1 ? "" : "s"} attached` : "Optional — attach the bill or note a bill number."} defaultOpen={optionsHaveError || atts.length > 0}>

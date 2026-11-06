@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
+import Link from "next/link";
 import { Building2, Landmark, PiggyBank, Plus, Save, ShieldCheck, SlidersHorizontal, Tags, UserPlus, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,11 +66,12 @@ interface V {
   overdueReminderEveryDays: number;
   installmentHorizonMonths: number;
   managerPermissions: ManagerPermissions;
-  paymentMethods: string[];
+  upiEnabled: boolean;
+  upiAccountId: string;
   categories: { key: string; name: string; isActive: boolean; isNew?: boolean }[];
 }
 
-export function SettingsForm({ org }: { org: Org }) {
+export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?: { _id: string; name: string; upiId: string }[] }) {
   const money = useMoney();
   const s = org.settings;
   const form = useForm<V>({
@@ -106,7 +108,8 @@ export function SettingsForm({ org }: { org: Org }) {
       overdueReminderEveryDays: s.overdueReminderEveryDays,
       installmentHorizonMonths: s.installmentHorizonMonths,
       managerPermissions: { ...s.managerPermissions, canRecordWithdrawals: !!s.managerPermissions.canRecordWithdrawals, canDistributeInterest: !!s.managerPermissions.canDistributeInterest },
-      paymentMethods: s.paymentMethods,
+      upiEnabled: !!s.upi?.enabled,
+      upiAccountId: s.upi?.accountId ?? upiAccounts[0]?._id ?? "",
       categories: s.expenseCategories,
     },
   });
@@ -125,6 +128,7 @@ export function SettingsForm({ org }: { org: Org }) {
     if (!/^\d{1,3}(\.\d{1,4})?$/.test(v.interestRate.trim())) return setError("Enter the default interest rate like 1 or 0.75");
     if (!/^\d{1,3}(\.\d{1,4})?$/.test(v.loanRate.trim())) return setError("Enter the default upad interest rate like 2 or 10");
     if (!(Number(v.loanDueDay) >= 1 && Number(v.loanDueDay) <= 28)) return setError("Upad interest due day must be between 1 and 28");
+    if (v.upiEnabled && !v.upiAccountId) return setError("Add the Mandal's UPI account first (Accounts → Add account → UPI), then choose it here");
     const opt = (x: string) => (x.trim() ? x.trim() : undefined);
     submit(
       {
@@ -153,7 +157,7 @@ export function SettingsForm({ org }: { org: Org }) {
             overdueReminderEveryDays: Number(v.overdueReminderEveryDays),
             installmentHorizonMonths: Number(v.installmentHorizonMonths),
             managerPermissions: v.managerPermissions,
-            paymentMethods: v.paymentMethods,
+            upi: { enabled: v.upiEnabled, accountId: v.upiAccountId || null },
             expenseCategories: v.categories.map(({ key, name, isActive }) => ({ key, name, isActive })),
             haptaTreatment: v.haptaTreatment,
             interest: { defaultMode: v.interestMode, monthlyRate: v.interestRate.trim(), basis: v.interestBasis },
@@ -318,9 +322,33 @@ export function SettingsForm({ org }: { org: Org }) {
       </FormSection>
 
       <FormSection icon={<Wallet />} tone="emerald" title="Payment methods" description="How money is recorded in this Mandal.">
-        <FormNote tone="good">
-          <b>Cash only for now.</b> MandalHisab records cash collected and paid out by hand. It doesn&apos;t take online payments, UPI, bank transfers or cheques.
-        </FormNote>
+        <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm">
+          <Checkbox checked={form.watch("upiEnabled")} onCheckedChange={(c) => form.setValue("upiEnabled", !!c)} />
+          <span>
+            <b>Accept UPI</b> as well as cash. Members get a &ldquo;Pay with UPI&rdquo; button and QR code for the Mandal&apos;s UPI ID, then report the payment with its 12-digit UPI transaction ID for you to verify.
+          </span>
+        </label>
+        {form.watch("upiEnabled") &&
+          (upiAccounts.length > 0 ? (
+            <Field label="Members pay into" htmlFor="o-upi" hint="Payments reported as UPI are verified into this account.">
+              <NativeSelect id="o-upi" {...form.register("upiAccountId")}>
+                {upiAccounts.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name} · {a.upiId}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          ) : (
+            <FormNote tone="warn">
+              Add the Mandal&apos;s UPI account first:{" "}
+              <Link href={`/org/${org.id}/accounts`} className="font-semibold underline">
+                Accounts
+              </Link>{" "}
+              → Add account → UPI.
+            </FormNote>
+          ))}
+        <FormNote tone="good">MandalHisab never takes or holds money. UPI payments go straight from the member&apos;s UPI app to the Mandal&apos;s own UPI ID, and are only recorded here.</FormNote>
       </FormSection>
 
       <FormSection icon={<ShieldCheck />} tone="amber" title="Manager permissions" description="Managers can always record collections, donations and expenses for approval, manage members and view basic reports.">

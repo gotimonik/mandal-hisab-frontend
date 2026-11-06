@@ -18,7 +18,7 @@ import { formatDate, newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/li
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
 import { IconChip } from "@/components/app/bits";
-import { AmountInput, ChoicePills, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, MoreOptions, SubmitButton, MethodController } from "@/components/app/form-bits";
 import { isTouchDevice } from "@/lib/touch";
 
 interface Opt {
@@ -235,8 +235,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
       <Field label="Date" htmlFor="rp-date" error={e.date?.message}>
         <Input id="rp-date" type="date" {...form.register("date")} />
       </Field>
-      <input type="hidden" {...form.register("method")} />
-      <PaidInCash />
+      <MethodController control={form.control} methods={methods} />
       <MoreOptions bare icon={<SlidersHorizontal />} title="Account, reference & notes" description={accountName(accounts, accountId)} defaultOpen={!!e.accountId} className="sm:col-span-2">
         <Field label="Received into" htmlFor="rp-account" error={e.accountId?.message}>
           <NativeSelect id="rp-account" {...form.register("accountId")}>
@@ -247,7 +246,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
             ))}
           </NativeSelect>
         </Field>
-        <Field label="Reference (UPI / cheque no.)" htmlFor="rp-ref">
+        <Field label="Reference (UPI transaction ID)" htmlFor="rp-ref">
           <Input id="rp-ref" {...form.register("reference")} />
         </Field>
         <Field label="Notes" htmlFor="rp-notes" className="sm:col-span-2">

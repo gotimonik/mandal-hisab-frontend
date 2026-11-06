@@ -19,7 +19,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
     id: "money",
     title: "Money & accuracy",
     items: [
-      { q: "Can members pay online through MandalHisab?", a: "No. MandalHisab doesn't take or process payments of any kind — no cards, UPI, net banking or wallets. Members hand over cash as usual and the treasurer records it, so the app is only the hisab, never the money." },
+      { q: "Can members pay by UPI?", a: "Yes, if the Mandal turns it on. The admin adds the Mandal's own UPI ID; members tap Pay with UPI or scan the QR code and pay from PhonePe, Google Pay, Paytm or any UPI app, then report it with the 12-digit transaction ID for the treasurer to verify. The money goes straight to the Mandal — MandalHisab never takes, holds or moves it, and doesn't take cards, net banking or payment gateways." },
       { q: "How does MandalHisab keep the numbers right?", a: "Every amount is stored to the paisa and posted to a double-entry ledger, so money in and money out always balance. Reports, the cash book and member balances all come from the same entries." },
       { q: "What happens if someone records a wrong entry?", a: "It is reversed, not edited or deleted. The reversal is recorded with a reason and the original stays in the history, so anyone checking the books can see exactly what happened." },
       { q: "Can a member pay only part of the hapta?", a: "Yes. Part payments are allowed and the rest stays due. If the same amount is recorded twice on the same day for the same member, MandalHisab asks before saving it again." },

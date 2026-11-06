@@ -14,7 +14,7 @@ import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
 import { useMoney } from "@/components/app/currency";
-import { AmountInput, MoreOptions, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { AmountInput, MoreOptions, SubmitButton, MethodController } from "@/components/app/form-bits";
 
 const Schema = z.object({
   donorName: z.string().trim().min(2, "Enter the donor's name").max(120),
@@ -63,8 +63,7 @@ function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]
       <Field label="Date" htmlFor="d-date">
         <Input id="d-date" type="date" {...form.register("date")} />
       </Field>
-      <input type="hidden" {...form.register("method")} />
-      <PaidInCash />
+      <MethodController control={form.control} methods={methods} />
       <Field label="Event" htmlFor="d-event" hint="Used in the event-wise report.">
         <Input id="d-event" placeholder="e.g. Ganeshotsav 2026" {...form.register("eventName")} />
       </Field>

@@ -213,8 +213,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
               </div>
               {canCollect && l.status === "active" && (
                 <div className="mt-3 flex gap-2 [&>*]:flex-1 [&_button]:w-full">
-                  {several(l) && <ReceiveInterestDialog memberId={l.memberId} memberName={l.member?.name ?? "member"} size="sm" />}
-                  <LoanPaymentDialog reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label={tr("upad.receivePayment")} />
+                  {several(l) && <ReceiveInterestDialog methods={org.settings.paymentMethods} memberId={l.memberId} memberName={l.member?.name ?? "member"} size="sm" />}
+                  <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label={tr("upad.receivePayment")} />
                 </div>
               )}
             </li>
@@ -262,8 +262,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">
                     <div className="flex justify-end gap-1">
-                      {canCollect && several(l) && <ReceiveInterestDialog memberId={l.memberId} memberName={l.member?.name ?? "member"} size="xs" />}
-                      {canCollect && l.status === "active" && <LoanPaymentDialog reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label={tr("upad.receive")} />}
+                      {canCollect && several(l) && <ReceiveInterestDialog methods={org.settings.paymentMethods} memberId={l.memberId} memberName={l.member?.name ?? "member"} size="xs" />}
+                      {canCollect && l.status === "active" && <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label={tr("upad.receive")} />}
                     </div>
                   </TableCell>
                 </TableRow>

@@ -28,7 +28,7 @@ export const site = {
     grievanceOfficer: "Monik Goti", // required under India's IT Rules / DPDP Act
     grievanceEmail: "gotimonik1@gmail.com",
     jurisdiction: "Surat, Gujarat, India", // courts for disputes
-    lastUpdated: "3 November 2026",
+    lastUpdated: "6 November 2026",
   },
 
   /** App store links. null = "Coming soon". */

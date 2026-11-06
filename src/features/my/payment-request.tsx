@@ -17,7 +17,8 @@ import { useLang, useT } from "@/i18n/client";
 import { intlLocale, type Key, type Lang } from "@/i18n/core";
 import { useMoney } from "@/components/app/currency";
 import { IconChip } from "@/components/app/bits";
-import { AmountInput, ChoicePills, FormNote, SubmitButton, PaidInCash } from "@/components/app/form-bits";
+import { AmountInput, ChoicePills, FormNote, MethodField, SubmitButton } from "@/components/app/form-bits";
+import { UpiPayPanel, type UpiPayee } from "./upi-pay";
 import type { Tone } from "@/lib/tones";
 
 type Purpose = "hapta" | "upad" | "other";
@@ -31,7 +32,12 @@ interface Options {
   /** interest paid ahead; used first for the next interest */
   upadAdvancePaise?: number;
   methods: string[];
+  /** the Mandal's UPI ID when it takes UPI (null: cash only) */
+  upi?: UpiPayee | null;
 }
+
+/** UPI transaction id (UTR): 12 digits; spaces / dashes people copy along are dropped. */
+const cleanUtr = (v: string) => v.replace(/[\s-]/g, "");
 
 const monthName = (lang: Lang, m: string) => new Intl.DateTimeFormat(intlLocale(lang), { month: "short", year: "numeric", timeZone: "UTC", numberingSystem: "latn" }).format(new Date(`${m}-01T00:00:00Z`));
 
@@ -52,7 +58,7 @@ function Form(_props: { methods: string[] }) {
   const [interest, setInterest] = useState("");
   const [principal, setPrincipal] = useState("");
   const [date, setDate] = useState(todayISO());
-  const method = "cash"; // cash only for now
+  const [method, setMethod] = useState("cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -99,6 +105,8 @@ function Form(_props: { methods: string[] }) {
 
   const save = () => {
     setError(null);
+    if (method === "upi" && !/^\d{12}$/.test(cleanUtr(reference))) return setError(t("pay.vUtr"));
+    const ref = method === "upi" ? cleanUtr(reference) : reference.trim();
     let req: { path: string; body: Record<string, unknown> };
     if (purpose === "upad") {
       const i = rupeesOrZero.safeParse(interest);
@@ -107,13 +115,13 @@ function Form(_props: { methods: string[] }) {
       if (!i.success) return setError(t("pay.vInterest", { msg: i.error.issues[0].message }));
       if (!p.success) return setError(t("pay.vReturned", { msg: p.error.issues[0].message }));
       if (Number(i.data) <= 0 && Number(p.data) <= 0) return setError(t("pay.vEnter"));
-      req = { path: `/orgs/${orgId}/me/upad-payments`, body: { loanId, interestAmount: i.data, principalAmount: p.data, date, method, reference: reference || undefined, notes: notes || undefined, idempotencyKey: key } };
+      req = { path: `/orgs/${orgId}/me/upad-payments`, body: { loanId, interestAmount: i.data, principalAmount: p.data, date, method, reference: ref || undefined, notes: notes || undefined, idempotencyKey: key } };
     } else {
       const a = rupees.safeParse(amount);
       if (!a.success) return setError(a.error.issues[0].message);
       if (purpose === "other" && notes.trim().length < 2) return setError(t("pay.vOther"));
       if (purpose === "hapta" && scheme && Math.round(Number(a.data) * 100) > scheme.remainingPaise) return setError(t("pay.vTooMuch", { amount: money.fmt(scheme.remainingPaise), name: scheme.name }));
-      req = { path: `/orgs/${orgId}/me/payment-requests`, body: { purpose, amount: a.data, schemeId: purpose === "hapta" && scheme ? scheme._id : undefined, date, method, reference: reference || undefined, notes: notes || undefined, idempotencyKey: key } };
+      req = { path: `/orgs/${orgId}/me/payment-requests`, body: { purpose, amount: a.data, schemeId: purpose === "hapta" && scheme ? scheme._id : undefined, date, method, reference: ref || undefined, notes: notes || undefined, idempotencyKey: key } };
     }
     start(async () => {
       const res = await apiMutate(req);
@@ -132,6 +140,15 @@ function Form(_props: { methods: string[] }) {
       </div>
     );
   }
+
+  // UPI only when the Mandal has it on and its UPI ID is set
+  const methods = opts.upi ? opts.methods : opts.methods.filter((m) => m !== "upi");
+  const paise = (v: string) => {
+    const r = rupeesOrZero.safeParse(v);
+    return r.success ? Math.round(Number(r.data) * 100) : 0;
+  };
+  const payPaise = purpose === "upad" ? paise(interest) + paise(principal) : paise(amount);
+  const payNote = purpose === "upad" ? t("pay.upad") : purpose === "other" ? notes : scheme ? scheme.name : t("pay.monthly");
 
   const choices: { key: Purpose; title: string; hint: React.ReactNode; icon: React.ReactNode; tone: Tone; show: boolean }[] = [
     { key: "hapta", title: opts.schemes?.length ? t("pay.hapta") : t("pay.monthly"), icon: <CalendarDays />, tone: "indigo", show: true, hint: opts.hapta.duePaise ? t("pay.dueNow", { amount: money.fmt(opts.hapta.duePaise) }) : t("pay.nothingNow") },
@@ -298,12 +315,25 @@ function Form(_props: { methods: string[] }) {
         <Field label={t("pay.datePaid")} htmlFor="pr-date">
           <Input id="pr-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <PaidInCash label={t("pay.paidBy")} value={methodLabel("cash")} />
+        <MethodField
+          methods={methods}
+          value={method}
+          onChange={(m) => {
+            setMethod(m);
+            setError(null);
+          }}
+          label={t("pay.paidBy")}
+          cashLabel={methodLabel("cash")}
+          upiLabel={methodLabel("upi")}
+        />
       </div>
-      {method !== "cash" && (
-        <Field label={t("pay.reference")} htmlFor="pr-ref" hint={t("pay.referenceHint")}>
-          <Input id="pr-ref" maxLength={100} value={reference} onChange={(e) => setReference(e.target.value)} />
-        </Field>
+      {method === "upi" && opts.upi && (
+        <>
+          <UpiPayPanel upi={opts.upi} amountPaise={payPaise} note={payNote} />
+          <Field label={t("pay.utr")} htmlFor="pr-ref" hint={t("pay.utrHint")}>
+            <Input id="pr-ref" inputMode="numeric" autoComplete="off" maxLength={20} placeholder="412345678901" value={reference} onChange={(e) => setReference(e.target.value)} />
+          </Field>
+        </>
       )}
       {purpose !== "other" && (
         <Field label={t("pay.note")} htmlFor="pr-notes">

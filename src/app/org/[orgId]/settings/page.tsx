@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { CalendarClock, CalendarDays, DatabaseBackup, KeyRound, Lock } from "lucide-react";
-import { getOrg, getMoney } from "@/lib/server/data";
+import { getAccounts, getOrg, getMoney } from "@/lib/server/data";
 import { api } from "@/lib/server/api";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
 import { PageHeader } from "@/components/app/page-header";
@@ -49,6 +49,8 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
   const settlement = org.settings.settlement;
   const backup = await api<{ lastBackupAt: string | null; lastBackupBy: string | null; due: boolean }>(`/orgs/${orgId}/backup/status`).catch(() => null);
   const backupDue = backup?.due ?? true;
+  // the Mandal's UPI accounts, to choose which one members pay into
+  const upiAccounts = (await getAccounts(orgId).catch(() => [])).filter((a) => a.type === "upi" && a.isActive && a.upiId).map((a) => ({ _id: a._id, name: a.name, upiId: a.upiId! }));
   return (
     <div className="max-w-3xl">
       <PageHeader title="Mandal settings" description={org.name} />
@@ -127,7 +129,7 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
       </SettingBlock>
 
       <SectionTitle className="mt-6">Mandal details & rules</SectionTitle>
-      <SettingsForm org={org} />
+      <SettingsForm org={org} upiAccounts={upiAccounts} />
     </div>
   );
 }

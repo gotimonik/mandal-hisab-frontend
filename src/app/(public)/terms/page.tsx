@@ -34,8 +34,10 @@ export default function TermsPage() {
               collected, kept and paid out by the Mandal itself.
             </li>
             <li>
-              <b>Cash only.</b> The Service does not take, process or route payments of any kind — no cards, UPI, net banking, wallets or payment gateways. Every amount a Mandal records in {site.name} is cash
-              handed over in person and recorded by the Mandal. In Personal Hisab, you record your own money yourself; wallets such as &quot;Bank&quot; or &quot;UPI&quot; are only labels,
+              <b>No payments through us.</b> The Service does not take, process or route payments of any kind — no cards, net banking, wallets or payment gateways. A Mandal records cash
+              handed over in person and, if it turns UPI on, UPI payments that members make from their own UPI app straight to the Mandal&apos;s own UPI ID. {site.name} only shows that UPI ID (as
+              a link or QR code) and records what members report; the Mandal is responsible for its UPI ID being correct and for checking that each payment arrived before verifying it, and{" "}
+              {site.name} is not responsible for money sent to a wrong UPI ID or a payment a bank or UPI app fails or reverses. In Personal Hisab, you record your own money yourself; wallets such as &quot;Bank&quot; or &quot;UPI&quot; are only labels,
               and {site.name} never connects to or moves money in any account.
             </li>
             <li>
