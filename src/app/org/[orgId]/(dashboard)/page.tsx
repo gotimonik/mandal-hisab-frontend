@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   DatabaseBackup,
   HandCoins,
+  History,
   Landmark,
   Lock,
   Percent,
@@ -130,6 +131,16 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         </Link>
       )}
 
+      {isAdmin && org.status === "active" && !org.settings.openingImport && (t.mandalCashPaise ?? 0) === 0 && (t.totalMemberBalancesPaise ?? 0) === 0 && (t.fundLoansOutstandingPaise ?? 0) === 0 && (
+        <Link href={`${base}/settings/import`} className="mb-4 flex items-center gap-3 rounded-2xl bg-sky-500/10 p-3.5 text-sm ring-1 ring-sky-500/25">
+          <History className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
+          <span className="min-w-0 flex-1">
+            <b>{tr("dash.importTitle")}</b>
+            <span className="block text-xs text-muted-foreground">{tr("dash.importSub")}</span>
+          </span>
+          <ArrowRight className="size-4" />
+        </Link>
+      )}
       <NextMeeting orgId={orgId} meeting={d.nextMeeting} />
       <PushStatus variant="nudge" />
       {backupTitle && (

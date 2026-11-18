@@ -90,6 +90,21 @@ export interface OrgSettings {
   /** last month the Mandal runs (YYYY-MM), if set */
   endMonth?: string | null;
   settlement?: { startedAt: string; closedAt?: string | null; payouts: { memberId: string; netPaise: number }[] } | null;
+  /** set once the paper hisab of an existing Mandal has been brought in */
+  openingImport?: OpeningImportDone | null;
+}
+
+export interface OpeningImportDone {
+  at: string;
+  cutoverDate: string;
+  haptaStartMonth: string;
+  members: number;
+  savingsPaise: number;
+  upadPaise: number;
+  interestDuePaise: number;
+  cashPaise: number;
+  mandalOwnPaise: number;
+  note?: string;
 }
 
 export interface Org {

@@ -342,6 +342,8 @@ export const gu: Dict = {
     endsThisMonth: "મંડળ આ મહિને પૂરું થાય છે",
     endPassed: "મંડળનો છેલ્લો મહિનો વીતી ગયો",
     paidOutSoFar: "અત્યાર સુધી {n} સભ્યોને ચૂકવ્યું — હિસાબ આગળ પૂરો કરો.",
+    importTitle: "મંડળ કાગળ પર ચાલે છે?",
+    importSub: "દરેક સભ્યની બચત, શેર અને ચાલુ ઉપાડ એક સાથે ઉમેરો.",
     settleWhenReady: "તૈયાર હો ત્યારે રકમ વહેંચો અને દરેક સભ્યને ચૂકવો.",
     incomeFy: "આવક FY {fy}",
     expensesFy: "ખર્ચ FY {fy}",

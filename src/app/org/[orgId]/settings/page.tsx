@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarClock, CalendarDays, DatabaseBackup, KeyRound, Lock } from "lucide-react";
+import { CalendarClock, CalendarDays, DatabaseBackup, History, KeyRound, Lock, RotateCcw } from "lucide-react";
 import { getAccounts, getOrg, getMoney } from "@/lib/server/data";
 import { api } from "@/lib/server/api";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
@@ -9,11 +9,13 @@ import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, SectionTitle } from "@/components/app/bits";
 import { SettingsForm } from "@/features/settings/settings-form";
 import { ChangeHaptaDialog, HaptaSetupForm } from "@/features/monthly/hapta-setup";
+import { ChangeStartDialog } from "@/features/monthly/change-start-dialog";
 import { formatDate, paiseToRupeeInput } from "@/lib/format";
 import { requestMonth } from "@/lib/server/today";
 import { buttonVariants } from "@/components/ui/button";
 import { monthLabelYM } from "@/lib/months";
 import { EndMonthForm } from "@/features/settlement/end-month-form";
+import { MoneyResetDialog } from "@/features/settings/money-reset-dialog";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
@@ -75,7 +77,12 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
                 Due by day {h.dueDay} · since {formatDate(h.startDate)}
               </span>
             </p>
-            {org.status === "active" && <ChangeHaptaDialog currentRupees={paiseToRupeeInput(h.amountPaise)} nextMonth={monthAfter(thisMonth)} />}
+            {org.status === "active" && (
+              <span className="flex flex-wrap gap-2">
+                <ChangeStartDialog orgId={orgId} currentMonth={new Date(h.startDate).toISOString().slice(0, 7)} />
+                <ChangeHaptaDialog currentRupees={paiseToRupeeInput(h.amountPaise)} nextMonth={monthAfter(thisMonth)} />
+              </span>
+            )}
           </div>
         ) : (
           <HaptaSetupForm inline />
@@ -89,6 +96,20 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
         )}
       </SettingBlock>
       <SettingBlock
+        tone="sky"
+        icon={<History />}
+        title="Bring in an existing Mandal"
+        description={
+          org.settings.openingImport
+            ? `Paper hisab up to ${formatDate(org.settings.openingImport.cutoverDate)} was brought in on ${formatDate(org.settings.openingImport.at)}.`
+            : "Running on paper already? Bring in each member's savings, shares and running upads as on one date — no need to type in old months."
+        }
+      >
+        <Link href={`/org/${orgId}/settings/import`} className={buttonVariants({ variant: "outline" })}>
+          {org.settings.openingImport ? "View what was brought in" : "Bring in the old hisab…"}
+        </Link>
+      </SettingBlock>
+      <SettingBlock
         tone="rose"
         icon={<Lock />}
         title="Close & settle the Mandal"
@@ -99,6 +120,17 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
           {settlement?.closedAt ? "View settlement" : settlement ? "Continue closing" : "Close & settle…"}
         </Link>
       </SettingBlock>
+      {org.status === "active" && !settlement && org.myPermissions.includes("org.settings.manage") && (
+        <SettingBlock
+          tone="rose"
+          icon={<RotateCcw />}
+          title="Start the hisab afresh"
+          description="Deletes every hapta, upad and interest entry and sets all balances to ₹0 — keeping the members, or removing them too (their logins are only unlinked). Then bring in the paper hisab again. Needs a fresh backup."
+          className="ring-rose-500/20"
+        >
+          <MoneyResetDialog orgId={orgId} orgName={org.name} />
+        </SettingBlock>
+      )}
 
       <SectionTitle className="mt-6">Safety</SectionTitle>
       <SettingBlock

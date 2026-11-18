@@ -340,6 +340,8 @@ export const en = {
     endsThisMonth: "The Mandal ends this month",
     endPassed: "The Mandal's end month has passed",
     paidOutSoFar: "{n} member(s) paid out so far — continue settling.",
+    importTitle: "Running on paper already?",
+    importSub: "Bring in each member's savings, shares and running upads in one go.",
     settleWhenReady: "Share out the money and pay every member when you're ready.",
     incomeFy: "Income FY {fy}",
     expensesFy: "Expenses FY {fy}",
