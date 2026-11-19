@@ -104,6 +104,8 @@ export interface OpeningImportDone {
   interestDuePaise: number;
   cashPaise: number;
   mandalOwnPaise: number;
+  /** the unpaid upad interest was already added to members' savings on paper */
+  interestInSavings?: boolean;
   note?: string;
 }
 
@@ -153,10 +155,17 @@ export interface Member {
   status: "active" | "inactive" | "left";
   userId?: string | null;
   notes?: string;
+  /** the earlier English spelling, kept for search after a change to Gujarati / Hindi */
+  nameEnglish?: string | null;
   /** haptas paid each month (default 1) */
   haptaShares?: number;
+  /** unpaid hapta due so far (members list) */
   outstandingPaise?: number;
   dueInstallments?: number;
+  /** upad principal still owed (members list) */
+  upadPaise?: number;
+  /** upad interest due and unpaid (members list) */
+  upadInterestDuePaise?: number;
   balancePaise?: number;
   /** joined partway through: owes (or paid / was let off) the price of their shares */
   joining?: MemberJoining;

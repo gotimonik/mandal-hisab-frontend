@@ -232,10 +232,12 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
 
       <section className="mt-5" aria-label="Mandal fund">
         <SectionTitle>{tr("dash.glance")}</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-5">
+          <StatCard label={tr("dash.cashOnHand")} value={money.compact(t.mandalCashPaise ?? 0)} icon={<Banknote />} accent="emerald" hint={tr("dash.cashOnHandHint")} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
+          <StatCard label={tr("dash.upadOut")} value={money.compact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={tr("dash.activeUpad", { n: t.activeFundLoans ?? 0 })} href={`${base}/fund-loans`} />
+          <StatCard label={tr("dash.unpaidInterest")} value={money.compact(t.fundLoanInterestDuePaise ?? 0)} icon={<Percent />} tone={(t.fundLoanInterestDuePaise ?? 0) > 0 ? "warn" : "good"} hint={tr("dash.unpaidInterestHint", { n: t.activeFundLoans ?? 0 })} href={`${base}/fund-loans`} />
           <StatCard label={tr("dash.mandalFund")} value={money.compact(t.mandalFundPaise ?? t.mandalCashPaise ?? 0)} icon={<Wallet />} accent="emerald" hint={tr("dash.mandalFundHint", { cash: money.fmt(t.mandalCashPaise ?? 0), upad: money.fmt(t.fundLoansOutstandingPaise ?? 0) })} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
           <StatCard label={tr("dash.memberBalances")} value={money.compact(t.totalMemberBalancesPaise ?? 0)} icon={<PiggyBank />} accent="violet" hint={<BalanceParts parts={t.memberBalanceParts} tr={tr} money={money} />} />
-          <StatCard label={tr("dash.upadOut")} value={money.compact(t.fundLoansOutstandingPaise ?? 0)} icon={<HandCoins />} accent="orange" hint={tr("dash.interestDueX", { amount: money.fmt(t.fundLoanInterestDuePaise ?? 0) })} href={`${base}/fund-loans`} />
           <StatCard label={tr("dash.membersCard")} value={t.activeMembers} icon={<Users />} accent="sky" hint={t.totalMembers !== undefined && t.totalMembers !== t.activeMembers ? tr("dash.inTotal", { n: t.totalMembers }) : tr("dash.activeLower")} href={`${base}/members`} />
           <StatCard label={tr("dash.yearHapta")} value={`${d.collectionPerformance.percent}%`} icon={<TrendingUp />} accent="indigo" hint={tr("dash.ofDue", { a: money.fmt(d.collectionPerformance.collectedPaise), b: money.fmt(d.collectionPerformance.duePaise) })} />
           <StatCard label={tr("dash.interestCredited")} value={money.compact(t.interestThisMonthPaise ?? 0)} icon={<Percent />} accent="pink" hint={t.interestThisFyPaise !== undefined ? tr("dash.thisMonthFy", { amount: money.fmt(t.interestThisFyPaise) }) : tr("dash.thisMonth")} />

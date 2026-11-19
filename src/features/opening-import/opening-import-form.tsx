@@ -49,6 +49,8 @@ interface Draft {
   haptaDueDay: string;
   upadRate: string;
   note: string;
+  /** the unpaid upad interest is already added to members' savings on paper */
+  interestInSavings?: boolean;
   members: MemberDraft[];
 }
 
@@ -92,6 +94,7 @@ function toBody(d: Draft, dryRun: boolean) {
     haptaAmount: cleanAmount(d.haptaAmount),
     haptaDueDay: Number(d.haptaDueDay) || 10,
     upadRate: d.upadRate.trim() || undefined,
+    interestInSavings: !!d.interestInSavings,
     note: d.note.trim() || undefined,
     members: d.members
       .filter((m) => m.name.trim() || m.memberId)
@@ -161,7 +164,8 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
     const shares = listed.reduce((s, m) => s + (Number(m.shares) || 1), 0);
     const cash = p(d.cash);
     const bad = [d.cash, d.haptaAmount, ...listed.flatMap((m) => [m.savings, ...m.upads.flatMap((u) => [u.amount, u.interestDue])])].some((v) => toPaise(v) === null);
-    return { count: listed.length, shares, savings, upad, upadCount: upads.length, interest, cash, own: cash + upad - savings, perMonth: shares * p(d.haptaAmount), bad };
+    const own = cash + upad + (d.interestInSavings ? interest : 0) - savings;
+    return { count: listed.length, shares, savings, upad, upadCount: upads.length, interest, cash, own, perMonth: shares * p(d.haptaAmount), bad, inSavings: !!d.interestInSavings };
   }, [d]);
 
   const body = JSON.stringify(toBody(d, true));
@@ -343,6 +347,16 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
         </Button>
       </FormSection>
 
+      {t.interest > 0 && (
+        <label className="flex items-start gap-2.5 rounded-2xl bg-amber-500/8 px-3.5 py-3 text-sm ring-1 ring-amber-500/20">
+          <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={!!d.interestInSavings} onChange={(e) => set("interestInSavings", e.target.checked)} />
+          <span>
+            <b>The unpaid interest is already added to members&apos; savings</b>
+            <span className="block text-xs text-muted-foreground">Tick this if the savings above already include the {money.fmt(t.interest)} of upad interest not yet collected. When it is collected it then only adds to the cash — it isn&apos;t added to members&apos; savings a second time.</span>
+          </span>
+        </label>
+      )}
+
       <Tally t={t} cashName={status.cashAccount?.name} />
 
       {checked && (checked.warnings.length > 0 || general.length > 0) && (
@@ -403,7 +417,7 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
   );
 }
 
-function Tally({ t, cashName }: { t: { count: number; shares: number; savings: number; upad: number; upadCount: number; interest: number; cash: number; own: number; perMonth: number }; cashName?: string }) {
+function Tally({ t, cashName }: { t: { count: number; shares: number; savings: number; upad: number; upadCount: number; interest: number; cash: number; own: number; perMonth: number; inSavings: boolean }; cashName?: string }) {
   const short = t.own < 0;
   return (
     <section className={cn("rounded-3xl p-4 ring-1 sm:p-5", short ? "bg-rose-500/6 ring-rose-500/25" : "bg-indigo-500/6 ring-indigo-500/20")}>
@@ -419,6 +433,14 @@ function Tally({ t, cashName }: { t: { count: number; shares: number; savings: n
         <dd className="text-right">
           <Money paise={t.upad} />
         </dd>
+        {t.inSavings && (
+          <>
+            <dt className="text-muted-foreground">+ Unpaid upad interest</dt>
+            <dd className="text-right">
+              <Money paise={t.interest} />
+            </dd>
+          </>
+        )}
         <dt className="text-muted-foreground">− Members&apos; savings ({t.count})</dt>
         <dd className="text-right">
           <Money paise={-t.savings} />
@@ -434,7 +456,13 @@ function Tally({ t, cashName }: { t: { count: number; shares: number; savings: n
         </p>
       )}
       <p className="mt-3 text-xs text-muted-foreground">
-        {t.shares} share{t.shares === 1 ? "" : "s"} · hapta <Money paise={t.perMonth} /> a month · upad interest unpaid <Money paise={t.interest} /> (counted when it&apos;s paid)
+        {t.shares} share{t.shares === 1 ? "" : "s"} · hapta <Money paise={t.perMonth} /> a month
+        {!t.inSavings && (
+          <>
+            {" "}
+            · upad interest unpaid <Money paise={t.interest} /> (shared among members when it&apos;s paid)
+          </>
+        )}
       </p>
     </section>
   );

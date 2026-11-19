@@ -137,7 +137,7 @@ function TransferForm({ accounts }: { accounts: Acc[] }) {
           <Input id="t-date" type="date" {...form.register("date")} />
         </Field>
         <Field label="Notes" htmlFor="t-notes">
-          <Input id="t-notes" {...form.register("notes")} />
+          <Input id="t-notes" placeholder="e.g. Given to Rameshbhai to keep" {...form.register("notes")} />
         </Field>
       </div>
       <SubmitButton pending={pending} icon={<ArrowLeftRight />}>

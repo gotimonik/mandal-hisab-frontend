@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Phone, Users } from "lucide-react";
+import { ArrowUpDown, FileSpreadsheet, Languages, Phone, Users } from "lucide-react";
 import { SearchBox } from "@/components/app/filter-bar";
 import { MemberAvatar } from "@/components/app/bits";
 import { SharesChip } from "@/features/monthly/month-list";
@@ -24,6 +24,7 @@ import {
 import { MemberDialog } from "@/features/members/member-form";
 import { ImportMembersDialog } from "@/features/members/import-dialog";
 import { getT } from "@/i18n/server";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = { title: "Members" };
 
@@ -52,12 +53,23 @@ export default async function MembersPage({
         title={t("members.title")}
         description={t("members.desc")}
         actions={
-          manage ? (
-            <>
-              <ImportMembersDialog orgId={orgId} />
-              <MemberDialog orgId={orgId} defaultOpen={sp.new === "1"} />
-            </>
-          ) : null
+          <>
+            <Link href={`/org/${orgId}/members/sheet`} className={buttonVariants({ variant: "outline" })}>
+              <FileSpreadsheet /> {t("sheet.button")}
+            </Link>
+            {manage && (
+              <>
+                <Link href={`/org/${orgId}/members/order`} className={buttonVariants({ variant: "outline" })}>
+                  <ArrowUpDown /> {t("members.reorder")}
+                </Link>
+                <Link href={`/org/${orgId}/members/names`} className={buttonVariants({ variant: "outline" })}>
+                  <Languages /> {t("members.editNames")}
+                </Link>
+                <ImportMembersDialog orgId={orgId} />
+                <MemberDialog orgId={orgId} defaultOpen={sp.new === "1"} />
+              </>
+            )}
+          </>
         }
       />
       <SearchBox className="mb-3" defaultValue={q} placeholder={t("members.searchPh")} label={t("common.search")} buttonLabel={t("common.search")} hidden={{ status }} />
@@ -92,7 +104,8 @@ export default async function MembersPage({
         <>
           <ul className="flex flex-col gap-2 md:hidden" aria-label={t("members.title")}>
             {data.items.map((m) => {
-              const due = m.outstandingPaise ?? 0;
+              // owed now: unpaid hapta + unpaid upad interest
+              const due = (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0);
               return (
                 <li
                   key={m._id}
@@ -120,6 +133,11 @@ export default async function MembersPage({
                           className="font-medium text-foreground"
                         />
                       </span>
+                      {(m.upadPaise ?? 0) > 0 && (
+                        <span className="text-orange-700 dark:text-orange-300">
+                          {t("members.upadX", { amount: money.short(m.upadPaise ?? 0) })}
+                        </span>
+                      )}
                     </span>
                   </Link>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -158,6 +176,7 @@ export default async function MembersPage({
                     </TableHead>
                     <TableHead>{t("common.status")}</TableHead>
                     <TableHead className="text-right">{t("members.colOutstanding")}</TableHead>
+                    <TableHead className="text-right">{t("members.colUpad")}</TableHead>
                     <TableHead className="text-right">{t("members.colSavings")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -190,13 +209,21 @@ export default async function MembersPage({
                       </TableCell>
                       <TableCell className="text-right">
                         <Money
-                          paise={m.outstandingPaise ?? 0}
+                          paise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0)}
                           className={
-                            (m.outstandingPaise ?? 0) > 0
+                            (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) > 0
                               ? "text-destructive"
                               : "text-muted-foreground"
                           }
                         />
+                        {(m.upadInterestDuePaise ?? 0) > 0 && (
+                          <span className="block text-xs text-muted-foreground">
+                            {t("members.haptaPart")} {money.short(m.outstandingPaise ?? 0)} · {t("members.interestPart")} {money.short(m.upadInterestDuePaise ?? 0)}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {(m.upadPaise ?? 0) > 0 ? <Money paise={m.upadPaise} className="text-orange-700 dark:text-orange-300" /> : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="text-right">
                         <Money

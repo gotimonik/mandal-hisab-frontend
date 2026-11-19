@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileImage, FileText, Link2, Loader2, Share2 } from "lucide-react";
+import { Copy, FileImage, FileText, Link2, Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -101,13 +101,17 @@ async function base64(file: Blob) {
   return s.slice(s.indexOf(",") + 1);
 }
 
-/** Hand the file to the phone's share sheet (WhatsApp, Files, email …), or download it. */
-async function deliver(file: File, title: string, text: string) {
+/**
+ * Hand the file to the phone's share sheet (WhatsApp, Files, email …), or download it.
+ * Only the file is shared — no title or text with it: the share sheet's "Copy" copies every item,
+ * so a file shared with text pasted as the picture plus the words, which looked like duplicates.
+ */
+async function deliver(file: File, title: string) {
   if (isNativeApp()) {
     const [{ Filesystem, Directory }, { Share }] = await Promise.all([import("@capacitor/filesystem"), import("@capacitor/share")]);
     const { uri } = await Filesystem.writeFile({ path: file.name, data: await base64(file), directory: Directory.Cache });
     try {
-      await Share.share({ title, text, files: [uri], dialogTitle: title });
+      await Share.share({ files: [uri], dialogTitle: title });
     } catch (e) {
       if (!cancelled(e)) throw e;
     }
@@ -115,7 +119,7 @@ async function deliver(file: File, title: string, text: string) {
   }
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title, text });
+      await navigator.share({ files: [file] });
       return;
     } catch (e) {
       if (cancelled(e)) return;
@@ -147,10 +151,29 @@ export function ShareDocument({ targetId, fileName, title, text, path, paged = f
     track("share_document", { kind });
     setBusy(kind);
     try {
-      await deliver(await makeFile(el, kind, base, title, paged), title, text);
+      await deliver(await makeFile(el, kind, base, title, paged), title);
     } catch (e) {
       if ((e as { code?: string })?.code === "UNIMPLEMENTED") toast.error(t("share.updateApp"));
       else toast.error(t("share.failed"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // the picture straight to the clipboard (websites only: the app's web view can't do this)
+  const canCopyImage = typeof window !== "undefined" && !isNativeApp() && typeof ClipboardItem !== "undefined" && !!navigator.clipboard?.write;
+  const copyImage = async () => {
+    const el = document.getElementById(targetId);
+    if (!el || busy) return;
+    track("share_document", { kind: "copy_image" });
+    setBusy("image");
+    try {
+      // the clipboard is given a promise so Safari still counts it as part of the click
+      const png = makeFile(el, "image", base, title, paged);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": png.then((f) => f as Blob) })]);
+      toast.success(t("share.imageCopied"));
+    } catch {
+      toast.error(t("share.failed"));
     } finally {
       setBusy(null);
     }
@@ -182,6 +205,11 @@ export function ShareDocument({ targetId, fileName, title, text, path, paged = f
         <DropdownMenuItem onClick={() => void shareFile("image")}>
           <FileImage /> {t("share.asImage")}
         </DropdownMenuItem>
+        {canCopyImage && (
+          <DropdownMenuItem onClick={() => void copyImage()}>
+            <Copy /> {t("share.copyImage")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => void shareFile("pdf")}>
           <FileText /> {t("share.asPdf")}
         </DropdownMenuItem>

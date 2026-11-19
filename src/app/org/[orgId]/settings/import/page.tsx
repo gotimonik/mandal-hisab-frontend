@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { monthLabelYM } from "@/lib/months";
 import { OpeningImportForm, type ImportStatus } from "@/features/opening-import/opening-import-form";
+import { ActionButton } from "@/components/app/action-button";
 
 export const metadata = { title: "Bring in an existing Mandal" };
 
@@ -42,6 +43,37 @@ export default async function OpeningImportPage({ params }: PageProps<"/org/[org
           ]}
         />
         {done.note && <p className="mb-4 text-sm text-muted-foreground">Note: {done.note}</p>}
+        {done.interestDuePaise > 0 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-500/8 p-4 text-sm ring-1 ring-amber-500/20">
+            <p className="min-w-0 flex-1">
+              <b>
+                Unpaid upad interest brought in: <Money paise={done.interestDuePaise} />
+              </b>
+              <span className="block text-xs text-muted-foreground">
+                {done.interestInSavings
+                  ? "Marked as already in members' savings: when it is collected it only adds to the cash."
+                  : "Shared among members' savings when it is collected. If the paper savings already include it, mark it so it isn't added twice."}
+              </span>
+            </p>
+            {org.status === "active" && (
+              <ActionButton
+                path={`/orgs/${orgId}/opening-import/interest-in-savings`}
+                body={{ inSavings: !done.interestInSavings }}
+                variant={done.interestInSavings ? "outline" : "default"}
+                successMessage={done.interestInSavings ? "It will be shared among members when collected" : "Marked: it will only add to the cash when collected"}
+                confirm={{
+                  title: done.interestInSavings ? "Share this interest among members when it's collected?" : "Is this interest already in members' savings?",
+                  description: done.interestInSavings
+                    ? "Use this only if the paper savings did NOT include the unpaid interest."
+                    : "Then collecting it adds to the cash only, and members' savings stay as they are. This can only be changed before any of it is collected.",
+                  confirmLabel: done.interestInSavings ? "Share when collected" : "Yes, already in savings",
+                }}
+              >
+                {done.interestInSavings ? "Undo" : "Already in members' savings"}
+              </ActionButton>
+            )}
+          </div>
+        )}
         <FormNote>
           Keep the old registers (or photos of them) safe — they are the record of everything before {formatDate(done.cutoverDate)}. A wrong figure for one member is fixed from their page with an adjustment; a wrong upad is cancelled on the upad screen and given again.
         </FormNote>
