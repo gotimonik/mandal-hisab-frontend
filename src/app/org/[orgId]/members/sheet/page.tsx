@@ -7,8 +7,6 @@ import { OrgLogo } from "@/components/app/org-logo";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { getT } from "@/i18n/server";
-import { HandCoins, Percent, Users, Wallet } from "lucide-react";
-import { monthLabelYM } from "@/lib/months";
 
 export const metadata = { title: "Hisab sheet" };
 
@@ -44,16 +42,23 @@ export default async function HisabSheetPage({ params }: PageProps<"/org/[orgId]
   const { orgId } = await params;
   const [org, s, money, { t }] = await Promise.all([getOrg(orgId), api<Sheet>(`/orgs/${orgId}/members-sheet`), getMoney(orgId), getT()]);
   const date = formatDate(s.asOf);
-  const monthName = monthLabelYM(s.month);
   const showHapta = s.totals.haptaDuePaise > 0;
   const nil = <span className="text-zinc-400" aria-label="0">—</span>;
   const amount = (p: number, className?: string) => (p ? <span className={cn("whitespace-nowrap tabular-nums", className)}>{money.short(p)}</span> : nil);
-  const stats: { value: number; label: string; icon: React.ReactNode; card: string; chip: string; number: string }[] = [
-    { value: s.eachPaise, label: s.byShares ? t("sheet.eachShare") : t("sheet.eachMember"), icon: <Users />, card: "bg-emerald-50 ring-emerald-200", chip: "bg-emerald-600 text-white", number: "text-emerald-800" },
-    { value: s.cashPaise, label: t("sheet.cash"), icon: <Wallet />, card: "bg-sky-50 ring-sky-200", chip: "bg-sky-600 text-white", number: "text-sky-900" },
-    { value: s.totals.upadPaise, label: t("sheet.upad"), icon: <HandCoins />, card: "bg-orange-50 ring-orange-200", chip: "bg-orange-500 text-white", number: "text-orange-900" },
-    { value: s.totals.interestDuePaise, label: t("sheet.eqInterest"), icon: <Percent />, card: "bg-rose-50 ring-rose-200", chip: "bg-rose-500 text-white", number: "text-rose-800" },
+  const tot = s.totals;
+  const parts: { value: number; label: string; dot: string; sub?: string }[] = [
+    { value: s.cashPaise, label: t("dash.shareCash"), dot: "bg-emerald-500" },
+    { value: tot.upadPaise, label: t("dash.shareUpad"), dot: "bg-orange-500" },
+    { value: tot.haptaDuePaise, label: t("dash.shareHapta2"), dot: "bg-indigo-500" },
+    {
+      value: tot.interestDuePaise,
+      label: t("dash.shareInterest"),
+      dot: "bg-amber-500",
+      // this month's picture of the upad interest, when there's any
+      sub: tot.interestDuePaise || tot.interestPaidMonthPaise ? `${t("sheet.subPrev")} ${money.short(tot.interestPrevDuePaise)} · ${t("sheet.subMonth")} ${money.short(tot.interestMonthDuePaise)} · ${t("sheet.subPaid")} ${money.short(tot.interestPaidMonthPaise)}` : undefined,
+    },
   ];
+  const moves = s.movements;
   const showCash = s.holders.length > 1 || s.movements.length > 0;
   const td = "px-1.5 py-3 text-center";
 
@@ -91,76 +96,76 @@ export default async function HisabSheetPage({ params }: PageProps<"/org/[orgId]
             <p className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-[14px] font-medium text-emerald-800 shadow-sm ring-1 ring-emerald-100">{t("sheet.members", { n: s.members, shares: s.totals.shares })}</p>
           </header>
 
-          {/* four numbers, each in its own soft card */}
-          <section data-row aria-label={t("sheet.title")} className="grid grid-cols-4 gap-3">
-            {stats.map((x) => (
-              <div key={x.label} className={cn("rounded-2xl px-4 py-4 ring-1", x.card)}>
-                <span aria-hidden className={cn("mb-3 flex size-9 items-center justify-center rounded-xl shadow-sm [&_svg]:size-[18px]", x.chip)}>
-                  {x.icon}
-                </span>
-                <p className={cn("text-[26px] leading-none font-bold tabular-nums", x.number)}>{money.short(x.value)}</p>
-                <p className="mt-1.5 text-[14px] text-zinc-600">{x.label}</p>
-              </div>
-            ))}
-          </section>
-          <p data-row className="mt-3 text-center text-[14px] text-zinc-600">
-            {t("sheet.div", { total: money.short(s.totalPaise), n: s.parts })} = {money.short(s.eachPaise)}
-            {showHapta && (
-              <>
-                {" · "}
-                {t("sheet.hapta")} <b className="text-rose-600">{money.short(s.totals.haptaDuePaise)}</b>
-              </>
-            )}
-          </p>
-
-          {/* two boxes: upad interest this month, and who holds the cash */}
-          <section data-row className={cn("mt-5 grid gap-3", showCash ? "grid-cols-2" : "grid-cols-1")}>
-            <div className="rounded-2xl bg-amber-50/60 px-4 py-3.5 ring-1 ring-amber-200">
-              <h3 className="text-[15px] font-bold text-amber-950">
-                {t("sheet.intGroup")} <span className="font-medium text-amber-800">· {monthName}</span>
-              </h3>
-              <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-                {[
-                  { label: t("sheet.subPrev"), value: s.totals.interestPrevDuePaise, tone: "text-rose-700" },
-                  { label: t("sheet.subMonth"), value: s.totals.interestMonthDuePaise, tone: "text-amber-800" },
-                  { label: t("sheet.subPaid"), value: s.totals.interestPaidMonthPaise, tone: "text-emerald-700" },
-                ].map((x) => (
-                  <div key={x.label} className="rounded-xl bg-white px-2 py-2.5 ring-1 ring-amber-100">
-                    <dd className={cn("text-[20px] leading-tight font-bold tabular-nums", x.value ? x.tone : "text-zinc-400")}>{money.short(x.value)}</dd>
-                    <dt className="mt-1 text-[13px] text-zinc-600">{x.label}</dt>
-                  </div>
-                ))}
-              </dl>
+          {/* each member's share, and what it's made of (same layout as the dashboard card) */}
+          <section data-row aria-label={s.byShares ? t("dash.shareHapta") : t("dash.shareMember")} className="flex overflow-hidden rounded-2xl ring-1 ring-zinc-200">
+            <div className="flex w-64 shrink-0 flex-col justify-center gap-1 px-5 py-5 text-white" style={{ backgroundImage: "linear-gradient(135deg, #12805f 0%, #0d6b72 100%)" }}>
+              <p className="text-[14px] text-white/85">{s.byShares ? t("dash.shareHapta") : t("dash.shareMember")}</p>
+              <p className="text-[34px] leading-tight font-extrabold tabular-nums">{money.short(s.eachPaise)}</p>
+              <p className="text-[13.5px] text-white/85">
+                {s.byShares ? t("dash.shareDivShares", { total: money.short(s.totalPaise), shares: s.parts, n: s.members }) : t("dash.shareDiv", { total: money.short(s.totalPaise), n: s.parts })}
+              </p>
             </div>
-            {showCash && (
-              <div className="rounded-2xl bg-sky-50/60 px-4 py-3.5 ring-1 ring-sky-200">
-                <h3 className="text-[15px] font-bold text-sky-950">{t("sheet.holdersTitle")}</h3>
-                <ul className="mt-2 divide-y divide-sky-100 text-[14px]">
+            <div className="min-w-0 flex-1 px-5 py-3">
+              <ul className="divide-y divide-zinc-100 text-[14.5px]">
+                {parts.map((x) => (
+                  <li key={x.label} className="py-2">
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2.5 text-zinc-800">
+                        <span aria-hidden className={cn("size-2.5 rounded-full", x.dot)} />
+                        {x.label}
+                      </span>
+                      <span className={cn("font-semibold tabular-nums", x.value ? "text-zinc-900" : "text-zinc-400")}>{money.short(x.value)}</span>
+                    </span>
+                    {x.sub && <span className="mt-0.5 block pl-5 text-[12.5px] text-zinc-500">{x.sub}</span>}
+                  </li>
+                ))}
+                <li className="flex items-center justify-between gap-3 py-2 font-bold text-zinc-900">
+                  <span>{t("dash.shareTotal")}</span>
+                  <span className="tabular-nums">{money.short(s.totalPaise)}</span>
+                </li>
+              </ul>
+              <p className="mt-0.5 text-[12.5px] text-zinc-500">{s.byShares ? t("dash.shareNoteShares") : t("dash.shareNoteMembers")}</p>
+            </div>
+          </section>
+
+          {/* who holds the cash, and how it moved between them */}
+          {showCash && (
+            <section data-row className={cn("mt-5 grid gap-3", moves.length > 0 ? "grid-cols-2" : "grid-cols-1")}>
+              <div className="rounded-2xl px-4 py-3.5 ring-1 ring-zinc-200">
+                <h3 className="text-[15px] font-bold text-zinc-900">{t("sheet.holdersTitle")}</h3>
+                <ul className="mt-2 divide-y divide-zinc-100 text-[14px]">
                   {s.holders.map((h) => (
                     <li key={h.accountId} className="flex items-center justify-between gap-2 py-1.5">
                       <span className="truncate text-zinc-800">{h.name}</span>
-                      <span className="font-semibold text-sky-900 tabular-nums">{money.short(h.balancePaise)}</span>
+                      <span className="font-semibold tabular-nums">{money.short(h.balancePaise)}</span>
                     </li>
                   ))}
-                  <li className="flex justify-between gap-2 pt-2 font-bold text-sky-950">
+                  <li className="flex justify-between gap-2 pt-2 font-bold">
                     <span>{t("sheet.holdersTotal")}</span>
                     <span className="tabular-nums">{money.short(s.holders.reduce((a, h) => a + h.balancePaise, 0))}</span>
                   </li>
                 </ul>
-                {s.movements.some((m) => m.note) && (
-                  <ul className="mt-2 space-y-0.5 border-t border-dashed border-sky-200 pt-2 text-[13px] text-zinc-600">
-                    {s.movements
-                      .filter((m) => m.note)
-                      .map((m, i) => (
-                        <li key={i}>
-                          {formatDate(m.date)} · {m.to} {money.short(m.amountPaise)} — “{m.note}”
-                        </li>
-                      ))}
-                  </ul>
-                )}
               </div>
-            )}
-          </section>
+              {moves.length > 0 && (
+                <div className="rounded-2xl px-4 py-3.5 ring-1 ring-zinc-200">
+                  <h3 className="text-[15px] font-bold text-zinc-900">{t("sheet.movesTitle")}</h3>
+                  <ul className="mt-2 divide-y divide-zinc-100 text-[14px]">
+                    {moves.map((m, i) => (
+                      <li key={i} className="py-1.5">
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 text-zinc-700">
+                            <span className="text-zinc-500">{formatDate(m.date)}</span> · {m.from} → <b className="font-semibold text-zinc-900">{m.to}</b>
+                          </span>
+                          <span className="shrink-0 font-semibold tabular-nums">{money.short(m.amountPaise)}</span>
+                        </span>
+                        {m.note && <span className="block text-[13px] text-zinc-500">“{m.note}”</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* every member */}
           <div className="mt-6 overflow-hidden rounded-2xl ring-1 ring-emerald-200">
