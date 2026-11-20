@@ -39,6 +39,7 @@ import { MonthlyChart } from "@/features/dashboard/monthly-chart";
 import { monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
 import { SchemesOverview } from "@/features/dashboard/schemes-overview";
+import { SetupChecklist, type SetupStep } from "@/features/dashboard/setup-checklist";
 import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
@@ -90,6 +91,29 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           ? tr("dash.backupCollected", { month })
           : null;
 
+  // New-Mandal checklist (admins). `setup` is missing from older API versions — then nothing changes.
+  const setup: { otherMembers: number; otherLogins: number; hasMoney: boolean } | undefined = d.setup;
+  const setupSteps: SetupStep[] | null =
+    isAdmin && setup && org.status === "active" && !org.platformView && !org.settings.settlement
+      ? [
+          { key: "created", done: true, title: tr("dash.setupCreated"), subtitle: tr("dash.setupCreatedSub") },
+          { key: "members", done: setup.otherMembers > 0, title: tr("dash.setupMembers"), subtitle: tr("dash.setupMembersSub"), href: `${base}/members?new=1` },
+          { key: "hapta", done: (t.activeSchemes ?? 0) > 0, title: tr("dash.setupHapta"), subtitle: tr("dash.setupHaptaSub"), href: `${base}/schemes` },
+          {
+            key: "money",
+            done: setup.hasMoney,
+            title: tr("dash.setupMoney"),
+            subtitle: tr("dash.setupMoneySub"),
+            href: `${base}/monthly`,
+            extra: org.settings.openingImport ? undefined : { label: tr("dash.setupImport"), href: `${base}/settings/import` },
+          },
+          { key: "invite", done: setup.otherLogins > 0, optional: true, title: tr("dash.setupInvite"), subtitle: tr("dash.setupInviteSub"), href: `${base}/users` },
+        ]
+      : null;
+  // While required steps are open the checklist carries the import link, and ₹0 cards would only add noise.
+  const setupOpen = !!setupSteps && setupSteps.some((s) => !s.optional && !s.done);
+  const noMoneyYet = setup ? !setup.hasMoney : false;
+
   type Todo = { key: string; href: string; tone: Tone; icon: React.ReactNode; title: string; subtitle?: string; trailing: React.ReactNode };
   const todos: Todo[] = [];
   const pend = d.pending;
@@ -131,7 +155,14 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
         </Link>
       )}
 
-      {isAdmin && org.status === "active" && !org.settings.openingImport && (t.mandalCashPaise ?? 0) === 0 && (t.totalMemberBalancesPaise ?? 0) === 0 && (t.fundLoansOutstandingPaise ?? 0) === 0 && (
+      {setupSteps && (
+        <SetupChecklist
+          orgId={orgId}
+          steps={setupSteps}
+          labels={{ title: tr("dash.setupTitle"), sub: tr("dash.setupSub"), hide: tr("dash.setupHide"), optional: tr("dash.setupOptional") }}
+        />
+      )}
+      {isAdmin && !setupOpen && org.status === "active" && !org.settings.openingImport && (t.mandalCashPaise ?? 0) === 0 && (t.totalMemberBalancesPaise ?? 0) === 0 && (t.fundLoansOutstandingPaise ?? 0) === 0 && (
         <Link href={`${base}/settings/import`} className="mb-4 flex items-center gap-3 rounded-2xl bg-sky-500/10 p-3.5 text-sm ring-1 ring-sky-500/25">
           <History className="size-5 shrink-0 text-sky-700 dark:text-sky-300" />
           <span className="min-w-0 flex-1">
@@ -230,6 +261,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
 
       <SchemesOverview schemes={d.schemes} orgId={orgId} money={money} />
 
+      {!noMoneyYet && (
       <section className="mt-5" aria-label="Mandal fund">
         <SectionTitle>{tr("dash.glance")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -263,6 +295,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           </div>
         )}
       </section>
+      )}
 
       {d.monthlyChart && incomeBooks && (
         <Card className="mt-5">
