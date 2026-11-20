@@ -25,6 +25,7 @@ import { OrgLogo } from "@/components/app/org-logo";
 import { startNavigationProgress } from "@/components/app/navigation-progress";
 import { EdgeSwipeMenu } from "@/components/app/edge-swipe-menu";
 import { AppVersion } from "@/components/app/app-version";
+import { BackButton } from "@/components/app/back-button";
 
 const ICONS: Record<NavIcon, typeof Bell> = {
   dashboard: LayoutDashboard,
@@ -303,8 +304,11 @@ function PersonalButton({ label = false }: { label?: boolean }) {
 
 export function MobileHeaderContent({ data }: { data: ShellData }) {
   const t = useT();
+  // the bottom-bar tabs are top-level screens: no back there
+  const tabs = data.nav.filter((n) => n.primary).map((n) => n.href);
   return (
     <>
+      <BackButton hide={tabs} className="-ml-1" />
       <Link href={`/org/${data.org.id}`} className="flex min-w-0 flex-1 items-center gap-2">
         <OrgAvatar name={data.org.name} logoUrl={data.org.logoUrl} className="size-8 rounded-lg text-xs" />
         <span className="min-w-0">
@@ -321,6 +325,7 @@ export function MobileHeaderContent({ data }: { data: ShellData }) {
 export function TopbarContent({ data }: { data: ShellData }) {
   return (
     <>
+      <BackButton label className="mr-auto -ml-2" />
       {data.org.status !== "active" && <span className="mr-auto rounded-md bg-warning/20 px-2 py-0.5 text-xs font-medium capitalize">Organization {data.org.status}</span>}
       <PersonalButton label />
       <Bell_ href={`/org/${data.org.id}/notifications`} unread={data.unread} small />

@@ -13,6 +13,7 @@ export const hi: Dict = {
     save: "सेव करें",
     saveChanges: "बदलाव सेव करें",
     cancel: "रद्द करें",
+    back: "वापस",
     close: "बंद करें",
     all: "सभी",
     search: "खोजें",

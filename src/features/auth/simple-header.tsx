@@ -7,6 +7,7 @@ import { Building2, HandCoins, PiggyBank } from "lucide-react";
 
 import { LanguageMenu } from "@/i18n/switcher";
 import { useT } from "@/i18n/client";
+import { BackButton } from "@/components/app/back-button";
 
 /** `account`: the signed-in person's menu (name, email, account & settings, sign out). */
 export function SimpleHeader({ account }: { account?: ReactNode }) {
@@ -14,12 +15,15 @@ export function SimpleHeader({ account }: { account?: ReactNode }) {
   const inPersonal = usePathname().startsWith("/personal");
   return (
     <header className="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center justify-between gap-2 border-b pt-[env(safe-area-inset-top)] border-border/60 bg-background/85 px-4 backdrop-blur-md sm:px-6">
+      <div className="flex min-w-0 items-center gap-1">
+      <BackButton className="-ml-2" />
       <Link href="/onboarding" className="flex items-center gap-2 font-bold tracking-tight">
         <span className="bg-hero flex size-8 items-center justify-center rounded-lg">
           <HandCoins className="size-4" />
         </span>
         MandalHisab
       </Link>
+      </div>
       <div className="flex items-center gap-2">
         {/* Personal Hisab ⇄ the person's Mandals */}
         <Link href={inPersonal ? "/onboarding" : "/personal"} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={inPersonal ? t("ph.backToMandals") : t("ph.open")}>

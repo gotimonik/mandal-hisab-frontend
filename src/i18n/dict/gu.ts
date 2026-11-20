@@ -13,6 +13,7 @@ export const gu: Dict = {
     save: "સાચવો",
     saveChanges: "ફેરફાર સાચવો",
     cancel: "રદ કરો",
+    back: "પાછા",
     close: "બંધ કરો",
     all: "બધા",
     search: "શોધો",

@@ -11,6 +11,7 @@ export const en = {
     save: "Save",
     saveChanges: "Save changes",
     cancel: "Cancel",
+    back: "Back",
     close: "Close",
     all: "All",
     search: "Search",
