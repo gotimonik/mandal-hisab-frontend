@@ -26,6 +26,7 @@ export function LoanPaymentDialog({
   memberName,
   interestDuePaise,
   outstandingPaise,
+  installmentDuePaise = 0,
   label: labelProp,
   size = "sm",
   variant = "default",
@@ -37,6 +38,8 @@ export function LoanPaymentDialog({
   memberName: string;
   interestDuePaise: number;
   outstandingPaise: number;
+  /** upad installment due now (Mandals with fixed installments): filled in as the amount returned */
+  installmentDuePaise?: number;
   label?: string;
   size?: "xs" | "sm" | "default";
   variant?: "default" | "outline";
@@ -52,7 +55,7 @@ export function LoanPaymentDialog({
   const label = labelProp ?? t("upad.receivePayment");
   const [open, setOpen] = useState(false);
   const [interest, setInterest] = useState(paiseToRupeeInput(interestDuePaise));
-  const [principal, setPrincipal] = useState("");
+  const [principal, setPrincipal] = useState(installmentDuePaise > 0 ? paiseToRupeeInput(installmentDuePaise) : "");
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [method, setMethod] = useState("cash");
@@ -69,7 +72,7 @@ export function LoanPaymentDialog({
 
   const reset = () => {
     setInterest(paiseToRupeeInput(interestDuePaise));
-    setPrincipal("");
+    setPrincipal(installmentDuePaise > 0 ? paiseToRupeeInput(installmentDuePaise) : "");
     setDate(todayISO());
     setNote("");
     setMethod("cash");
@@ -162,7 +165,18 @@ export function LoanPaymentDialog({
               </Field>
             </div>
             <MethodField methods={methods} value={method} onChange={setMethod} label={t("pay.paidBy")} cashLabel={t("pay.method.cash")} upiLabel={t("pay.method.upi")} />
-            {outstandingPaise > 0 && <ChoicePills label={t("upad.returnedRs")} value={principal} onChange={setPrincipal} options={[{ value: paiseToRupeeInput(outstandingPaise), label: `${t("collect.full")} · ${money.short(outstandingPaise)}` }]} />}
+            {outstandingPaise > 0 && (
+              <ChoicePills
+                label={t("upad.returnedRs")}
+                value={principal}
+                onChange={setPrincipal}
+                options={[
+                  ...(installmentDuePaise > 0 && installmentDuePaise < outstandingPaise ? [{ value: paiseToRupeeInput(installmentDuePaise), label: `${t("members.installmentPart")} · ${money.short(installmentDuePaise)}` }] : []),
+                  { value: paiseToRupeeInput(outstandingPaise), label: `${t("collect.full")} · ${money.short(outstandingPaise)}` },
+                ]}
+              />
+            )}
+            {installmentDuePaise > 0 && <FormNote tone="warn">{t("upad.installmentHint", { amount: money.fmt(installmentDuePaise) })}</FormNote>}
             <MoreOptions bare icon={<NotebookPen />} title={t("common.noteOptional")}>
               <Field label={t("common.noteOptional")} htmlFor="lp-note" className="sm:col-span-2">
                 <Input id="lp-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />

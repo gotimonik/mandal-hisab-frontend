@@ -45,6 +45,8 @@ interface V {
   loanRate: string;
   loanDueDay: number;
   allowUpadRequests: boolean;
+  upadInstallmentsOn: boolean;
+  upadInstallmentCount: number;
   discoverable: boolean;
   allowJoinRequests: boolean;
   autoCreateMember: boolean;
@@ -87,6 +89,8 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
       loanRate: s.fundLoans.defaultMonthlyRate,
       loanDueDay: s.fundLoans.dueDay,
       allowUpadRequests: s.fundLoans.allowMemberRequests ?? true,
+      upadInstallmentsOn: !!s.fundLoans.installments?.enabled,
+      upadInstallmentCount: s.fundLoans.installments?.count ?? 10,
       discoverable: s.membership.discoverable,
       allowJoinRequests: s.membership.allowJoinRequests,
       autoCreateMember: s.membership.autoCreateMember,
@@ -128,6 +132,8 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
     if (!/^\d{1,3}(\.\d{1,4})?$/.test(v.interestRate.trim())) return setError("Enter the default interest rate like 1 or 0.75");
     if (!/^\d{1,3}(\.\d{1,4})?$/.test(v.loanRate.trim())) return setError("Enter the default upad interest rate like 2 or 10");
     if (!(Number(v.loanDueDay) >= 1 && Number(v.loanDueDay) <= 28)) return setError("Upad interest due day must be between 1 and 28");
+    const installmentCount = Number(v.upadInstallmentCount);
+    if (v.upadInstallmentsOn && !(Number.isInteger(installmentCount) && installmentCount >= 2 && installmentCount <= 60)) return setError("Number of upad installments must be between 2 and 60");
     if (v.upiEnabled && !v.upiAccountId) return setError("Add the Mandal's UPI account first (Accounts → Add account → UPI), then choose it here");
     const opt = (x: string) => (x.trim() ? x.trim() : undefined);
     submit(
@@ -162,7 +168,12 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
             haptaTreatment: v.haptaTreatment,
             interest: { defaultMode: v.interestMode, monthlyRate: v.interestRate.trim(), basis: v.interestBasis },
             withdrawals: { allowExceptions: v.allowWithdrawalExceptions },
-            fundLoans: { defaultMonthlyRate: v.loanRate.trim(), dueDay: Number(v.loanDueDay), allowMemberRequests: v.allowUpadRequests },
+            fundLoans: {
+              defaultMonthlyRate: v.loanRate.trim(),
+              dueDay: Number(v.loanDueDay),
+              allowMemberRequests: v.allowUpadRequests,
+              installments: { enabled: v.upadInstallmentsOn, count: v.upadInstallmentsOn ? installmentCount : (s.fundLoans.installments?.count ?? 10) },
+            },
             membership: { discoverable: v.discoverable, allowJoinRequests: v.allowJoinRequests, autoCreateMember: v.autoCreateMember },
           },
         },
@@ -243,6 +254,22 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
             <Checkbox checked={form.watch("allowUpadRequests")} onCheckedChange={(c) => form.setValue("allowUpadRequests", !!c)} />
             <span>Members can request upad in the app (up to the cash available; an admin approves each request)</span>
           </label>
+          <div className="flex flex-col gap-3 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm sm:col-span-2">
+            <label className="flex items-start gap-2.5">
+              <Checkbox checked={form.watch("upadInstallmentsOn")} onCheckedChange={(c) => form.setValue("upadInstallmentsOn", !!c)} />
+              <span>
+                Upad must be returned in fixed monthly installments
+                <span className="block text-xs text-muted-foreground">
+                  The installment is due every month with the interest, from the month after the upad is given. Interest is on what is still left — e.g. {money.fmt(8000000)} at 1% in 10: {money.fmt(800000)} + {money.fmt(80000)} interest the first month, {money.fmt(800000)} + {money.fmt(72000)} the next, and so on. Applies to upad given from now on.
+                </span>
+              </span>
+            </label>
+            {form.watch("upadInstallmentsOn") && (
+              <Field label="Number of monthly installments" htmlFor="o-linst" hint="2–60 months" className="max-w-[14rem]">
+                <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
+              </Field>
+            )}
+          </div>
           <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm sm:col-span-2">
             <Checkbox checked={form.watch("allowWithdrawalExceptions")} onCheckedChange={(c) => form.setValue("allowWithdrawalExceptions", !!c)} />
             <span>Allow admins to approve a withdrawal above a member&apos;s balance (a reason is required and recorded).</span>

@@ -16,17 +16,20 @@ import { useLang, useT } from "@/i18n/client";
 import { monthName } from "@/i18n/core";
 import { useMoney } from "@/components/app/currency";
 import { AmountInput, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
+import { InstallmentPlanNote } from "./installment-note";
 
 interface Props {
   members: { _id: string; name: string; membershipNumber: string }[];
   accounts: { _id: string; name: string; balancePaise: number }[];
   defaultRate: string;
   defaultMemberId?: string;
+  /** the Mandal returns upad in fixed monthly installments */
+  installments?: { enabled: boolean; count: number };
 }
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
-function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
+function Form({ members, accounts, defaultRate, defaultMemberId, installments }: Props) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -117,6 +120,7 @@ function Form({ members, accounts, defaultRate, defaultMemberId }: Props) {
         </Field>
       </MoreOptions>
       {monthly > 0 && <FormNote>{t("upad.willBeDue", { amount: money.fmt(monthly), month: nextMonthName })}</FormNote>}
+      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} />
       <SubmitButton pending={pending} icon={<HandCoins />}>
         {t("upad.give")}
       </SubmitButton>

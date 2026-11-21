@@ -85,7 +85,13 @@ export interface OrgSettings {
   haptaTreatment: "member_savings" | "income";
   interest: InterestSettings;
   withdrawals: { allowExceptions: boolean };
-  fundLoans: { defaultMonthlyRate: string; dueDay: number; allowMemberRequests: boolean };
+  fundLoans: {
+    defaultMonthlyRate: string;
+    dueDay: number;
+    allowMemberRequests: boolean;
+    /** every new upad is returned in `count` equal monthly installments (with the interest) */
+    installments?: { enabled: boolean; count: number };
+  };
   membership: { discoverable: boolean; allowJoinRequests: boolean; autoCreateMember: boolean };
   /** last month the Mandal runs (YYYY-MM), if set */
   endMonth?: string | null;
@@ -166,6 +172,7 @@ export interface Member {
   upadPaise?: number;
   /** upad interest due and unpaid (members list) */
   upadInterestDuePaise?: number;
+  upadInstallmentDuePaise?: number;
   balancePaise?: number;
   /** joined partway through: owes (or paid / was let off) the price of their shares */
   joining?: MemberJoining;
@@ -515,12 +522,39 @@ export interface FundLoan {
   nextInterestPaise: number;
   /** the borrower's upad advance (interest paid ahead; shared by all their upads) */
   memberAdvancePaise?: number;
+  /** fixed when given, in Mandals that return upad in installments */
+  installmentPlan?: { count: number; amountPaise: number; firstMonth: string } | null;
+  /** where it stands against its installments now (active upads with a plan) */
+  installment?: UpadInstallmentNow | null;
+}
+
+export interface UpadInstallmentNow {
+  count: number;
+  amountPaise: number;
+  firstMonth: string;
+  lastMonth: string;
+  returnedPaise: number;
+  duePaise: number;
+  overduePaise: number;
+  thisMonthPaise: number;
+  paidCount: number;
+  next: { sequence: number; period: string; dueDate: string; amountPaise: number } | null;
+}
+
+export interface UpadInstallmentRow {
+  sequence: number;
+  period: string;
+  dueDate: string;
+  amountPaise: number;
+  paidPaise: number;
+  status: "paid" | "partially_paid" | "overdue" | "due" | "upcoming";
 }
 
 export interface FundLoanList {
   items: FundLoan[];
-  totals: { outstandingPaise: number; interestDuePaise: number; interestPaidPaise: number; activeLoans: number };
+  totals: { outstandingPaise: number; interestDuePaise: number; interestPaidPaise: number; activeLoans: number; installmentDuePaise?: number };
   defaultMonthlyRate: string;
+  installments?: { enabled: boolean; count: number };
 }
 
 export interface FundLoanMonthRow {
@@ -534,6 +568,8 @@ export interface FundLoanMonthRow {
   carriedForwardPaise: number;
   carriedForwardMonths: string[];
   totalDuePaise: number;
+  /** upad installment for the month (Mandals with fixed installments) */
+  installment?: { count: number; amountPaise: number; thisMonthPaise: number; overduePaise: number; duePaise: number; sequence: number | null } | null;
   status: string;
 }
 

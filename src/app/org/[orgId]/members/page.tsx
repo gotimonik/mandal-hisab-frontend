@@ -116,8 +116,8 @@ export default async function MembersPage({
         <>
           <ul className="flex flex-col gap-2 md:hidden" aria-label={t("members.title")}>
             {data.items.map((m) => {
-              // owed now: unpaid hapta + unpaid upad interest
-              const due = (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0);
+              // owed now: unpaid hapta + unpaid upad interest + upad installment due
+              const due = (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) + (m.upadInstallmentDuePaise ?? 0);
               return (
                 <li
                   key={m._id}
@@ -129,7 +129,7 @@ export default async function MembersPage({
                     className="min-w-0 flex-1"
                   >
                     <span className="flex items-center gap-1.5">
-                      <span className="truncate font-semibold">{m.name}</span>
+                      <span className="line-clamp-2 font-semibold break-words">{m.name}</span>
                       {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} />}
                     </span>
                     <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
@@ -154,7 +154,7 @@ export default async function MembersPage({
                   </Link>
                   <div className="flex shrink-0 items-center gap-1.5">
                     {due > 0 && canCollect ? (
-                      <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={due} size="sm" />
+                      <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={due} stacked />
                     ) : due > 0 ? (
                       <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
                         {t("members.due", { amount: money.short(due) })}
@@ -224,16 +224,17 @@ export default async function MembersPage({
                       </TableCell>
                       <TableCell className="text-right">
                         <Money
-                          paise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0)}
+                          paise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) + (m.upadInstallmentDuePaise ?? 0)}
                           className={
-                            (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) > 0
+                            (m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) + (m.upadInstallmentDuePaise ?? 0) > 0
                               ? "text-destructive"
                               : "text-muted-foreground"
                           }
                         />
-                        {(m.upadInterestDuePaise ?? 0) > 0 && (
+                        {((m.upadInterestDuePaise ?? 0) > 0 || (m.upadInstallmentDuePaise ?? 0) > 0) && (
                           <span className="block text-xs text-muted-foreground">
                             {t("members.haptaPart")} {money.short(m.outstandingPaise ?? 0)} · {t("members.interestPart")} {money.short(m.upadInterestDuePaise ?? 0)}
+                            {(m.upadInstallmentDuePaise ?? 0) > 0 && <> · {t("members.installmentPart")} {money.short(m.upadInstallmentDuePaise ?? 0)}</>}
                           </span>
                         )}
                       </TableCell>
@@ -248,7 +249,7 @@ export default async function MembersPage({
                       </TableCell>
                       {canCollect && (
                         <TableCell className="text-right">
-                          {(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) > 0 && <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0)} size="xs" />}
+                          {(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) + (m.upadInstallmentDuePaise ?? 0) > 0 && <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) + (m.upadInstallmentDuePaise ?? 0)} size="xs" />}
                         </TableCell>
                       )}
                     </TableRow>

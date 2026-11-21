@@ -12,10 +12,11 @@ import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";
 import { FormNote, SubmitButton } from "@/components/app/form-bits";
+import { InstallmentPlanNote } from "./installment-note";
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
-function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amountPaise: number; defaultRate: string }) {
+function Form({ requestId, amountPaise, defaultRate, installments }: { requestId: string; amountPaise: number; defaultRate: string; installments?: { enabled: boolean; count: number } }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -56,6 +57,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
         </Field>
       </div>
       {monthly > 0 && <FormNote>{t("upad.perMonthFromNext", { amount: money.fmt(monthly) })}</FormNote>}
+      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} />
       <SubmitButton pending={pending} icon={<Check />}>
         {t("upad.approveGive")}
       </SubmitButton>
@@ -63,7 +65,7 @@ function Form({ requestId, amountPaise, defaultRate }: { requestId: string; amou
   );
 }
 
-export function ApproveRequestDialog(props: { requestId: string; memberName: string; amountPaise: number; defaultRate: string }) {
+export function ApproveRequestDialog(props: { requestId: string; memberName: string; amountPaise: number; defaultRate: string; installments?: { enabled: boolean; count: number } }) {
   const t = useT();
   return (
     <FormDialog trigger={t("common.approve")} triggerSize="xs" title={t("upad.approveTitle", { name: props.memberName })} icon={<HandCoins />} tone="orange">

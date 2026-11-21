@@ -147,6 +147,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                   <div className="text-xs text-muted-foreground">
                     {r.number} · <Money paise={r.outstandingPaise} /> @ {r.monthlyRate}%
                   </div>
+                  {r.installment && r.installment.duePaise > 0 && <div className="text-xs font-medium text-warning-ink">{t("upad.installmentDueNow", { amount: money.fmt(r.installment.duePaise) })}</div>}
                 </div>
                 <div className="col-span-2 row-start-2 text-sm md:col-span-1 md:row-start-auto">
                   <span className="text-xs text-muted-foreground md:hidden">{t("monthly.thisMonthLbl")}</span>
@@ -167,7 +168,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
                   {r.totalDuePaise > 0 && <Money paise={r.totalDuePaise} className="text-sm font-medium" />}
                 </div>
                 <div className="col-start-2 row-start-1 flex justify-end md:col-start-auto md:row-start-auto md:w-24">
-                  {canCollect && r.totalDuePaise > 0 && <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={r.loanId} number={r.number} memberName={r.member?.name ?? "member"} interestDuePaise={r.totalDuePaise} outstandingPaise={r.outstandingPaise} size="xs" label={t("monthly.receive")} />}
+                  {canCollect && (r.totalDuePaise > 0 || (r.installment?.duePaise ?? 0) > 0) && <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={r.loanId} number={r.number} memberName={r.member?.name ?? "member"} interestDuePaise={r.totalDuePaise} outstandingPaise={r.outstandingPaise} installmentDuePaise={r.installment?.duePaise ?? 0} size="xs" label={t("monthly.receive")} />}
                 </div>
               </div>
             ))}

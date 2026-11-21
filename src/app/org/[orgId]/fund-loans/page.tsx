@@ -62,6 +62,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
               members={members.map((m) => ({ _id: m._id, name: m.name, membershipNumber: m.membershipNumber }))}
               accounts={accounts.filter((a) => a.isActive).sort((a, b) => (a.type === "cash" ? -1 : 0) - (b.type === "cash" ? -1 : 0)).map((a) => ({ _id: a._id, name: a.name, balancePaise: a.balancePaise }))}
               defaultRate={data.defaultMonthlyRate}
+              installments={data.installments}
               defaultOpen={sp.new === "1"}
             />
           ) : null
@@ -168,7 +169,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                     <ActionButton path={`/orgs/${orgId}/upad-requests/${r._id}/reject`} size="xs" variant="ghost" successMessage={tr("upad.reqRejected")} confirm={{ title: tr("upad.rejectReqConfirm", { name: r.member?.name ?? tr("common.member") }), reason: "required", reasonLabel: tr("upad.reasonShown"), destructive: true, confirmLabel: tr("common.reject") }}>
                       {tr("common.reject")}
                     </ActionButton>
-                    <ApproveRequestDialog requestId={r._id} memberName={r.member?.name ?? "member"} amountPaise={r.amountPaise} defaultRate={data.defaultMonthlyRate} />
+                    <ApproveRequestDialog requestId={r._id} memberName={r.member?.name ?? "member"} amountPaise={r.amountPaise} defaultRate={data.defaultMonthlyRate} installments={data.installments} />
                   </div>
                 )}
               </div>
@@ -203,6 +204,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   <p className="text-[11px] text-muted-foreground">{tr("common.outstanding")}</p>
                   <p className="font-bold tabular-nums"><Money paise={l.outstandingPaise} short /></p>
                   <p className="text-[11px] text-muted-foreground">{tr("upad.since", { rate: l.monthlyRate, date: formatDate(l.date) })}</p>
+                  {l.installment && <p className="text-[11px] text-muted-foreground">{tr("upad.installmentProgress", { paid: l.installment.paidCount, n: l.installment.count })}</p>}
+                  {(l.installment?.duePaise ?? 0) > 0 && <p className="text-[11px] font-medium text-warning-ink">{tr("upad.installmentDueNow", { amount: money.fmt(l.installment!.duePaise) })}</p>}
                 </div>
                 <div className={`rounded-xl px-3 py-2 ${l.interestDuePaise > 0 ? "bg-amber-500/12" : "bg-muted/60"}`}>
                   <p className="text-[11px] text-muted-foreground">{tr("common.interestDue")}</p>
@@ -214,7 +217,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
               {canCollect && l.status === "active" && (
                 <div className="mt-3 flex gap-2 [&>*]:flex-1 [&_button]:w-full">
                   {several(l) && <ReceiveInterestDialog methods={org.settings.paymentMethods} memberId={l.memberId} memberName={l.member?.name ?? "member"} size="sm" />}
-                  <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="sm" label={tr("upad.receivePayment")} />
+                  <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} installmentDuePaise={l.installment?.duePaise ?? 0} size="sm" label={tr("upad.receivePayment")} />
                 </div>
               )}
             </li>
@@ -250,6 +253,8 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   <TableCell className="hidden font-medium sm:table-cell">{l.member?.name ?? "—"}</TableCell>
                   <TableCell className="text-right">
                     <Money paise={l.outstandingPaise} />
+                    {l.installment && <div className="text-xs text-muted-foreground">{tr("upad.installmentProgress", { paid: l.installment.paidCount, n: l.installment.count })}</div>}
+                    {(l.installment?.duePaise ?? 0) > 0 && <div className="text-xs font-medium text-warning-ink">{tr("upad.installmentDueNow", { amount: money.fmt(l.installment!.duePaise) })}</div>}
                   </TableCell>
                   <TableCell className="hidden text-right sm:table-cell">{l.monthlyRate}%</TableCell>
                   <TableCell className="text-right">
@@ -263,7 +268,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
                   <TableCell className="hidden text-right sm:table-cell">
                     <div className="flex justify-end gap-1">
                       {canCollect && several(l) && <ReceiveInterestDialog methods={org.settings.paymentMethods} memberId={l.memberId} memberName={l.member?.name ?? "member"} size="xs" />}
-                      {canCollect && l.status === "active" && <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} size="xs" label={tr("upad.receive")} />}
+                      {canCollect && l.status === "active" && <LoanPaymentDialog methods={org.settings.paymentMethods} reported={claims.filter((x) => x.loanId === l._id && !x.alreadyRecorded)} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} installmentDuePaise={l.installment?.duePaise ?? 0} size="xs" label={tr("upad.receive")} />}
                     </div>
                   </TableCell>
                 </TableRow>

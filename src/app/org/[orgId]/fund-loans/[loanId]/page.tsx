@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { api } from "@/lib/server/api";
 import { can, getOrg, getMoney } from "@/lib/server/data";
-import type { FundLoan } from "@/lib/types";
+import type { FundLoan, UpadInstallmentNow, UpadInstallmentRow } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/app/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { CalendarDays, HandCoins, Receipt } from "lucide-react";
+import { CalendarDays, CalendarRange, HandCoins, Receipt } from "lucide-react";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
 
 export const metadata = { title: "Upad" };
@@ -49,10 +49,23 @@ const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "shor
 
 export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/fund-loans/[loanId]">) {
   const { orgId, loanId } = await params;
-  const [org, data] = await Promise.all([getOrg(orgId), api<{ loan: FundLoan; dues: Due[]; payments: Payment[] }>(`/orgs/${orgId}/fund-loans/${loanId}`)]);
+  const [org, data] = await Promise.all([getOrg(orgId), api<{ loan: FundLoan; dues: Due[]; payments: Payment[]; installments?: (UpadInstallmentNow & { rows: UpadInstallmentRow[] }) | null }>(`/orgs/${orgId}/fund-loans/${loanId}`)]);
   // getOrg is already in flight above (and cached), so this resolves without a second wait
   const money = await getMoney(orgId);
   const { loan: l, dues, payments } = data;
+  const inst = l.status === "active" ? (data.installments ?? null) : null;
+  // each installment month: the installment + that month's interest (the actual due once it exists; else
+  // worked out on what the plan leaves outstanding, as interest is on last month's closing amount)
+  const instRows = (() => {
+    if (!inst) return [];
+    let left = l.principalPaise;
+    return inst.rows.map((r) => {
+      const due = dues.find((d) => d.period === r.period);
+      const interest = due ? due.interestPaise : Math.round((left * Number(l.monthlyRate)) / 100);
+      left -= r.amountPaise;
+      return { ...r, interestPaise: interest, estimated: !due };
+    });
+  })();
   const live = org.status === "active";
   const latestValid = payments.find((p) => p.status === "valid");
   const staffView = can(org, "members.view");
@@ -88,7 +101,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
         actions={
           <>
             {staffView && l.status === "active" && can(org, "payments.record") && live && (
-              <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} />
+              <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} installmentDuePaise={inst?.duePaise ?? 0} />
             )}
             {staffView && l.status === "active" && payments.every((p) => p.status === "reversed") && can(org, "transactions.adjust") && live && (
               <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/cancel`} variant="ghost" successMessage="Upad cancelled" confirm={{ title: `Cancel ${l.number}?`, description: "Only for an upad recorded by mistake. The cash goes back into the fund.", reason: "required", destructive: true, confirmLabel: "Cancel upad" }}>
@@ -137,6 +150,76 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
             </ActionButton>
           )}
         </div>
+      )}
+
+      {inst && (
+        <>
+          <SectionTitle>
+            Installments · {inst.paidCount}/{inst.count} paid
+          </SectionTitle>
+          <p className={cn("mb-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium ring-1", inst.duePaise > 0 ? "bg-amber-500/12 text-amber-800 ring-amber-500/30 dark:text-amber-300" : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300")}>
+            {inst.duePaise > 0
+              ? `${money.fmt(inst.duePaise)} installment due now${inst.overduePaise > 0 ? ` (${money.fmt(inst.overduePaise)} from earlier months)` : ""} — record it as "Upad amount returned".`
+              : inst.next
+                ? `Installments are up to date. Next: ${money.fmt(inst.next.amountPaise)} in ${monthName(inst.next.period)}.`
+                : "All installments returned."}
+            <span className="block text-xs font-normal opacity-80">
+              {money.fmt(inst.amountPaise)} a month for {inst.count} months ({monthName(inst.firstMonth)} – {monthName(inst.lastMonth)}), with the interest on what is left.
+            </span>
+          </p>
+          <div className="mb-6">
+            <TableWrap>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-right">Installment</TableHead>
+                    <TableHead className="text-right">Interest</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {instRows.map((r) => (
+                    <TableRow key={r.sequence}>
+                      <TableCell className="text-muted-foreground tabular-nums">{r.sequence}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-2">
+                          <CalendarRange className="size-4 text-muted-foreground" />
+                          <span>
+                            <span className="font-semibold">{monthName(r.period)}</span>
+                            <span className="block text-xs text-muted-foreground">due {formatDate(r.dueDate)}</span>
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Money paise={r.amountPaise} className="font-semibold" />
+                        {r.paidPaise > 0 && r.paidPaise < r.amountPaise && (
+                          <span className="block text-xs text-muted-foreground">
+                            paid <Money paise={r.paidPaise} />
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {r.estimated ? "≈ " : ""}
+                        <Money paise={r.interestPaise} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {r.estimated ? "≈ " : ""}
+                        <Money paise={r.amountPaise + r.interestPaise} className="font-semibold" />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={r.status} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableWrap>
+            <p className="mt-1.5 text-xs text-muted-foreground">≈ interest of coming months if each installment is paid on time.</p>
+          </div>
+        </>
       )}
 
       <SectionTitle>Monthly interest</SectionTitle>
