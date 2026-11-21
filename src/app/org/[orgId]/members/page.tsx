@@ -174,6 +174,22 @@ export default async function MembersPage({
                       )}
                     </div>
                   </div>
+                  {/* what is owed, part by part */}
+                  {due > 0 && (
+                    <div className="flex flex-wrap gap-1.5 text-xs">
+                      {[
+                        [t("members.haptaPart"), m.outstandingPaise ?? 0],
+                        [t("members.interestPart"), m.upadInterestDuePaise ?? 0],
+                        [t("members.installmentPart"), m.upadInstallmentDuePaise ?? 0],
+                      ]
+                        .filter(([, v]) => (v as number) > 0)
+                        .map(([label, v]) => (
+                          <span key={label as string} className="rounded-full bg-rose-500/8 px-2.5 py-1 text-rose-700 ring-1 ring-rose-500/15 dark:text-rose-300">
+                            {label} <b className="tabular-nums">{money.short(v as number)}</b>
+                          </span>
+                        ))}
+                    </div>
+                  )}
                   {/* on its own line, so the name and details keep the full width */}
                   {due > 0 && canCollect && (
                     <div className="[&_button]:w-full">
