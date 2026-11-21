@@ -90,7 +90,7 @@ export interface OrgSettings {
     dueDay: number;
     allowMemberRequests: boolean;
     /** every new upad is returned in `count` equal monthly installments (with the interest) */
-    installments?: { enabled: boolean; count: number };
+    installments?: { enabled: boolean; count: number; minAmountPaise?: number };
   };
   membership: { discoverable: boolean; allowJoinRequests: boolean; autoCreateMember: boolean };
   /** last month the Mandal runs (YYYY-MM), if set */
@@ -554,7 +554,7 @@ export interface FundLoanList {
   items: FundLoan[];
   totals: { outstandingPaise: number; interestDuePaise: number; interestPaidPaise: number; activeLoans: number; installmentDuePaise?: number };
   defaultMonthlyRate: string;
-  installments?: { enabled: boolean; count: number };
+  installments?: { enabled: boolean; count: number; minAmountPaise?: number };
 }
 
 export interface FundLoanMonthRow {

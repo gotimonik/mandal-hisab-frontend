@@ -16,7 +16,7 @@ import { useLang, useT } from "@/i18n/client";
 import { monthName } from "@/i18n/core";
 import { useMoney } from "@/components/app/currency";
 import { AmountInput, FormNote, MoreOptions, SubmitButton } from "@/components/app/form-bits";
-import { InstallmentPlanNote } from "./installment-note";
+import { InstallmentPlanNote, InstallmentStartField, MONTH, addMonths, installmentsApply, type InstallmentSetting } from "./installment-note";
 
 interface Props {
   members: { _id: string; name: string; membershipNumber: string }[];
@@ -24,7 +24,7 @@ interface Props {
   defaultRate: string;
   defaultMemberId?: string;
   /** the Mandal returns upad in fixed monthly installments */
-  installments?: { enabled: boolean; count: number };
+  installments?: InstallmentSetting;
 }
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
@@ -42,6 +42,8 @@ function Form({ members, accounts, defaultRate, defaultMemberId, installments }:
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState("");
   const [accountId, setAccountId] = useState(accounts[0]?._id ?? "");
+  // first installment month: blank = the month after the upad is given
+  const [startMonth, setStartMonth] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [key] = useState(() => newIdempotencyKey("fl"));
   const [pending, start] = useTransition();
@@ -51,6 +53,9 @@ function Form({ members, accounts, defaultRate, defaultMemberId, installments }:
     return p.success ? Math.round(Number(p.data) * 100) : 0;
   }, [amount]);
   const monthly = RATE.test(rate) ? Math.round((amountPaise * Number(rate)) / 100) : 0;
+  const firstMonth = date ? addMonths(date.slice(0, 7), 1) : "";
+  const withInstallments = installmentsApply(amountPaise, installments);
+  const instStart = startMonth || firstMonth;
   const nextMonthName = (() => {
     const [y, m] = date.slice(0, 7).split("-").map(Number);
     return y ? monthName(lang, new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7)) : "";
@@ -61,9 +66,10 @@ function Form({ members, accounts, defaultRate, defaultMemberId, installments }:
     const p = rupees.safeParse(amount);
     if (!p.success) return setError(p.error.issues[0].message);
     if (!RATE.test(rate) || Number(rate) <= 0) return setError(t("upad.vRate"));
+    if (withInstallments && (!MONTH.test(instStart) || instStart < firstMonth)) return setError("Installments can start from the month after the upad is given");
     start(async () => {
       setError(null);
-      const res = await apiMutate<{ loan: { _id: string; number: string } }>({ path: `/orgs/${orgId}/fund-loans`, body: { memberId, amount: p.data, monthlyRate: rate, date, note: note || undefined, accountId: accountId || undefined, idempotencyKey: key } });
+      const res = await apiMutate<{ loan: { _id: string; number: string } }>({ path: `/orgs/${orgId}/fund-loans`, body: { memberId, amount: p.data, monthlyRate: rate, date, installmentStartMonth: withInstallments ? instStart : undefined, note: note || undefined, accountId: accountId || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.error);
       toast.success(t("upad.recorded", { number: res.data.loan.number }));
       close();
@@ -120,7 +126,8 @@ function Form({ members, accounts, defaultRate, defaultMemberId, installments }:
         </Field>
       </MoreOptions>
       {monthly > 0 && <FormNote>{t("upad.willBeDue", { amount: money.fmt(monthly), month: nextMonthName })}</FormNote>}
-      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} />
+      {withInstallments && <InstallmentStartField id="fl-start" value={instStart} min={firstMonth} onChange={setStartMonth} />}
+      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} startMonth={instStart} />
       <SubmitButton pending={pending} icon={<HandCoins />}>
         {t("upad.give")}
       </SubmitButton>

@@ -12,11 +12,11 @@ import { todayISO } from "@/lib/format";
 import { useT } from "@/i18n/client";
 import { useMoney } from "@/components/app/currency";
 import { FormNote, SubmitButton } from "@/components/app/form-bits";
-import { InstallmentPlanNote } from "./installment-note";
+import { InstallmentPlanNote, InstallmentStartField, MONTH, addMonths, installmentsApply, type InstallmentSetting } from "./installment-note";
 
 const RATE = /^\d{1,3}(\.\d{1,4})?$/;
 
-function Form({ requestId, amountPaise, defaultRate, installments }: { requestId: string; amountPaise: number; defaultRate: string; installments?: { enabled: boolean; count: number } }) {
+function Form({ requestId, amountPaise, defaultRate, installments }: { requestId: string; amountPaise: number; defaultRate: string; installments?: InstallmentSetting }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -25,6 +25,10 @@ function Form({ requestId, amountPaise, defaultRate, installments }: { requestId
   const [rate, setRate] = useState(defaultRate);
   const [date, setDate] = useState(todayISO());
   const [error, setError] = useState<string | null>(null);
+  const [startMonth, setStartMonth] = useState("");
+  const firstMonth = date ? addMonths(date.slice(0, 7), 1) : "";
+  const withInstallments = installmentsApply(amountPaise, installments);
+  const instStart = startMonth || firstMonth;
   const [pending, start] = useTransition();
   const monthly = RATE.test(rate) ? Math.round((amountPaise * Number(rate)) / 100) : 0;
   return (
@@ -34,9 +38,10 @@ function Form({ requestId, amountPaise, defaultRate, installments }: { requestId
       onSubmit={(e) => {
         e.preventDefault();
         if (!RATE.test(rate) || Number(rate) <= 0) return setError(t("upad.vRateShort"));
+        if (withInstallments && (!MONTH.test(instStart) || instStart < firstMonth)) return setError("Installments can start from the month after the upad is given");
         start(async () => {
           setError(null);
-          const res = await apiMutate<{ number: string }>({ path: `/orgs/${orgId}/upad-requests/${requestId}/approve`, body: { monthlyRate: rate, date } });
+          const res = await apiMutate<{ number: string }>({ path: `/orgs/${orgId}/upad-requests/${requestId}/approve`, body: { monthlyRate: rate, date, installmentStartMonth: withInstallments ? instStart : undefined } });
           if (!res.ok) return setError(res.error);
           toast.success(t("upad.approved", { number: res.data.number }));
           close();
@@ -57,7 +62,8 @@ function Form({ requestId, amountPaise, defaultRate, installments }: { requestId
         </Field>
       </div>
       {monthly > 0 && <FormNote>{t("upad.perMonthFromNext", { amount: money.fmt(monthly) })}</FormNote>}
-      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} />
+      {withInstallments && <InstallmentStartField id="ar-start" value={instStart} min={firstMonth} onChange={setStartMonth} />}
+      <InstallmentPlanNote amountPaise={amountPaise} rate={rate} installments={installments} startMonth={instStart} />
       <SubmitButton pending={pending} icon={<Check />}>
         {t("upad.approveGive")}
       </SubmitButton>
@@ -65,7 +71,7 @@ function Form({ requestId, amountPaise, defaultRate, installments }: { requestId
   );
 }
 
-export function ApproveRequestDialog(props: { requestId: string; memberName: string; amountPaise: number; defaultRate: string; installments?: { enabled: boolean; count: number } }) {
+export function ApproveRequestDialog(props: { requestId: string; memberName: string; amountPaise: number; defaultRate: string; installments?: InstallmentSetting }) {
   const t = useT();
   return (
     <FormDialog trigger={t("common.approve")} triggerSize="xs" title={t("upad.approveTitle", { name: props.memberName })} icon={<HandCoins />} tone="orange">

@@ -7,7 +7,7 @@ import { Building2, Landmark, PiggyBank, Plus, Save, ShieldCheck, SlidersHorizon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ActionButton } from "@/components/app/action-button";
+import { StartAllInstallmentsDialog } from "@/features/fund-loans/start-all-installments-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -48,6 +48,7 @@ interface V {
   allowUpadRequests: boolean;
   upadInstallmentsOn: boolean;
   upadInstallmentCount: number;
+  upadInstallmentMin: string;
   discoverable: boolean;
   allowJoinRequests: boolean;
   autoCreateMember: boolean;
@@ -92,6 +93,7 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
       allowUpadRequests: s.fundLoans.allowMemberRequests ?? true,
       upadInstallmentsOn: !!s.fundLoans.installments?.enabled,
       upadInstallmentCount: s.fundLoans.installments?.count ?? 10,
+      upadInstallmentMin: paiseToRupeeInput(s.fundLoans.installments?.minAmountPaise ?? 0),
       discoverable: s.membership.discoverable,
       allowJoinRequests: s.membership.allowJoinRequests,
       autoCreateMember: s.membership.autoCreateMember,
@@ -135,6 +137,8 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
     if (!(Number(v.loanDueDay) >= 1 && Number(v.loanDueDay) <= 28)) return setError("Upad interest due day must be between 1 and 28");
     const installmentCount = Number(v.upadInstallmentCount);
     if (v.upadInstallmentsOn && !(Number.isInteger(installmentCount) && installmentCount >= 2 && installmentCount <= 60)) return setError("Number of upad installments must be between 2 and 60");
+    if (!/^\d+(\.\d{1,2})?$/.test((v.upadInstallmentMin || "0").replace(/[,\s]/g, ""))) return setError("Enter the upad amount for installments like 50000");
+    const installmentMinPaise = Math.round(Number((v.upadInstallmentMin || "0").replace(/[,\s]/g, "")) * 100);
     if (v.upiEnabled && !v.upiAccountId) return setError("Add the Mandal's UPI account first (Accounts → Add account → UPI), then choose it here");
     const opt = (x: string) => (x.trim() ? x.trim() : undefined);
     submit(
@@ -173,7 +177,11 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
               defaultMonthlyRate: v.loanRate.trim(),
               dueDay: Number(v.loanDueDay),
               allowMemberRequests: v.allowUpadRequests,
-              installments: { enabled: v.upadInstallmentsOn, count: v.upadInstallmentsOn ? installmentCount : (s.fundLoans.installments?.count ?? 10) },
+              installments: {
+                enabled: v.upadInstallmentsOn,
+                count: v.upadInstallmentsOn ? installmentCount : (s.fundLoans.installments?.count ?? 10),
+                minAmountPaise: v.upadInstallmentsOn ? installmentMinPaise : (s.fundLoans.installments?.minAmountPaise ?? 0),
+              },
             },
             membership: { discoverable: v.discoverable, allowJoinRequests: v.allowJoinRequests, autoCreateMember: v.autoCreateMember },
           },
@@ -261,30 +269,27 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
               <span>
                 Upad must be returned in fixed monthly installments
                 <span className="block text-xs text-muted-foreground">
-                  The installment is due every month with the interest, from the month after the upad is given. Interest is on what is still left — e.g. {money.fmt(8000000)} at 1% in 10: {money.fmt(800000)} + {money.fmt(80000)} interest the first month, {money.fmt(800000)} + {money.fmt(72000)} the next, and so on. Applies to upad given from now on.
+                  The installment is due every month with the interest, from the month after the upad is given. Interest is on what is still left — e.g. {money.fmt(8000000)} at 1% in 10: {money.fmt(800000)} + {money.fmt(80000)} interest the first month, {money.fmt(800000)} + {money.fmt(72000)} the next, and so on. Applies to upad given from now on; the first installment month can be changed when giving the upad.
                 </span>
               </span>
             </label>
             {form.watch("upadInstallmentsOn") && (
-              <Field label="Number of monthly installments" htmlFor="o-linst" hint="2–60 months" className="max-w-[14rem]">
-                <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
-              </Field>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Number of monthly installments" htmlFor="o-linst" hint="2–60 months">
+                  <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
+                </Field>
+                <Field label={`Only for upad of more than (${money.symbol})`} htmlFor="o-lmin" hint={`e.g. 50000 → upad above ${money.fmt(5000000)} only. 0 = every upad.`}>
+                  <Input id="o-lmin" inputMode="decimal" {...form.register("upadInstallmentMin")} />
+                </Field>
+              </div>
             )}
             {form.watch("upadInstallmentsOn") && (
               <div className="flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-2.5">
                 <span className="min-w-0 flex-1 text-xs text-muted-foreground">
-                  Upad given before this was turned on is returned any time. Put those on installments too — what is left of each, in equal monthly installments from next month (or do it one by one on each upad).
+                  Upad given before this was turned on is returned any time. Put those on installments too — what is left of each, in equal monthly installments from the month you choose (or do it one by one on each upad).
                 </span>
                 {s.fundLoans.installments?.enabled ? (
-                  <ActionButton
-                    path={`/orgs/${org.id}/fund-loans/installments/start-all`}
-                    body={{ count: s.fundLoans.installments.count }}
-                    size="xs"
-                    successMessage="Running upads put on installments"
-                    confirm={{ title: `Put all running upads on ${s.fundLoans.installments.count} installments?`, description: "What is still outstanding on each upad is split into equal monthly installments from next month, with the interest. Upads that already have installments are not changed.", confirmLabel: "Start installments" }}
-                  >
-                    Apply to running upads
-                  </ActionButton>
+                  <StartAllInstallmentsDialog count={s.fundLoans.installments.count} minAmountPaise={s.fundLoans.installments.minAmountPaise ?? 0} />
                 ) : (
                   <span className="rounded-full bg-amber-500/12 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">Save the settings first, then apply to running upads</span>
                 )}

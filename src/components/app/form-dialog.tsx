@@ -56,7 +56,7 @@ export function FormDialog({
   };
   return (
     <Dialog open={open} onOpenChange={change}>
-      <DialogTrigger render={<Button variant={triggerVariant} size={triggerSize} className={triggerClassName} />}>{trigger}</DialogTrigger>
+      <DialogTrigger render={<Button type="button" variant={triggerVariant} size={triggerSize} className={triggerClassName} />}>{trigger}</DialogTrigger>
       <DialogContent className={cn(wide ? "sm:max-w-2xl" : "sm:max-w-lg")}>
         <DialogHeader className={cn(icon && "flex-row items-start gap-3")}>
           {icon && (
