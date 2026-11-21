@@ -24,7 +24,16 @@ export interface MemberDraft {
 
 let n = 0;
 export const newKey = () => `${Date.now().toString(36)}${(n++).toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-export const emptyUpad = (): UpadDraft => ({ key: newKey(), amount: "", monthlyRate: "", givenOn: "", interestDue: "" });
+export const emptyUpad = (givenOn = ""): UpadDraft => ({ key: newKey(), amount: "", monthlyRate: "", givenOn, interestDue: "" });
+
+/**
+ * A new closing date: upads still showing the old closing date (the default "given on") move with
+ * it; dates typed in by hand stay as they are.
+ */
+export function moveClosingDate(members: MemberDraft[], from: string, to: string): MemberDraft[] {
+  if (!from || from === to) return members;
+  return members.map((m) => (m.upads.some((u) => u.givenOn === from) ? { ...m, upads: m.upads.map((u) => (u.givenOn === from ? { ...u, givenOn: to } : u)) } : m));
+}
 export const emptyMember = (): MemberDraft => ({ key: newKey(), name: "", phone: "", shares: "1", savings: "", upads: [] });
 
 /** "1,20,000.50" / "₹ 500" → paise. Empty → 0. Not a valid amount → null. */
@@ -157,7 +166,7 @@ const digits = (s?: string) => (s ?? "").replace(/\D/g, "").slice(-10);
  * Put pasted rows into the list: a row whose name (or 10-digit phone) is already there fills in
  * that member; others are added. Repeated names in the paste only add their upad.
  */
-export function mergeRows(members: MemberDraft[], rows: SheetRow[]): { members: MemberDraft[]; added: number; updated: number; upads: number } {
+export function mergeRows(members: MemberDraft[], rows: SheetRow[], givenOn = ""): { members: MemberDraft[]; added: number; updated: number; upads: number } {
   const out = members.map((m) => ({ ...m, upads: [...m.upads] }));
   const touched = new Set<string>();
   let added = 0;
@@ -182,11 +191,52 @@ export function mergeRows(members: MemberDraft[], rows: SheetRow[]): { members: 
       touched.add(m.key);
     }
     if (r.upad) {
-      m.upads.push({ key: newKey(), ...r.upad });
+      m.upads.push({ key: newKey(), ...r.upad, givenOn: r.upad.givenOn || givenOn });
       upads++;
     }
   }
   return { members: out, added, updated, upads };
+}
+
+export interface ExistingMember {
+  _id: string;
+  name: string;
+  phone: string | null;
+  shares: number;
+}
+
+/** Members already in the Mandal that no card in the list is linked to. */
+export const notInList = <M extends ExistingMember>(members: MemberDraft[], existing: M[]): M[] => {
+  const linked = new Set(members.map((m) => m.memberId).filter(Boolean));
+  return existing.filter((e) => !linked.has(e._id));
+};
+
+/**
+ * Put members already in the Mandal into the list, so their old savings and upads can be filled in.
+ * A typed (unlinked) card with the same 10-digit phone or name is linked to the member — keeping
+ * what was typed; anyone else gets a new card (a blank card is used first).
+ */
+export function addExisting(members: MemberDraft[], existing: ExistingMember[]): { members: MemberDraft[]; added: number; linked: number } {
+  const out = members.map((m) => ({ ...m }));
+  let added = 0;
+  let linked = 0;
+  for (const e of notInList(out, existing)) {
+    const free = out.filter((x) => !x.memberId && x.name.trim());
+    const card = (digits(e.phone ?? "").length === 10 ? free.find((x) => digits(x.phone) === digits(e.phone ?? "")) : undefined) ?? free.find((x) => norm(x.name) === norm(e.name));
+    if (card) {
+      card.memberId = e._id;
+      card.name = e.name;
+      if (!card.phone.trim() && e.phone) card.phone = e.phone;
+      linked++;
+      continue;
+    }
+    const m: MemberDraft = { ...emptyMember(), memberId: e._id, name: e.name, phone: e.phone ?? "", shares: String(e.shares || 1) };
+    const blank = out.findIndex((x) => !x.name.trim() && !x.memberId && !x.savings.trim() && !x.upads.length);
+    if (blank >= 0) out.splice(blank, 1, m);
+    else out.push(m);
+    added++;
+  }
+  return { members: out, added, linked };
 }
 
 export const TEMPLATE_CSV = [

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Banknote, CalendarCheck, CheckCircle2, ClipboardPaste, Download, HandCoins, ListChecks, Loader2, Plus, Scale, Trash2, Users, X } from "lucide-react";
+import { AlertTriangle, Banknote, CalendarCheck, Check, CheckCircle2, ClipboardPaste, Download, HandCoins, ListChecks, Loader2, Plus, Scale, Trash2, UserPlus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,7 @@ import { useMoney } from "@/components/app/currency";
 import { apiMutate } from "@/app/actions/api";
 import { monthLabelYM } from "@/lib/months";
 import { cn } from "@/lib/utils";
-import { TEMPLATE_CSV, cleanAmount, emptyMember, emptyUpad, lastDayOfPrevMonth, mergeRows, monthAfter, parseSheet, toPaise, type MemberDraft, type UpadDraft } from "./sheet";
+import { TEMPLATE_CSV, addExisting, cleanAmount, emptyMember, emptyUpad, lastDayOfPrevMonth, mergeRows, monthAfter, moveClosingDate, notInList, parseSheet, toPaise, type MemberDraft, type UpadDraft } from "./sheet";
 
 export interface ImportStatus {
   canImport: boolean;
@@ -65,7 +65,7 @@ function startingDraft(s: ImportStatus): Draft {
     haptaDueDay: String(s.monthlyHapta?.dueDay ?? 10),
     upadRate: s.upadRate ?? "",
     note: "",
-    members: s.members.length ? s.members.map((m) => ({ ...emptyMember(), memberId: m._id, name: m.name, phone: m.phone ?? "", shares: String(m.shares) })) : [emptyMember()],
+    members: addExisting([emptyMember()], s.members).members,
   };
 }
 
@@ -153,6 +153,16 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
   const setUpad = (mk: string, uk: string, patch: Partial<UpadDraft>) =>
     setD((x) => ({ ...x, members: x.members.map((m) => (m.key === mk ? { ...m, upads: m.upads.map((u) => (u.key === uk ? { ...u, ...patch } : u)) } : m)) }));
 
+  // members in the Mandal (added before or after the draft was started) that aren't in the list yet
+  const missing = notInList(d.members, status.members);
+  const linkedIds = new Set(d.members.map((m) => m.memberId).filter(Boolean));
+  const bringExisting = () => {
+    const r = addExisting(d.members, status.members);
+    set("members", r.members);
+    const parts = [r.added && `${r.added} added`, r.linked && `${r.linked} matched to cards you typed`].filter(Boolean);
+    toast.success(`Members already in the Mandal are in the list${parts.length ? ` · ${parts.join(" · ")}` : ""}. Fill in their old savings and upads.`);
+  };
+
   /* --- live tally (the server checks again) */
   const t = useMemo(() => {
     const p = (v: string) => toPaise(v) ?? 0;
@@ -230,7 +240,8 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
     <div className="flex flex-col gap-4">
       {restored && (
         <FormNote tone="good">
-          Your saved draft is back — carry on where you left off.{" "}
+          Your saved draft is back — carry on where you left off.
+          {missing.length > 0 && ` ${missing.length} member${missing.length === 1 ? " was" : "s were"} added to the Mandal since — see below.`}{" "}
           <button type="button" className="font-semibold underline" onClick={startOver}>
             Start again
           </button>
@@ -240,7 +251,12 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
       <FormSection icon={<CalendarCheck />} tone="indigo" title="1. Close the paper books" description="Pick the day the registers stop. Everything up to that day comes in as one opening figure.">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Closing date" htmlFor="oi-date" hint={startMonth ? `Hapta from ${monthLabelYM(startMonth)} onwards is collected in the app.` : undefined}>
-            <Input id="oi-date" type="date" max={status.today} value={d.cutoverDate} onChange={(e) => set("cutoverDate", e.target.value)} />
+            <Input id="oi-date" type="date" max={status.today} value={d.cutoverDate} onChange={(e) => {
+                const to = e.target.value;
+                // upads still on the old closing date (the default) move with it
+                setD((x) => ({ ...x, cutoverDate: to, members: moveClosingDate(x.members, x.cutoverDate, to) }));
+              }}
+            />
           </Field>
           <Field label={`Cash in hand on that day${status.cashAccount ? ` (${status.cashAccount.name})` : ""}`} htmlFor="oi-cash" hint="Count money kept on UPI here too." error={toPaise(d.cash) === null ? "Enter a valid amount" : undefined}>
             <AmountInput id="oi-cash" value={d.cash} onChange={(e) => set("cash", e.target.value)} placeholder="0" />
@@ -263,10 +279,40 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
       </FormSection>
 
       <FormSection icon={<Users />} tone="sky" title="3. Members on the closing date" description="Savings = all hapta + interest credited − withdrawals. Upad = what is still owed, not what was first given.">
+        {status.members.length > 0 && (
+          <div className={cn("rounded-2xl p-3 text-sm ring-1", missing.length ? "bg-sky-500/8 ring-sky-500/25" : "bg-muted/40 ring-foreground/[0.06]")}>
+            <p className="font-semibold">
+              {status.members.length} member{status.members.length === 1 ? " is" : "s are"} already in this Mandal
+            </p>
+            <p className="mb-2 text-xs text-muted-foreground">
+              {missing.length
+                ? `${missing.length} of them ${missing.length === 1 ? "isn't" : "aren't"} in the list below. Bring them in to add their old savings, shares and upads — anyone left out starts with ₹0.`
+                : "All of them are in the list below — fill in their old savings, shares and upads."}
+            </p>
+            <ul className="mb-2 flex flex-wrap gap-1.5">
+              {status.members.map((m) => {
+                const inList = linkedIds.has(m._id);
+                return (
+                  <li key={m._id} className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-xs ring-1", inList ? "bg-emerald-500/10 text-emerald-800 ring-emerald-500/25 dark:text-emerald-200" : "bg-card ring-foreground/10")}>
+                    {inList ? <Check className="size-3" /> : null}
+                    {m.name}
+                    {m.membershipNumber ? <span className="text-muted-foreground">· {m.membershipNumber}</span> : null}
+                  </li>
+                );
+              })}
+            </ul>
+            {missing.length > 0 && (
+              <Button size="sm" onClick={bringExisting}>
+                <UserPlus /> Show {missing.length === 1 ? "them" : `all ${missing.length}`} in the list
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <FormDialog trigger={<><ClipboardPaste /> Paste from Excel</>} triggerVariant="outline" triggerSize="sm" title="Paste the closing sheet" wide icon={<ClipboardPaste />} tone="sky">
             <PasteForm onRead={(rows) => {
-              const r = mergeRows(d.members, rows);
+              const r = mergeRows(d.members, rows, d.cutoverDate);
               set("members", r.members);
               toast.success(`${r.added} added · ${r.updated} filled in · ${r.upads} upad${r.upads === 1 ? "" : "s"}`);
             }} />
@@ -285,11 +331,9 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
                 <div className="mb-2 flex items-center gap-2">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-primary">{i + 1}</span>
                   <Input aria-label="Name" value={m.name} onChange={(e) => setMember(m.key, { name: e.target.value })} placeholder="Member's name" className="font-semibold" readOnly={!!m.memberId} />
-                  {!m.memberId && (
-                    <Button variant="ghost" size="icon-sm" aria-label={`Remove ${m.name || "member"}`} onClick={() => set("members", d.members.filter((x) => x.key !== m.key))}>
-                      <Trash2 />
-                    </Button>
-                  )}
+                  <Button variant="ghost" size="icon-sm" aria-label={`Remove ${m.name || "member"} from the list`} onClick={() => set("members", d.members.filter((x) => x.key !== m.key))}>
+                    <Trash2 />
+                  </Button>
                 </div>
                 {(m.memberId || match) && <p className="mb-2 text-xs text-muted-foreground">Already in the app{match ? ` as ${match.name} (${match.membershipNumber})` : ""}</p>}
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -330,7 +374,7 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
                     </div>
                   </div>
                 ))}
-                <Button variant="ghost" size="xs" className="mt-2" onClick={() => setMember(m.key, { upads: [...m.upads, emptyUpad()] })}>
+                <Button variant="ghost" size="xs" className="mt-2" onClick={() => setMember(m.key, { upads: [...m.upads, emptyUpad(d.cutoverDate)] })}>
                   <Plus /> Running upad
                 </Button>
                 {errs.map((e, k) => (
