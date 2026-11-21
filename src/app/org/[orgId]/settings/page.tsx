@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarClock, CalendarDays, DatabaseBackup, History, KeyRound, Lock, RotateCcw } from "lucide-react";
+import { CalendarClock, CalendarDays, DatabaseBackup, History, KeyRound, Lock, RotateCcw, UserCog } from "lucide-react";
 import { getAccounts, getOrg, getMoney } from "@/lib/server/data";
 import { api } from "@/lib/server/api";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
@@ -16,6 +16,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { monthLabelYM } from "@/lib/months";
 import { EndMonthForm } from "@/features/settlement/end-month-form";
 import { MoneyResetDialog } from "@/features/settings/money-reset-dialog";
+import { AddMeAsMemberDialog, ManageOnlyDialog } from "@/features/settings/manage-only-dialog";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
@@ -130,6 +131,28 @@ export default async function SettingsPage({ params }: PageProps<"/org/[orgId]/s
         >
           <MoneyResetDialog orgId={orgId} orgName={org.name} />
         </SettingBlock>
+      )}
+
+      {org.status === "active" && org.myRole !== "member" && (
+        <>
+          <SectionTitle className="mt-6">You in this Mandal</SectionTitle>
+          <SettingBlock
+            tone="amber"
+            icon={<UserCog />}
+            title={org.myMemberId ? "Manager and member" : "Only managing"}
+            description={
+              org.myMemberId
+                ? `You are ${org.myRole === "admin" ? "an admin" : "a manager"} and also save in the Mandal as a member. Only looking after it? Stay on as ${org.myRole === "admin" ? "admin" : "manager"} without being a member — you won't show in the members list or pay hapta.`
+                : `You are ${org.myRole === "admin" ? "an admin" : "a manager"} who only manages the Mandal: you show under Users but not as a member, and pay no hapta.`
+            }
+          >
+            {org.myMemberId ? (
+              <ManageOnlyDialog orgId={orgId} />
+            ) : org.myPermissions.includes("memberships.manage") ? (
+              <AddMeAsMemberDialog orgId={orgId} hasMonthlyHapta={!!h} thisMonth={thisMonth} />
+            ) : null}
+          </SettingBlock>
+        </>
       )}
 
       <SectionTitle className="mt-6">Safety</SectionTitle>

@@ -36,13 +36,14 @@ export interface NavItem {
 }
 
 /** Navigation filtered by the caller's permissions (the API still enforces every rule). */
-export function buildNav(orgId: string, perms: string[], role: string, t: T = translator(undefined)): NavItem[] {
+/** `hasMemberRecord`: false for an admin / manager who only manages the Mandal (no savings of their own). */
+export function buildNav(orgId: string, perms: string[], role: string, t: T = translator(undefined), hasMemberRecord = true): NavItem[] {
   const can = (p: string) => perms.includes(p);
   const base = `/org/${orgId}`;
   const staff = role !== "member";
   const items: (NavItem & { when: boolean })[] = [
     { href: base, label: t("nav.dashboard"), short: t("nav.short.home"), icon: "dashboard", primary: true, when: true },
-    { href: `${base}/my`, label: role === "member" ? t("nav.mySavings") : t("nav.myAccount"), short: role === "member" ? t("nav.short.savings") : t("nav.short.account"), icon: "my", primary: role === "member", when: can("self.view") },
+    { href: `${base}/my`, label: role === "member" ? t("nav.mySavings") : t("nav.myAccount"), short: role === "member" ? t("nav.short.savings") : t("nav.short.account"), icon: "my", primary: role === "member", when: can("self.view") && (role === "member" || hasMemberRecord) },
     { href: `${base}/monthly`, label: t("nav.monthly"), short: t("nav.short.hapta"), icon: "monthly", primary: true, when: can("installments.view") },
     { href: `${base}/members`, label: t("nav.members"), short: t("nav.short.members"), icon: "members", primary: true, when: can("members.view") },
     { href: `${base}/fund-loans`, label: t("nav.upad"), short: t("nav.short.upad"), icon: "fundloans", primary: true, when: can("members.view") },

@@ -100,7 +100,7 @@ const loadShell = cache(async (orgId: string): Promise<ShellData> => {
   return {
     org: { id: org.id, name: org.name, role: org.myRole, status: org.status, logoUrl: org.logoUrl },
     orgs: me.organizations.filter((o) => o.membershipStatus === "active").map((o) => ({ id: o.id, name: o.name, role: o.role, status: o.status, logoUrl: o.logoUrl })),
-    nav: buildNav(org.id, org.myPermissions, org.myRole, t),
+    nav: buildNav(org.id, org.myPermissions, org.myRole, t, !!org.myMemberId),
     quick: buildQuickActions(org.id, org.myPermissions, org.myRole, { live: org.status === "active", memberRequests: !!org.settings.fundLoans?.allowMemberRequests }, t),
     lang,
     user: { name: me.user.name, email: me.user.email, isPlatformAdmin: me.user.isPlatformAdmin },

@@ -39,6 +39,12 @@ describe("navigation", () => {
     expect(admin).toContain("Settings");
     expect(admin).toContain("Withdrawals");
     expect(admin).toContain("Upad");
+    expect(admin).toContain("My account");
+    // an admin who only manages the Mandal has no savings page of their own
+    const manageOnly = buildNav("a".repeat(24), ["org.view", "members.view", "self.view"], "admin", undefined, false).map((n) => n.label);
+    expect(manageOnly).not.toContain("My account");
+    // a member always keeps theirs
+    expect(buildNav("a".repeat(24), ["org.view", "self.view"], "member", undefined, false).map((n) => n.label)).toContain("My savings");
   });
 
   it("puts the daily Mandal screens first and less-used tools under More", () => {
