@@ -270,19 +270,24 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
                 <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
               </Field>
             )}
-            {s.fundLoans.installments?.enabled && (
+            {form.watch("upadInstallmentsOn") && (
               <div className="flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-2.5">
                 <span className="min-w-0 flex-1 text-xs text-muted-foreground">
-                  Upad given before this was turned on is returned any time. Put those on installments too — what is left of each, in {s.fundLoans.installments.count} installments from next month (or do it one by one on each upad).
+                  Upad given before this was turned on is returned any time. Put those on installments too — what is left of each, in equal monthly installments from next month (or do it one by one on each upad).
                 </span>
-                <ActionButton
-                  path={`/orgs/${org.id}/fund-loans/installments/start-all`}
-                  size="xs"
-                  successMessage="Running upads put on installments"
-                  confirm={{ title: `Put all running upads on ${s.fundLoans.installments.count} installments?`, description: "What is still outstanding on each upad is split into equal monthly installments from next month, with the interest. Upads that already have installments are not changed.", confirmLabel: "Start installments" }}
-                >
-                  Apply to running upads
-                </ActionButton>
+                {s.fundLoans.installments?.enabled ? (
+                  <ActionButton
+                    path={`/orgs/${org.id}/fund-loans/installments/start-all`}
+                    body={{ count: s.fundLoans.installments.count }}
+                    size="xs"
+                    successMessage="Running upads put on installments"
+                    confirm={{ title: `Put all running upads on ${s.fundLoans.installments.count} installments?`, description: "What is still outstanding on each upad is split into equal monthly installments from next month, with the interest. Upads that already have installments are not changed.", confirmLabel: "Start installments" }}
+                  >
+                    Apply to running upads
+                  </ActionButton>
+                ) : (
+                  <span className="rounded-full bg-amber-500/12 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">Save the settings first, then apply to running upads</span>
+                )}
               </div>
             )}
           </div>
