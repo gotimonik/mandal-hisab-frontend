@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { MemberDialog } from "@/features/members/member-form";
+import { CollectDuesDialog } from "@/features/members/collect-dues-dialog";
 import { ImportMembersDialog } from "@/features/members/import-dialog";
 import { getT } from "@/i18n/server";
 import { buttonVariants } from "@/components/ui/button";
@@ -36,16 +37,20 @@ export default async function MembersPage({
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
   const status = typeof sp.status === "string" ? sp.status : "";
+  // only members who owe hapta or upad interest now
+  const due = sp.due === "1" ? "1" : "";
   const page = Number(sp.page ?? 1) || 1;
   const [org, data] = await Promise.all([
     getOrg(orgId),
     api<Paged<Member>>(
-      `/orgs/${orgId}/members${qs({ q, status, page, pageSize: 25 })}`,
+      `/orgs/${orgId}/members${qs({ q, status, due, page, pageSize: 25 })}`,
     ),
   ]);
   // getOrg is already in flight above (and cached), so this resolves without a second wait
   const money = await getMoney(orgId);
   const manage = can(org, "members.manage");
+  // hapta and upad interest are collected from the list itself
+  const canCollect = can(org, "payments.record") && org.status === "active";
   const { t } = await getT();
   return (
     <>
@@ -72,7 +77,7 @@ export default async function MembersPage({
           </>
         }
       />
-      <SearchBox className="mb-3" defaultValue={q} placeholder={t("members.searchPh")} label={t("common.search")} buttonLabel={t("common.search")} hidden={{ status }} />
+      <SearchBox className="mb-3" defaultValue={q} placeholder={t("members.searchPh")} label={t("common.search")} buttonLabel={t("common.search")} hidden={{ status, due }} />
       <div className="no-print scrollbar-none -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" aria-label={t("common.status")}>
         {[
           ["", t("common.all")],
@@ -83,18 +88,25 @@ export default async function MembersPage({
           <Link
             key={k}
             href={`/org/${orgId}/members${qs({ q, status: k })}`}
-            aria-current={status === k ? "page" : undefined}
-            className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold ${status === k ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "bg-card text-muted-foreground ring-1 ring-foreground/10 hover:text-foreground"}`}
+            aria-current={!due && status === k ? "page" : undefined}
+            className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold ${!due && status === k ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "bg-card text-muted-foreground ring-1 ring-foreground/10 hover:text-foreground"}`}
           >
             {l}
           </Link>
         ))}
+        <Link
+          href={`/org/${orgId}/members${qs({ q, due: "1" })}`}
+          aria-current={due ? "page" : undefined}
+          className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold ${due ? "bg-rose-600 text-white shadow-sm shadow-rose-600/30" : "bg-rose-500/8 text-rose-700 ring-1 ring-rose-500/20 hover:bg-rose-500/12 dark:text-rose-300"}`}
+        >
+          {t("members.dueFilter")}
+        </Link>
       </div>
       {data.items.length === 0 ? (
         <EmptyState
           icon={<Users />}
           title={
-            q || status ? t("members.noMatch") : t("members.none")
+            due && !q ? t("members.noneDue") : q || status || due ? t("members.noMatch") : t("members.none")
           }
           description={
             manage ? t("members.noneDesc") : undefined
@@ -141,7 +153,9 @@ export default async function MembersPage({
                     </span>
                   </Link>
                   <div className="flex shrink-0 items-center gap-1.5">
-                    {due > 0 ? (
+                    {due > 0 && canCollect ? (
+                      <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={due} size="sm" />
+                    ) : due > 0 ? (
                       <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
                         {t("members.due", { amount: money.short(due) })}
                       </span>
@@ -178,6 +192,7 @@ export default async function MembersPage({
                     <TableHead className="text-right">{t("members.colOutstanding")}</TableHead>
                     <TableHead className="text-right">{t("members.colUpad")}</TableHead>
                     <TableHead className="text-right">{t("members.colSavings")}</TableHead>
+                    {canCollect && <TableHead className="w-0"><span className="sr-only">{t("collect.collect")}</span></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -231,6 +246,11 @@ export default async function MembersPage({
                           colored={(m.balancePaise ?? 0) < 0}
                         />
                       </TableCell>
+                      {canCollect && (
+                        <TableCell className="text-right">
+                          {(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0) > 0 && <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={(m.outstandingPaise ?? 0) + (m.upadInterestDuePaise ?? 0)} size="xs" />}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -244,7 +264,7 @@ export default async function MembersPage({
         pageSize={data.pageSize}
         total={data.total}
         baseHref={`/org/${orgId}/members`}
-        params={{ q, status }}
+        params={{ q, status, due }}
       />
     </>
   );
