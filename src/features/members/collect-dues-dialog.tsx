@@ -42,7 +42,7 @@ const toPaise = (v: string): number | null => {
  * installments) from one screen: the amounts start at what is due, one date and one way of paying;
  * saved as a hapta receipt, an interest receipt and an upad-returned receipt.
  */
-export function CollectDuesDialog({ memberId, memberName, duePaise, size = "sm", stacked = false }: { memberId: string; memberName: string; duePaise: number; size?: "xs" | "sm"; /** label over the amount: a narrow button, so the member's name keeps its room on phones */ stacked?: boolean }) {
+export function CollectDuesDialog({ memberId, memberName, duePaise, size = "sm" }: { memberId: string; memberName: string; duePaise: number; size?: "xs" | "sm" }) {
   const money = useMoney();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
@@ -124,19 +124,10 @@ export function CollectDuesDialog({ memberId, memberName, duePaise, size = "sm",
 
   return (
     <>
-      {stacked ? (
-        <Button onClick={() => setOpen(true)} aria-label={t("collect.collectFrom", { name: memberName })} className="h-auto shrink-0 flex-col gap-0 rounded-2xl px-3 py-1.5 leading-tight">
-          <span className="flex items-center gap-1 text-xs">
-            <HandCoins className="size-3.5" /> {t("collect.collect")}
-          </span>
-          {duePaise > 0 && <span className="text-sm font-bold tabular-nums">{money.short(duePaise)}</span>}
-        </Button>
-      ) : (
-        <Button size={size} onClick={() => setOpen(true)} aria-label={t("collect.collectFrom", { name: memberName })} className="shrink-0">
-          <HandCoins /> {t("collect.collect")}
-          {duePaise > 0 && <span className="tabular-nums opacity-90">· {money.short(duePaise)}</span>}
-        </Button>
-      )}
+      <Button size={size} onClick={() => setOpen(true)} aria-label={t("collect.collectFrom", { name: memberName })} className="shrink-0">
+        <HandCoins /> {t("collect.collect")}
+        {duePaise > 0 && <span className="tabular-nums opacity-90">· {money.short(duePaise)}</span>}
+      </Button>
       <Dialog
         open={open}
         onOpenChange={(o) => {

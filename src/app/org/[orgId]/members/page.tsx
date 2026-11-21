@@ -121,59 +121,65 @@ export default async function MembersPage({
               return (
                 <li
                   key={m._id}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]"
+                  className="flex flex-col gap-2.5 rounded-2xl bg-card p-3 shadow-card ring-1 ring-foreground/[0.06]"
                 >
-                  <MemberAvatar name={m.name} />
-                  <Link
-                    href={`/org/${orgId}/members/${m._id}`}
-                    className="min-w-0 flex-1"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span className="line-clamp-2 font-semibold break-words">{m.name}</span>
-                      {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} />}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                      <span className="font-mono">{m.membershipNumber}</span>
-                      {m.status !== "active" && (
-                        <StatusBadge status={m.status} />
-                      )}
-                      <span>
-                        {t("members.savingsX")}{" "}
-                        <Money
-                          paise={m.balancePaise ?? 0}
-                          short
-                          className="font-medium text-foreground"
-                        />
+                  <div className="flex items-center gap-3">
+                    <MemberAvatar name={m.name} />
+                    <Link
+                      href={`/org/${orgId}/members/${m._id}`}
+                      className="min-w-0 flex-1"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className="line-clamp-2 font-semibold break-words">{m.name}</span>
+                        {(m.haptaShares ?? 1) > 1 && <SharesChip n={m.haptaShares!} />}
                       </span>
-                      {(m.upadPaise ?? 0) > 0 && (
-                        <span className="text-orange-700 dark:text-orange-300">
-                          {t("members.upadX", { amount: money.short(m.upadPaise ?? 0) })}
+                      <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                        <span className="font-mono">{m.membershipNumber}</span>
+                        {m.status !== "active" && (
+                          <StatusBadge status={m.status} />
+                        )}
+                        <span>
+                          {t("members.savingsX")}{" "}
+                          <Money
+                            paise={m.balancePaise ?? 0}
+                            short
+                            className="font-medium text-foreground"
+                          />
+                        </span>
+                        {(m.upadPaise ?? 0) > 0 && (
+                          <span className="text-orange-700 dark:text-orange-300">
+                            {t("members.upadX", { amount: money.short(m.upadPaise ?? 0) })}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {due > 0 && canCollect ? null : due > 0 ? (
+                        <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
+                          {t("members.due", { amount: money.short(due) })}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                          {t("members.paidUp")}
                         </span>
                       )}
-                    </span>
-                  </Link>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {due > 0 && canCollect ? (
-                      <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={due} stacked />
-                    ) : due > 0 ? (
-                      <span className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300">
-                        {t("members.due", { amount: money.short(due) })}
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                        {t("members.paidUp")}
-                      </span>
-                    )}
-                    {m.phone && (
-                      <a
-                        href={`tel:${m.phone}`}
-                        aria-label={t("common.callX", { name: m.name })}
-                        className="flex size-9 items-center justify-center rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300"
-                      >
-                        <Phone className="size-4" />
-                      </a>
-                    )}
+                      {m.phone && (
+                        <a
+                          href={`tel:${m.phone}`}
+                          aria-label={t("common.callX", { name: m.name })}
+                          className="flex size-9 items-center justify-center rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300"
+                        >
+                          <Phone className="size-4" />
+                        </a>
+                      )}
+                    </div>
                   </div>
+                  {/* on its own line, so the name and details keep the full width */}
+                  {due > 0 && canCollect && (
+                    <div className="[&_button]:w-full">
+                      <CollectDuesDialog memberId={m._id} memberName={m.name} duePaise={due} />
+                    </div>
+                  )}
                 </li>
               );
             })}
