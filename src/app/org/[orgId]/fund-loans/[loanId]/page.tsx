@@ -15,6 +15,7 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CalendarDays, CalendarRange, HandCoins, Receipt } from "lucide-react";
 import { LoanPaymentDialog } from "@/features/fund-loans/loan-payment-dialog";
+import { StartInstallmentsDialog } from "@/features/fund-loans/start-installments-dialog";
 
 export const metadata = { title: "Upad" };
 
@@ -58,7 +59,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
   // worked out on what the plan leaves outstanding, as interest is on last month's closing amount)
   const instRows = (() => {
     if (!inst) return [];
-    let left = l.principalPaise;
+    let left = l.installmentPlan?.basePaise ?? l.principalPaise;
     return inst.rows.map((r) => {
       const due = dues.find((d) => d.period === r.period);
       const interest = due ? due.interestPaise : Math.round((left * Number(l.monthlyRate)) / 100);
@@ -102,6 +103,9 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
           <>
             {staffView && l.status === "active" && can(org, "payments.record") && live && (
               <LoanPaymentDialog methods={org.settings.paymentMethods} loanId={l._id} number={l.number} memberName={l.member?.name ?? "member"} interestDuePaise={l.interestDuePaise} outstandingPaise={l.outstandingPaise} installmentDuePaise={inst?.duePaise ?? 0} />
+            )}
+            {staffView && l.status === "active" && !inst && l.outstandingPaise > 0 && can(org, "withdrawals.record") && live && (
+              <StartInstallmentsDialog loanId={l._id} number={l.number} outstandingPaise={l.outstandingPaise} monthlyRate={l.monthlyRate} defaultCount={org.settings.fundLoans.installments?.count ?? 10} />
             )}
             {staffView && l.status === "active" && payments.every((p) => p.status === "reversed") && can(org, "transactions.adjust") && live && (
               <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/cancel`} variant="ghost" successMessage="Upad cancelled" confirm={{ title: `Cancel ${l.number}?`, description: "Only for an upad recorded by mistake. The cash goes back into the fund.", reason: "required", destructive: true, confirmLabel: "Cancel upad" }}>
@@ -154,7 +158,15 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
 
       {inst && (
         <>
-          <SectionTitle>
+          <SectionTitle
+            action={
+              staffView && can(org, "withdrawals.record") && live ? (
+                <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/installments/stop`} size="xs" variant="ghost" successMessage="Installments stopped" confirm={{ title: "Stop installments on this upad?", description: "It goes back to being returned any time. Interest is not affected.", confirmLabel: "Stop installments" }}>
+                  Stop installments
+                </ActionButton>
+              ) : undefined
+            }
+          >
             Installments · {inst.paidCount}/{inst.count} paid
           </SectionTitle>
           <p className={cn("mb-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium ring-1", inst.duePaise > 0 ? "bg-amber-500/12 text-amber-800 ring-amber-500/30 dark:text-amber-300" : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300")}>

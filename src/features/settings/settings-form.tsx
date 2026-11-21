@@ -7,6 +7,7 @@ import { Building2, Landmark, PiggyBank, Plus, Save, ShieldCheck, SlidersHorizon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ActionButton } from "@/components/app/action-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FormError } from "@/components/app/field";
 import { NativeSelect } from "@/components/app/native-select";
@@ -268,6 +269,21 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
               <Field label="Number of monthly installments" htmlFor="o-linst" hint="2–60 months" className="max-w-[14rem]">
                 <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
               </Field>
+            )}
+            {s.fundLoans.installments?.enabled && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-2.5">
+                <span className="min-w-0 flex-1 text-xs text-muted-foreground">
+                  Upad given before this was turned on is returned any time. Put those on installments too — what is left of each, in {s.fundLoans.installments.count} installments from next month (or do it one by one on each upad).
+                </span>
+                <ActionButton
+                  path={`/orgs/${org.id}/fund-loans/installments/start-all`}
+                  size="xs"
+                  successMessage="Running upads put on installments"
+                  confirm={{ title: `Put all running upads on ${s.fundLoans.installments.count} installments?`, description: "What is still outstanding on each upad is split into equal monthly installments from next month, with the interest. Upads that already have installments are not changed.", confirmLabel: "Start installments" }}
+                >
+                  Apply to running upads
+                </ActionButton>
+              </div>
             )}
           </div>
           <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm sm:col-span-2">

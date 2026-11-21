@@ -523,7 +523,7 @@ export interface FundLoan {
   /** the borrower's upad advance (interest paid ahead; shared by all their upads) */
   memberAdvancePaise?: number;
   /** fixed when given, in Mandals that return upad in installments */
-  installmentPlan?: { count: number; amountPaise: number; firstMonth: string } | null;
+  installmentPlan?: { count: number; amountPaise: number; firstMonth: string; basePaise?: number; returnedBeforePaise?: number } | null;
   /** where it stands against its installments now (active upads with a plan) */
   installment?: UpadInstallmentNow | null;
 }
