@@ -7,6 +7,7 @@ import { Building2, Landmark, PiggyBank, Plus, Save, ShieldCheck, SlidersHorizon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ActionButton } from "@/components/app/action-button";
 import { StartAllInstallmentsDialog } from "@/features/fund-loans/start-all-installments-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FormError } from "@/components/app/field";
@@ -295,6 +296,20 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
                 )}
               </div>
             )}
+            <div className="flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-2.5">
+              <span className="min-w-0 flex-1 text-xs text-muted-foreground">
+                Stop installments on every running upad — they go back to being returned any time. Interest is not affected. (One upad: open it and use Stop installments.) To stop new upad getting installments, untick the box above and save.
+              </span>
+              <ActionButton
+                path={`/orgs/${org.id}/fund-loans/installments/stop-all`}
+                size="xs"
+                variant="ghost"
+                successMessage="Installments stopped on all running upads"
+                confirm={{ title: "Stop installments on all running upads?", description: "Every running upad goes back to being returned any time; the installment schedules are removed. Interest and payments already recorded are not changed.", destructive: true, confirmLabel: "Stop all installments" }}
+              >
+                Stop on all upads
+              </ActionButton>
+            </div>
           </div>
           <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5 text-sm sm:col-span-2">
             <Checkbox checked={form.watch("allowWithdrawalExceptions")} onCheckedChange={(c) => form.setValue("allowWithdrawalExceptions", !!c)} />

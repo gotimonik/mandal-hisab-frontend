@@ -51,7 +51,7 @@ export function ActionButton({ path, method = "POST", body, children, variant = 
 
   if (!confirm) {
     return (
-      <Button variant={variant} size={size} disabled={pending} onClick={run} className={className}>
+      <Button type="button" variant={variant} size={size} disabled={pending} onClick={run} className={className}>
         {pending && <Loader2 className="animate-spin" />}
         {children}
       </Button>
@@ -60,7 +60,7 @@ export function ActionButton({ path, method = "POST", body, children, variant = 
   const needReason = confirm.reason === "required";
   return (
     <>
-      <Button variant={variant} size={size} disabled={pending} onClick={() => setOpen(true)} className={className}>
+      <Button type="button" variant={variant} size={size} disabled={pending} onClick={() => setOpen(true)} className={className}>
         {children}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
