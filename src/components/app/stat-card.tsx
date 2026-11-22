@@ -36,6 +36,7 @@ export function StatCard({
         {icon && <span className={cn("-mt-0.5 -mr-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl [&_svg]:size-4", TONE_CHIP[accent ?? TONE_ACCENT[tone]])}>{icon}</span>}
       </div>
       <div
+        data-slot="stat-value"
         className={cn(
           "text-xl leading-tight font-bold tracking-tight tabular-nums sm:text-2xl",
           tone === "good" && "text-success",

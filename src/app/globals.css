@@ -199,6 +199,39 @@
   body { background: white; }
 }
 
+/*
+ * Printing / Save as PDF. On paper nothing can scroll sideways, so wide tables must fit the page:
+ * drop the scroll boxes, use a smaller size and tighter cells, and let column headings wrap onto two
+ * lines (amounts never wrap). Big stat figures shrink a little so four fit across an A4 page.
+ */
+@media print {
+  @page { margin: 10mm; }
+  [data-slot="table-container"],
+  .overflow-x-auto { overflow: visible !important; }
+  table[data-slot="table"] { font-size: 9.5px !important; line-height: 1.3; }
+  table[data-slot="table"] .text-xs { font-size: 8.5px !important; }
+  [data-slot="table-head"] {
+    height: auto !important;
+    padding: 5px 5px !important;
+    white-space: normal !important;
+    font-size: 8.5px !important;
+    letter-spacing: 0 !important;
+    vertical-align: bottom !important;
+  }
+  [data-slot="table-cell"] { padding: 4px 5px !important; }
+  [data-slot="table-head"]:first-child,
+  [data-slot="table-cell"]:first-child { padding-left: 8px !important; }
+  [data-slot="table-head"]:last-child,
+  [data-slot="table-cell"]:last-child { padding-right: 8px !important; }
+  [data-slot="table-row"] { break-inside: avoid; }
+  [data-slot="table-header"] { display: table-header-group; } /* repeat headings on every page */
+  [data-slot="stat-value"] { font-size: 1.05rem !important; }
+  /* cards clip what doesn't fit on screen; on paper show it all */
+  [data-slot="card"] { overflow: visible !important; }
+  /* the page area: no screen padding (incl. the space kept for the phone bottom bar) or width cap */
+  main { padding: 0 !important; max-width: none !important; }
+}
+
 /* App lock (components/app/app-lock.tsx): hide the signed-in screen until Face ID / fingerprint unlocks it. */
 html.app-locking body * {
   visibility: hidden;
