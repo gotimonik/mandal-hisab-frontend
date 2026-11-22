@@ -56,6 +56,17 @@ export const site = {
     adsenseClientId: "ca-pub-6031242056409187" as string | null,
   },
 
+  /**
+   * "How to use MandalHisab" demo video (Gujarati voice and captions), on Vercel Blob → assets/.
+   * Shown on the home page, to signed-in people with no Mandal yet, and in a new Mandal's setup checklist.
+   * Set to null to hide it everywhere.
+   */
+  demoVideo: {
+    src: "https://bhglodtr4klrikxc.public.blob.vercel-storage.com/assets/mandalhisab-demo-gu.mp4",
+    poster: "https://bhglodtr4klrikxc.public.blob.vercel-storage.com/assets/mandalhisab-demo-gu-poster.jpg",
+    minutes: 3,
+  } as { src: string; poster: string | null; minutes: number } | null,
+
   languages: ["English", "ગુજરાતી", "हिन्दी"],
   copyrightYear: 2026,
 } as const;

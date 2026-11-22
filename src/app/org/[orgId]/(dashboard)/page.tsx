@@ -40,6 +40,8 @@ import { monthsBetween } from "@/lib/months";
 import { MemberDashboard } from "@/features/dashboard/member-dashboard";
 import { SchemesOverview } from "@/features/dashboard/schemes-overview";
 import { SetupChecklist, type SetupStep } from "@/features/dashboard/setup-checklist";
+import { DemoVideo } from "@/components/app/demo-video";
+import { site } from "@/config/site";
 import { getT } from "@/i18n/server";
 import { intlLocale, monthName, type Lang, type T } from "@/i18n/core";
 import type { MoneyFmt } from "@/lib/currency";
@@ -160,6 +162,17 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
           orgId={orgId}
           steps={setupSteps}
           labels={{ title: tr("dash.setupTitle"), sub: tr("dash.setupSub"), hide: tr("dash.setupHide"), optional: tr("dash.setupOptional") }}
+          video={
+            site.demoVideo && (
+              <DemoVideo
+                variant="inline"
+                src={site.demoVideo.src}
+                poster={site.demoVideo.poster}
+                source="setup_checklist"
+                labels={{ title: tr("demo.title"), desc: tr("demo.desc", { min: site.demoVideo.minutes }), watch: tr("demo.title"), lang: tr("demo.lang") }}
+              />
+            )
+          }
         />
       )}
       {isAdmin && !setupOpen && org.status === "active" && !org.settings.openingImport && (t.mandalCashPaise ?? 0) === 0 && (t.totalMemberBalancesPaise ?? 0) === 0 && (t.fundLoansOutstandingPaise ?? 0) === 0 && (

@@ -10,6 +10,8 @@ import { ActionButton } from "@/components/app/action-button";
 import { OnboardingActions } from "@/features/onboarding/onboarding-actions";
 import { OrgLogo } from "@/components/app/org-logo";
 import { getT } from "@/i18n/server";
+import { site } from "@/config/site";
+import { DemoVideo } from "@/components/app/demo-video";
 import type { Key } from "@/i18n/core";
 
 interface MyInvitation {
@@ -54,6 +56,16 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
           )}
         </div>
       </section>
+
+      {/* new here: the 3-minute "how to use" video */}
+      {site.demoVideo && active.length === 0 && pending.length === 0 && (
+        <DemoVideo
+          src={site.demoVideo.src}
+          poster={site.demoVideo.poster}
+          source="onboarding"
+          labels={{ title: t("demo.title"), desc: t("demo.desc", { min: site.demoVideo.minutes }), watch: t("demo.watch"), lang: t("demo.lang") }}
+        />
+      )}
 
       {/* invitations */}
       {invitations.length > 0 && (

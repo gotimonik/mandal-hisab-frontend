@@ -449,6 +449,12 @@ export const en = {
     add: "Add",
     membersAdded: "Members added to the monthly hapta",
   },
+  demo: {
+    title: "How to use MandalHisab",
+    desc: "A {min}-minute video: create a Mandal, add members, collect hapta, give upad and receive interest.",
+    watch: "Watch video",
+    lang: "in Gujarati",
+  },
   mreport: {
     title: "Monthly summary — {month}",
     desc: "Where the Mandal's money came from and went this month, and what each member paid.",

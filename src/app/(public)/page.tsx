@@ -42,6 +42,7 @@ import { JsonLd } from "@/features/public/json-ld";
 import { NativeRedirect } from "@/features/public/native-redirect";
 import { getGuide } from "@/features/public/guides";
 import { GuideCard } from "@/features/public/guides/render";
+import { DemoVideo } from "@/components/app/demo-video";
 
 const HOME_GUIDES = ["what-is-a-mandal", "collect-hapta-at-the-monthly-meeting", "how-upad-interest-is-calculated"].map((s) => getGuide(s)!);
 
@@ -387,6 +388,20 @@ export default function HomePage() {
       {/* 4. How it works — numbered timeline */}
       <Section id="how-it-works">
         <SectionHeading eyebrow="How it works" title="Up and running in an evening" center />
+        {site.demoVideo && (
+          <DemoVideo
+            src={site.demoVideo.src}
+            poster={site.demoVideo.poster}
+            source="home"
+            className="mx-auto mb-8 max-w-md sm:mb-12"
+            labels={{
+              title: `Watch the ${site.demoVideo.minutes}-minute demo`,
+              desc: "Create a Mandal, add members, collect hapta, give upad and receive interest — shown in the real app.",
+              watch: "Watch video",
+              lang: "in Gujarati",
+            }}
+          />
+        )}
         <ol className="relative grid grid-cols-1 gap-5 md:grid-cols-4 md:gap-6">
           <span
             aria-hidden

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Rocket } from "lucide-react";
 import { IconChip, ProgressBar } from "@/components/app/bits";
@@ -41,7 +41,7 @@ function subscribe(cb: () => void) {
  * "Get your Mandal started": what a new Mandal's admin still has to do, worked out from real data so
  * each step ticks itself off. Gone once every required step is done, or when the admin hides it.
  */
-export function SetupChecklist({ orgId, steps, labels }: { orgId: string; steps: SetupStep[]; labels: Labels }) {
+export function SetupChecklist({ orgId, steps, labels, video }: { orgId: string; steps: SetupStep[]; labels: Labels; video?: ReactNode }) {
   // Hidden on the server and until the device's choice is read, so a hidden card never flashes in.
   const hidden = useSyncExternalStore(subscribe, () => readHidden(orgId), () => true);
 
@@ -71,6 +71,7 @@ export function SetupChecklist({ orgId, steps, labels }: { orgId: string; steps:
         </button>
       </div>
       <ProgressBar value={(done / steps.length) * 100} className="mt-3 h-2" label={labels.title} />
+      {video && <div className="mt-2">{video}</div>}
       <ol className="mt-3 flex flex-col gap-1">
         {steps.map((s, i) => {
           const isNext = s.key === next;
