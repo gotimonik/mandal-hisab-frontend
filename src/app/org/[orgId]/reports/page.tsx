@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { IconChip, SectionTitle } from "@/components/app/bits";
 import type { Tone } from "@/lib/tones";
 import { REPORTS } from "@/features/reports-meta";
+import { getT } from "@/i18n/server";
 import { reportLook } from "@/features/reports/look";
 
 export const metadata = { title: "Reports" };
@@ -29,37 +30,38 @@ function ReportTile({ href, tone, icon, title, description }: { href: string; to
 
 export default async function ReportsPage({ params }: PageProps<"/org/[orgId]/reports">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const org = await getOrg(orgId);
   const list = REPORTS.filter((r) => org.myPermissions.includes(r.permission));
   return (
     <>
-      <PageHeader title="Reports" description="All figures are computed from the ledger and verified records. Export any report as CSV or print it to PDF." />
+      <PageHeader title={t("rep.title")} description={t("rep.desc")} />
 
-      <SectionTitle>Every month</SectionTitle>
+      <SectionTitle>{t("rep.everyMonth")}</SectionTitle>
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <ReportTile
           href={`/org/${orgId}/monthly/report`}
           tone="indigo"
           icon={<CalendarRange />}
-          title="Monthly summary"
-          description="Hapta expected vs collected, interest, withdrawals, cash and each member's balance for a month."
+          title={t("rep.monthly")}
+          description={t("rep.monthlyDesc")}
         />
-        <ReportTile href={`/org/${orgId}/cashbook`} tone="emerald" icon={<Wallet />} title="Cash book" description="Opening cash, every receipt and payment, and closing cash for any period." />
+        <ReportTile href={`/org/${orgId}/cashbook`} tone="emerald" icon={<Wallet />} title={t("rep.cashbook")} description={t("rep.cashbookDesc")} />
       </div>
 
       {list.length > 0 && (
         <>
-          <SectionTitle>All reports</SectionTitle>
+          <SectionTitle>{t("rep.all")}</SectionTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {list.map((r) => {
               const lk = reportLook(r.kind);
-              return <ReportTile key={r.kind} href={`/org/${orgId}/reports/${r.kind}`} tone={lk.tone} icon={lk.icon} title={r.title} description={r.description} />;
+              return <ReportTile key={r.kind} href={`/org/${orgId}/reports/${r.kind}`} tone={lk.tone} icon={lk.icon} title={t(r.title)} description={t(r.description)} />;
             })}
           </div>
         </>
       )}
 
-      <p className="mt-6 rounded-2xl bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">Member-wise savings ledgers and dues statements are on each member&apos;s page (Members → member).</p>
+      <p className="mt-6 rounded-2xl bg-secondary/40 px-4 py-3 text-sm text-muted-foreground">{t("rep.memberNote")}</p>
     </>
   );
 }

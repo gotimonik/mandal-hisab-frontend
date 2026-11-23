@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -19,9 +20,9 @@ import { useMoney } from "@/components/app/currency";
 
 const Schema = z
   .object({
-    categoryKey: z.string().min(2, "Choose a category"),
-    payeeName: z.string().trim().min(2, "Who was paid?").max(120),
-    description: z.string().trim().min(2, "Describe the expense").max(500),
+    categoryKey: z.string().min(2, "exp.v.cat"),
+    payeeName: z.string().trim().min(2, "exp.v.payee").max(120),
+    description: z.string().trim().min(2, "exp.v.desc").max(500),
     amount: rupees,
     date: z.string().min(10),
     method: z.string(),
@@ -31,13 +32,14 @@ const Schema = z
     eventName: z.string().max(120).optional(),
   })
   .superRefine((v, ctx) => {
-    if (v.paidBy === "organization" && !v.accountId) ctx.addIssue({ code: "custom", path: ["accountId"], message: "Choose the account" });
+    if (v.paidBy === "organization" && !v.accountId) ctx.addIssue({ code: "custom", path: ["accountId"], message: "exp.v.account" });
   });
 
 type Att = { url: string; name: string; contentType: string; size: number };
 
 function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _id: string; name: string }[]; methods: string[]; categories: { key: string; name: string }[]; thresholdPaise: number }) {
   const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("exp"));
@@ -58,16 +60,16 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
       onSubmit={form.handleSubmit((v) =>
         submit<{ expense: { status: string } }>(
           { path: `/orgs/${orgId}/expenses`, body: { ...v, accountId: v.paidBy === "organization" ? v.accountId : null, eventName: v.eventName || undefined, reference: v.reference || undefined, attachments: atts, idempotencyKey: key } },
-          { success: "Expense saved", onSuccess: close },
+          { success: t("exp.saved"), onSuccess: close },
         ),
       )}
     >
       <FormError message={error} />
-      <Field label={`Amount (${money.symbol})`} htmlFor="x-amt" error={e.amount?.message} hint={thresholdPaise > 0 ? `Above ${money.fmt(thresholdPaise)} needs admin approval` : "Needs approval unless you are an admin"}>
+      <Field label={t("exp.amount")} htmlFor="x-amt" error={e.amount?.message} hint={thresholdPaise > 0 ? t("exp.above", { amount: money.fmt(thresholdPaise) }) : t("exp.needsApproval")}>
         <AmountInput id="x-amt" placeholder="0" {...form.register("amount")} />
       </Field>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Category" htmlFor="x-cat" error={e.categoryKey?.message}>
+        <Field label={t("ap.category")} htmlFor="x-cat" error={e.categoryKey?.message}>
           <NativeSelect id="x-cat" {...form.register("categoryKey")}>
             {categories.map((c) => (
               <option key={c.key} value={c.key}>
@@ -76,32 +78,32 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
             ))}
           </NativeSelect>
         </Field>
-        <Field label="Date" htmlFor="x-date">
+        <Field label={t("ap.date")} htmlFor="x-date">
           <Input id="x-date" type="date" {...form.register("date")} />
         </Field>
-        <Field label="Paid to (vendor / payee)" htmlFor="x-payee" error={e.payeeName?.message}>
+        <Field label={t("exp.paidTo")} htmlFor="x-payee" error={e.payeeName?.message}>
           <Input id="x-payee" {...form.register("payeeName")} />
         </Field>
-        <Field label="Description" htmlFor="x-desc" error={e.description?.message}>
+        <Field label={t("ap.description")} htmlFor="x-desc" error={e.description?.message}>
           <Input id="x-desc" {...form.register("description")} />
         </Field>
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium">Paid by</span>
+        <span className="text-sm font-medium">{t("exp.paidBy")}</span>
         <input type="hidden" {...form.register("paidBy")} />
         <ChoicePills
-          label="Paid by"
+          label={t("exp.paidBy")}
           value={paidBy}
           onChange={(v) => form.setValue("paidBy", v, { shouldDirty: true })}
           options={[
-            { value: "organization" as const, label: "Organization account", icon: <Landmark /> },
-            { value: "out_of_pocket" as const, label: "Out of pocket (reimburse later)", icon: <Wallet /> },
+            { value: "organization" as const, label: t("exp.org"), icon: <Landmark /> },
+            { value: "out_of_pocket" as const, label: t("exp.oopOpt"), icon: <Wallet /> },
           ]}
         />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {paidBy === "organization" && (
-          <Field label="From account" htmlFor="x-acc" error={e.accountId?.message}>
+          <Field label={t("exp.fromAccount")} htmlFor="x-acc" error={e.accountId?.message}>
             <NativeSelect id="x-acc" {...form.register("accountId")}>
               {accounts.map((a) => (
                 <option key={a._id} value={a._id}>
@@ -113,17 +115,17 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
         )}
         <MethodController control={form.control} methods={methods} />
       </div>
-      {paidBy === "out_of_pocket" && <FormNote>Saved as owed to the payer. Use “Reimburse” on the expense when the Mandal pays them back.</FormNote>}
-      <MoreOptions bare icon={<SlidersHorizontal />} title="Bill, reference & event" description={atts.length > 0 ? `${atts.length} file${atts.length === 1 ? "" : "s"} attached` : "Optional — attach the bill or note a bill number."} defaultOpen={optionsHaveError || atts.length > 0}>
-        <Field label="Reference / bill no." htmlFor="x-ref">
+      {paidBy === "out_of_pocket" && <FormNote>{t("exp.oopNote")}</FormNote>}
+      <MoreOptions bare icon={<SlidersHorizontal />} title={t("exp.more")} description={atts.length > 0 ? (atts.length === 1 ? t("exp.file1") : t("exp.filesN", { n: atts.length })) : t("exp.moreDesc")} defaultOpen={optionsHaveError || atts.length > 0}>
+        <Field label={t("exp.ref")} htmlFor="x-ref">
           <Input id="x-ref" {...form.register("reference")} />
         </Field>
-        <Field label="Event (optional)" htmlFor="x-event">
+        <Field label={t("exp.eventOpt")} htmlFor="x-event">
           <Input id="x-event" {...form.register("eventName")} />
         </Field>
-        <Field label="Bill / invoice" htmlFor="x-file" hint="PDF or image up to 5 MB" className="sm:col-span-2">
+        <Field label={t("exp.bill")} htmlFor="x-file" hint={t("exp.billHint")} className="sm:col-span-2">
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/30 bg-secondary/30 px-3 py-3 text-sm font-medium hover:bg-secondary/50">
-            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />} Attach file
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />} {t("exp.attach")}
             <input
               id="x-file"
               type="file"
@@ -149,7 +151,7 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
             {atts.map((a, i) => (
               <li key={a.url} className="flex items-center gap-2 rounded-xl bg-muted/60 px-2.5 py-1.5">
                 <Paperclip className="size-3.5 shrink-0" /> <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                <button type="button" aria-label={`Remove ${a.name}`} onClick={() => setAtts((x) => x.filter((_, j) => j !== i))} className="rounded-full p-0.5 hover:bg-muted">
+                <button type="button" aria-label={t("exp.removeX", { name: a.name })} onClick={() => setAtts((x) => x.filter((_, j) => j !== i))} className="rounded-full p-0.5 hover:bg-muted">
                   <X className="size-3.5" />
                 </button>
               </li>
@@ -158,15 +160,16 @@ function Form({ accounts, methods, categories, thresholdPaise }: { accounts: { _
         )}
       </MoreOptions>
       <SubmitButton pending={pending} disabled={pending || uploading} icon={<Receipt />}>
-        Submit expense
+        {t("exp.submit")}
       </SubmitButton>
     </form>
   );
 }
 
 export function ExpenseDialog(props: { accounts: { _id: string; name: string }[]; methods: string[]; categories: { key: string; name: string }[]; thresholdPaise: number }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><Receipt /> Add expense</>} title="Record an expense" icon={<Receipt />} tone="orange" wide>
+    <FormDialog trigger={<><Receipt /> {t("exp.add")}</>} title={t("exp.recordTitle")} icon={<Receipt />} tone="orange" wide>
       <Form {...props} />
     </FormDialog>
   );
@@ -174,8 +177,9 @@ export function ExpenseDialog(props: { accounts: { _id: string; name: string }[]
 
 export function ReimburseDialog({ expenseId, accounts, payee, amountPaise }: { expenseId: string; accounts: { _id: string; name: string }[]; payee: string; amountPaise: number }) {
   const money = useMoney();
+  const t = useT();
   return (
-    <FormDialog trigger="Reimburse" triggerVariant="outline" triggerSize="xs" title="Reimburse out-of-pocket expense" icon={<Wallet />} tone="emerald">
+    <FormDialog trigger={t("exp.reimburse")} triggerVariant="outline" triggerSize="xs" title={t("exp.reimburseTitle")} icon={<Wallet />} tone="emerald">
       <ReimburseForm expenseId={expenseId} accounts={accounts} summary={`${payee} · ${money.fmt(amountPaise)}`} />
     </FormDialog>
   );
@@ -183,15 +187,16 @@ export function ReimburseDialog({ expenseId, accounts, payee, amountPaise }: { e
 
 function ReimburseForm({ expenseId, accounts, summary }: { expenseId: string; accounts: { _id: string; name: string }[]; summary: string }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const close = useDialogClose();
   const form = useForm({ defaultValues: { accountId: accounts[0]?._id ?? "", date: todayISO() } });
   const { submit, pending, error } = useApiSubmit(form);
   return (
-    <form className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/expenses/${expenseId}/reimburse`, body: v }, { success: "Reimbursed", onSuccess: close }))}>
+    <form className="grid grid-cols-1 gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/expenses/${expenseId}/reimburse`, body: v }, { success: t("exp.reimbursed"), onSuccess: close }))}>
       <div className="rounded-2xl bg-muted/60 px-3 py-2.5 text-sm font-semibold">{summary}</div>
       <FormError message={error} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Pay from" htmlFor="rb-acc">
+        <Field label={t("exp.payFrom")} htmlFor="rb-acc">
           <NativeSelect id="rb-acc" {...form.register("accountId")}>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
@@ -200,12 +205,12 @@ function ReimburseForm({ expenseId, accounts, summary }: { expenseId: string; ac
             ))}
           </NativeSelect>
         </Field>
-        <Field label="Date" htmlFor="rb-date">
+        <Field label={t("ap.date")} htmlFor="rb-date">
           <Input id="rb-date" type="date" {...form.register("date")} />
         </Field>
       </div>
       <SubmitButton pending={pending} icon={<CheckCircle2 />}>
-        Record reimbursement
+        {t("exp.record")}
       </SubmitButton>
     </form>
   );

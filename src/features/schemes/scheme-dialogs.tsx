@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -23,6 +24,7 @@ import { useMoney } from "@/components/app/currency";
 
 function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId: string; members: { _id: string; name: string; membershipNumber: string }[]; memberSpecific: boolean; startDate: string }) {
   const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [q, setQ] = useState("");
@@ -36,20 +38,20 @@ function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId
       <FormError message={error} />
       <div className="relative">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search members" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search members" className="pl-9" />
+        <Input placeholder={t("schg.search")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t("schg.search")} className="pl-9" />
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-semibold text-primary tabular-nums">{ids.length} selected</span>
+        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-semibold text-primary tabular-nums">{t("schg.selected", { n: ids.length })}</span>
         <button
           type="button"
           className="font-semibold text-primary hover:underline"
           onClick={() => setSelected(Object.fromEntries(filtered.map((m) => [m._id, selected[m._id] ?? { amount: "", startDate: "" }])))}
         >
-          Select all shown
+          {t("schg.selectAll")}
         </button>
       </div>
       <ul className="max-h-72 divide-y overflow-y-auto rounded-2xl ring-1 ring-foreground/10">
-        {filtered.length === 0 && <li className="p-3 text-sm text-muted-foreground">All active members are already enrolled.</li>}
+        {filtered.length === 0 && <li className="p-3 text-sm text-muted-foreground">{t("schg.allEnrolled")}</li>}
         {filtered.map((m) => {
           const on = !!selected[m._id];
           return (
@@ -76,8 +78,8 @@ function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId
                 <Input
                   className="w-28"
                   inputMode="decimal"
-                  placeholder={`${money.symbol} amount`}
-                  aria-label={`Amount for ${m.name}`}
+                  placeholder={t("schg.amountPh", { cur: money.symbol })}
+                  aria-label={t("schg.amountFor", { name: m.name })}
                   value={selected[m._id].amount}
                   onChange={(e) => setSelected((s) => ({ ...s, [m._id]: { ...s[m._id], amount: e.target.value } }))}
                 />
@@ -86,8 +88,8 @@ function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId
                 <Input
                   className="w-36"
                   type="date"
-                  aria-label={`Start date for ${m.name}`}
-                  title="Member start date (optional)"
+                  aria-label={t("schg.startFor", { name: m.name })}
+                  title={t("schg.startOpt")}
                   min={isoDate(startDate)}
                   value={selected[m._id].startDate}
                   onChange={(e) => setSelected((s) => ({ ...s, [m._id]: { ...s[m._id], startDate: e.target.value } }))}
@@ -97,28 +99,29 @@ function EnrollForm({ schemeId, members, memberSpecific, startDate }: { schemeId
           );
         })}
       </ul>
-      <FormNote>Leave the date empty to start from the scheme start date. Installments before a member&apos;s start date are not charged.</FormNote>
+      <FormNote>{t("schg.note")}</FormNote>
       <Button
         size="lg"
         className="w-full"
         disabled={pending || ids.length === 0}
         onClick={() => {
-          for (const id of ids) if (selected[id].amount && !/^\d+(\.\d{1,2})?$/.test(selected[id].amount)) return setError("Enter valid amounts (max 2 decimals)");
+          for (const id of ids) if (selected[id].amount && !/^\d+(\.\d{1,2})?$/.test(selected[id].amount)) return setError(t("schg.validAmounts"));
           submit(
             { path: `/orgs/${orgId}/schemes/${schemeId}/enroll`, body: { members: ids.map((id) => ({ memberId: id, amount: selected[id].amount || null, startDate: selected[id].startDate || undefined })) } },
-            { success: "Members enrolled and installments generated", onSuccess: close },
+            { success: t("schg.enrolled"), onSuccess: close },
           );
         }}
       >
-        {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} Enroll {ids.length || ""} member{ids.length === 1 ? "" : "s"}
+        {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} {ids.length === 1 ? t("schg.enroll1") : ids.length ? t("schg.enrollN", { n: ids.length }) : t("schg.enroll")}
       </Button>
     </div>
   );
 }
 
 export function EnrollDialog(props: { schemeId: string; members: { _id: string; name: string; membershipNumber: string }[]; memberSpecific: boolean; startDate: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><UserPlus /> Enroll members</>} title="Enroll members" description="Installments are generated immediately for each enrolled member." wide icon={<UserPlus />} tone="sky">
+    <FormDialog trigger={<><UserPlus /> {t("schg.enroll")}</>} title={t("schg.enroll")} description={t("schg.enrollD")} wide icon={<UserPlus />} tone="sky">
       <EnrollForm {...props} />
     </FormDialog>
   );
@@ -126,10 +129,10 @@ export function EnrollDialog(props: { schemeId: string; members: { _id: string; 
 
 /* -------------------------------------------------- override one period */
 
-const OverrideSchema = z.object({ mode: z.enum(["date", "amount", "skip"]), dueDate: z.string().optional(), amount: optionalRupees, reason: z.string().trim().min(3, "Please give a reason").max(500) });
+const OverrideSchema = z.object({ mode: z.enum(["date", "amount", "skip"]), dueDate: z.string().optional(), amount: optionalRupees, reason: z.string().trim().min(3, "schg.reason").max(500) });
 
 function OverrideForm({ schemeId, sequence, dueDate, label }: { schemeId: string; sequence: number; dueDate: string; label: string }) {
-  const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.input<typeof OverrideSchema>, unknown, z.output<typeof OverrideSchema>>({ resolver: zodResolver(OverrideSchema), defaultValues: { mode: "date", dueDate: isoDate(dueDate), amount: "", reason: "" } });
@@ -142,49 +145,50 @@ function OverrideForm({ schemeId, sequence, dueDate, label }: { schemeId: string
       onSubmit={form.handleSubmit((v) =>
         submit(
           { path: `/orgs/${orgId}/schemes/${schemeId}/overrides`, body: { sequence, reason: v.reason, ...(v.mode === "date" ? { dueDate: v.dueDate } : v.mode === "amount" ? { amount: v.amount } : { skip: true }) } },
-          { success: "Period updated for all members", onSuccess: close },
+          { success: t("schg.periodUpdated"), onSuccess: close },
         ),
       )}
     >
       <FormNote>
-        Period #{sequence} · {label} · currently due {formatDate(dueDate)}. Applies to every enrolled member&apos;s unpaid installment for this period; other months are unchanged.
+        {t("schg.periodNote", { seq: sequence, label, date: formatDate(dueDate) })}
       </FormNote>
       <FormError message={error} />
-      <Field label="Change">
+      <Field label={t("schg.change")}>
         <ChoicePills
-          label="Change"
+          label={t("schg.change")}
           value={mode}
           onChange={(v) => form.setValue("mode", v, { shouldDirty: true })}
           options={[
-            { value: "date" as const, label: "Due date", icon: <CalendarCog /> },
-            { value: "amount" as const, label: "Amount", icon: <IndianRupee /> },
-            { value: "skip" as const, label: "Skip this period", icon: <CalendarX2 /> },
+            { value: "date" as const, label: t("schg.dueDate"), icon: <CalendarCog /> },
+            { value: "amount" as const, label: t("schg.amountL"), icon: <IndianRupee /> },
+            { value: "skip" as const, label: t("schg.skip"), icon: <CalendarX2 /> },
           ]}
         />
       </Field>
       {mode === "date" && (
-        <Field label="New due date" htmlFor="ov-date">
+        <Field label={t("schg.newDate")} htmlFor="ov-date">
           <Input id="ov-date" type="date" {...form.register("dueDate")} />
         </Field>
       )}
       {mode === "amount" && (
-        <Field label={`Amount (${money.symbol})`} htmlFor="ov-amt" error={form.formState.errors.amount?.message}>
+        <Field label={t("schg.amount")} htmlFor="ov-amt" error={form.formState.errors.amount?.message}>
           <AmountInput id="ov-amt" {...form.register("amount")} />
         </Field>
       )}
-      <Field label="Reason" htmlFor="ov-reason" error={form.formState.errors.reason?.message}>
-        <Input id="ov-reason" placeholder="e.g. Navratri — collection moved" {...form.register("reason")} />
+      <Field label={t("schg.reasonL")} htmlFor="ov-reason" error={form.formState.errors.reason?.message}>
+        <Input id="ov-reason" placeholder={t("schg.reasonPh")} {...form.register("reason")} />
       </Field>
       <SubmitButton pending={pending} icon={<CheckCircle2 />}>
-        Apply
+        {t("schg.apply")}
       </SubmitButton>
     </form>
   );
 }
 
 export function OverrideDialog(props: { schemeId: string; sequence: number; dueDate: string; label: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><CalendarCog /> Change</>} triggerVariant="ghost" triggerSize="xs" title={`Change period #${props.sequence}`} icon={<CalendarCog />} tone="indigo">
+    <FormDialog trigger={<><CalendarCog /> {t("schg.change")}</>} triggerVariant="ghost" triggerSize="xs" title={t("schg.changePeriod", { seq: props.sequence })} icon={<CalendarCog />} tone="indigo">
       <OverrideForm {...props} />
     </FormDialog>
   );
@@ -192,37 +196,38 @@ export function OverrideDialog(props: { schemeId: string; sequence: number; dueD
 
 /* -------------------------------------------------- amount revision */
 
-const RevisionSchema = z.object({ effectiveFrom: z.string().min(10, "Pick a date"), amount: rupees, reason: z.string().max(300).optional() });
+const RevisionSchema = z.object({ effectiveFrom: z.string().min(10, "schg.pickDate"), amount: rupees, reason: z.string().max(300).optional() });
 
 function RevisionForm({ schemeId }: { schemeId: string }) {
-  const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const form = useForm<z.infer<typeof RevisionSchema>>({ resolver: zodResolver(RevisionSchema), defaultValues: { effectiveFrom: "", amount: "", reason: "" } });
   const { submit, pending, error } = useApiSubmit(form);
   return (
-    <form noValidate className="flex flex-col gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/schemes/${schemeId}/revisions`, body: v }, { success: "Future installments updated", onSuccess: close }))}>
-      <FormNote>Unpaid installments due on or after the date get the new amount. Paid or partly paid installments and member-specific amounts keep their history.</FormNote>
+    <form noValidate className="flex flex-col gap-3" onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/schemes/${schemeId}/revisions`, body: v }, { success: t("schg.futureUpdated"), onSuccess: close }))}>
+      <FormNote>{t("schg.revNote")}</FormNote>
       <FormError message={error} />
-      <Field label={`New amount (${money.symbol})`} htmlFor="rv-amt" error={form.formState.errors.amount?.message}>
+      <Field label={t("schg.newAmount")} htmlFor="rv-amt" error={form.formState.errors.amount?.message}>
         <AmountInput id="rv-amt" {...form.register("amount")} />
       </Field>
-      <Field label="Effective from" htmlFor="rv-date" error={form.formState.errors.effectiveFrom?.message}>
+      <Field label={t("schg.effective")} htmlFor="rv-date" error={form.formState.errors.effectiveFrom?.message}>
         <Input id="rv-date" type="date" {...form.register("effectiveFrom")} />
       </Field>
-      <Field label="Reason" htmlFor="rv-reason">
+      <Field label={t("schg.reasonL")} htmlFor="rv-reason">
         <Input id="rv-reason" {...form.register("reason")} />
       </Field>
       <SubmitButton pending={pending} icon={<Coins />}>
-        Change amount
+        {t("schg.changeAmount")}
       </SubmitButton>
     </form>
   );
 }
 
 export function RevisionDialog({ schemeId }: { schemeId: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><Coins /> Change future amount</>} triggerVariant="outline" title="Change future installment amount" icon={<Coins />} tone="indigo">
+    <FormDialog trigger={<><Coins /> {t("schg.changeFuture")}</>} triggerVariant="outline" title={t("schg.changeFutureT")} icon={<Coins />} tone="indigo">
       <RevisionForm schemeId={schemeId} />
     </FormDialog>
   );

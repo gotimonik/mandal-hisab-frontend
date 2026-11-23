@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -25,6 +26,7 @@ interface ResetStatus {
 
 function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
   const router = useRouter();
+  const t = useT();
   const [st, setSt] = useState<ResetStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -46,7 +48,7 @@ function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
   if (!st)
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> {error ?? "Loading…"}
+        <Loader2 className="size-4 animate-spin" /> {error ?? t("setd.loading")}
       </div>
     );
 
@@ -58,33 +60,33 @@ function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
   return (
     <div className="flex flex-col gap-3 text-sm">
       <ChoicePills
-        label="What to reset"
+        label={t("setd.mr.what")}
         value={removeMembers ? "all" : "money"}
         onChange={(v) => setRemoveMembers(v === "all")}
         options={[
-          { value: "money", label: "Money only" },
-          { value: "all", label: "Money and members" },
+          { value: "money", label: t("setd.mr.moneyOnly") },
+          { value: "all", label: t("setd.mr.moneyMembers") },
         ]}
       />
       <FormNote tone="warn">
-        <b>Everything with money is deleted:</b> hapta payments and receipts, interest, upad and its interest, withdrawals, cash book, expenses and donations. Hapta months go back to unpaid and every balance becomes ₹0.{" "}
+        <b>{t("setd.mr.deletedTitle")}</b> {t("setd.mr.deletedRest")}{" "}
         {removeMembers ? (
           <>
-            <b>Members go too:</b> all {c.otherMembers} other member{c.otherMembers === 1 ? "" : "s"} are deleted and {c.otherLogins} login{c.otherLogins === 1 ? " is" : "s are"} unlinked from the Mandal (their accounts stay — they can join again with the code or an invitation). Pending invitations are cancelled. <b>Only you stay</b>, as admin with your own member record. Kept: settings and meetings.
+            <b>{t("setd.mr.membersGo")}</b> {t("setd.mr.membersRest", { members: c.otherMembers, logins: c.otherLogins })} <b>{t("setd.mr.onlyYou")}</b>{t("setd.mr.onlyYouRest")}
           </>
         ) : (
           <>
-            <b>Kept:</b> members and their shares, logins, settings and meetings. Members get a notification.
+            <b>{t("setd.mr.kept")}</b> {t("setd.mr.keptRest")}
           </>
         )}
       </FormNote>
 
       <ul className="grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-4">
         {[
-          ["Money entries", c.transactions],
-          ["Payments", c.payments],
-          ["Upads", c.upads],
-          removeMembers ? ["Other members", c.otherMembers] : ["Interest runs", c.interestRuns],
+          [t("setd.mr.cEntries"), c.transactions],
+          [t("setd.mr.cPayments"), c.payments],
+          [t("setd.mr.cUpads"), c.upads],
+          removeMembers ? [t("setd.mr.cOthers"), c.otherMembers] : [t("setd.mr.cInterest"), c.interestRuns],
         ].map(([l, n]) => (
           <li key={l} className="rounded-lg bg-muted/60 px-2 py-1.5">
             <span className="block text-muted-foreground">{l}</span>
@@ -93,7 +95,7 @@ function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
         ))}
       </ul>
 
-      {nothing && <FormNote tone="warn">There is nothing to reset{removeMembers ? "" : " — no money has been recorded yet"}.</FormNote>}
+      {nothing && <FormNote tone="warn">{removeMembers ? t("setd.mr.nothing") : t("setd.mr.nothingMoney")}</FormNote>}
       {others.map((b) => (
         <FormNote key={b} tone="warn">
           {b}
@@ -104,28 +106,28 @@ function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
         <p className="flex items-center gap-2">
           {st.backup.fresh ? <CheckCircle2 className="size-4 text-emerald-600" /> : <TriangleAlert className="size-4 text-amber-600" />}
           <span>
-            <b>Step 1: backup</b>
+            <b>{t("setd.mr.step1")}</b>
             <span className="block text-xs text-muted-foreground">
-              {st.backup.fresh ? `Taken ${formatDateTime(st.backup.lastBackupAt)} — keep that file safe.` : st.backup.lastBackupAt ? `Last one ${formatDateTime(st.backup.lastBackupAt)} is too old or out of date.` : "No backup yet."} If anything goes wrong, MandalHisab can load it back.
+              {st.backup.fresh ? t("setd.mr.taken", { at: formatDateTime(st.backup.lastBackupAt) }) : st.backup.lastBackupAt ? t("setd.mr.old", { at: formatDateTime(st.backup.lastBackupAt) }) : t("setd.mr.none")} {t("setd.mr.loadBack")}
             </span>
           </span>
         </p>
         <div className="flex gap-2">
           {!st.backup.fresh && (
             <ExportCsvButton href={`/api/backup?orgId=${orgId}`} className="h-9">
-              <DatabaseBackup /> Download backup
+              <DatabaseBackup /> {t("setd.mr.download")}
             </ExportCsvButton>
           )}
           <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
-            {loading ? <Loader2 className="animate-spin" /> : <RefreshCw />} Check
+            {loading ? <Loader2 className="animate-spin" /> : <RefreshCw />} {t("setd.mr.check")}
           </Button>
         </div>
       </div>
 
-      <Field label={`Step 2: type the Mandal's name — ${orgName}`} htmlFor="reset-name">
+      <Field label={t("setd.mr.step2", { name: orgName })} htmlFor="reset-name">
         <Input id="reset-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" placeholder={orgName} />
       </Field>
-      <Field label="Why" htmlFor="reset-why" hint="Kept in the audit log, e.g. “Start again and bring in the paper hisab”.">
+      <Field label={t("setd.mr.why")} htmlFor="reset-why" hint={t("setd.mr.whyHint")}>
         <Input id="reset-why" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} />
       </Field>
       <FormError message={error} />
@@ -138,20 +140,21 @@ function ResetForm({ orgId, orgName }: { orgId: string; orgName: string }) {
             setError(null);
             const r = await apiMutate<{ ok: true }>({ path: `/orgs/${orgId}/money-reset`, body: { confirmName: name, reason, removeMembers } });
             if (!r.ok) return setError(r.error);
-            toast.success(removeMembers ? "Money and members removed. Now bring in the members and closing figures." : "The hisab has been reset. Now bring in the closing figures.");
+            toast.success(removeMembers ? t("setd.mr.doneAll") : t("setd.mr.doneMoney"));
             router.push(`/org/${orgId}/settings/import`);
           })
         }
       >
-        {pending ? <Loader2 className="animate-spin" /> : <RotateCcw />} {removeMembers ? "Delete money and members" : "Delete all money entries"}
+        {pending ? <Loader2 className="animate-spin" /> : <RotateCcw />} {removeMembers ? t("setd.mr.btnAll") : t("setd.mr.btnMoney")}
       </Button>
     </div>
   );
 }
 
 export function MoneyResetDialog({ orgId, orgName }: { orgId: string; orgName: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><RotateCcw /> Reset money…</>} triggerVariant="outline" title="Start the hisab afresh" description="For when entries were typed in before the old hisab was brought in properly." wide icon={<RotateCcw />} tone="rose" openParam="reset">
+    <FormDialog trigger={<><RotateCcw /> {t("setd.mr.trigger")}</>} triggerVariant="outline" title={t("setd.mr.title")} description={t("setd.mr.desc")} wide icon={<RotateCcw />} tone="rose" openParam="reset">
       <ResetForm orgId={orgId} orgName={orgName} />
     </FormDialog>
   );

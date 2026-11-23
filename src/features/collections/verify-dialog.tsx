@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -15,6 +16,7 @@ import { FormNote, SubmitButton } from "@/components/app/form-bits";
 
 function VerifyForm({ paymentId, accounts, accountId, summary, path }: { paymentId: string; accounts: { _id: string; name: string }[]; accountId?: string | null; summary: string; path: string }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const close = useDialogClose();
   const [acc, setAcc] = useState(accountId ?? accounts[0]?._id ?? "");
   const form = useForm();
@@ -28,7 +30,7 @@ function VerifyForm({ paymentId, accounts, accountId, summary, path }: { payment
         <p className="min-w-0 text-sm font-semibold">{summary}</p>
       </div>
       <FormError message={error} />
-      <Field label="Received into account" htmlFor={`va-${paymentId}`}>
+      <Field label={t("ap.ver.into")} htmlFor={`va-${paymentId}`}>
         <NativeSelect id={`va-${paymentId}`} value={acc} onChange={(e) => setAcc(e.target.value)}>
           {accounts.map((a) => (
             <option key={a._id} value={a._id}>
@@ -37,9 +39,9 @@ function VerifyForm({ paymentId, accounts, accountId, summary, path }: { payment
           ))}
         </NativeSelect>
       </Field>
-      <FormNote>Verifying posts the amount to the ledger, updates the member&apos;s installments and issues a receipt.</FormNote>
-      <SubmitButton type="button" pending={pending} disabled={!acc} icon={<Check />} onClick={() => submit({ path: `/orgs/${orgId}${path}`, body: { accountId: acc } }, { success: "Verified — receipt issued", onSuccess: close })}>
-        Verify
+      <FormNote>{t("ap.ver.note")}</FormNote>
+      <SubmitButton type="button" pending={pending} disabled={!acc} icon={<Check />} onClick={() => submit({ path: `/orgs/${orgId}${path}`, body: { accountId: acc } }, { success: t("ap.ver.done"), onSuccess: close })}>
+        {t("ap.verify")}
       </SubmitButton>
     </div>
   );
@@ -47,8 +49,9 @@ function VerifyForm({ paymentId, accounts, accountId, summary, path }: { payment
 
 export function VerifyDialog(props: { paymentId: string; accounts: { _id: string; name: string }[]; accountId?: string | null; payer: string; amountPaise: number; date: string; path: string }) {
   const money = useMoney();
+  const t = useT();
   return (
-    <FormDialog trigger={<><Check /> Verify</>} triggerSize="xs" title="Verify payment" icon={<BadgeCheck />} tone="emerald">
+    <FormDialog trigger={<><Check /> {t("ap.verify")}</>} triggerSize="xs" title={t("ap.ver.title")} icon={<BadgeCheck />} tone="emerald">
       <VerifyForm {...props} summary={`${props.payer} · ${money.fmt(props.amountPaise)} · ${formatDate(props.date)}`} />
     </FormDialog>
   );

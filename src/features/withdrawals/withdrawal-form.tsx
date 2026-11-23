@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useMemo, useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,7 +17,6 @@ import { IconChip } from "@/components/app/bits";
 import { apiMutate } from "@/lib/api-client";
 import { newIdempotencyKey, paiseToRupeeInput, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
-import { useMoney } from "@/components/app/currency";
 
 export interface WithdrawalMemberOption {
   _id: string;
@@ -34,7 +34,7 @@ interface Props {
 }
 
 function Form({ members, accounts, allowException, defaultMemberId }: Props) {
-  const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -59,10 +59,10 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
   const over = !!member && amountPaise > member.balancePaise;
 
   const save = (confirmDuplicate: boolean) => {
-    if (!member) return setError("Choose a member");
+    if (!member) return setError(t("wd.f.choose"));
     const p = rupees.safeParse(amount);
     if (!p.success) return setError(p.error.issues[0].message);
-    if (over && !exceed) return setError("The amount is more than the member's available balance");
+    if (over && !exceed) return setError(t("wd.f.over"));
     start(async () => {
       setError(null);
       const res = await apiMutate<{ withdrawal: { _id: string; number: string } }>({
@@ -73,7 +73,7 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
         if (res.code === "DUPLICATE_SUSPECTED") return setDup(res.error);
         return setError(res.error);
       }
-      toast.success(`Withdrawal ${res.data.withdrawal.number} recorded`);
+      toast.success(t("wd.f.done", { number: res.data.withdrawal.number }));
       close();
       router.push(`/org/${orgId}/withdrawals/${res.data.withdrawal._id}`);
       router.refresh();
@@ -90,9 +90,9 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
       }}
     >
       <FormError message={error} />
-      <Field label="Member" htmlFor="w-member">
+      <Field label={t("ap.member")} htmlFor="w-member">
         <NativeSelect id="w-member" value={memberId} onChange={(e) => setMemberId(e.target.value)}>
-          <option value="">Choose a member…</option>
+          <option value="">{t("wd.f.choosePh")}</option>
           {members.map((m) => (
             <option key={m._id} value={m._id}>
               {m.name} ({m.membershipNumber})
@@ -105,30 +105,30 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
           <IconChip tone="emerald" size="sm">
             <PiggyBank />
           </IconChip>
-          <span className="min-w-0 flex-1 font-medium">Available balance</span>
+          <span className="min-w-0 flex-1 font-medium">{t("wd.f.available")}</span>
           <Money paise={member.balancePaise} className="text-base font-bold" colored />
         </div>
       )}
-      <Field label={`Amount (${money.symbol})`} htmlFor="w-amt" error={over ? "More than the available balance" : undefined}>
+      <Field label={t("wd.f.amount")} htmlFor="w-amt" error={over ? t("wd.f.moreThan") : undefined}>
         <AmountInput id="w-amt" placeholder="0" value={amount} onChange={(e) => setAmount(e.target.value)} />
       </Field>
       {member && member.balancePaise > 0 && (
         <ChoicePills
-          label="Amount shortcuts"
+          label={t("wd.f.shortcuts")}
           value={amount}
           onChange={setAmount}
           options={[
-            { value: paiseToRupeeInput(member.balancePaise), label: "Full balance" },
-            { value: paiseToRupeeInput(Math.round(member.balancePaise / 200) * 100), label: "Half" },
+            { value: paiseToRupeeInput(member.balancePaise), label: t("wd.f.full") },
+            { value: paiseToRupeeInput(Math.round(member.balancePaise / 200) * 100), label: t("wd.f.half") },
           ].filter((o, i, all) => Number(o.value) > 0 && all.findIndex((x) => x.value === o.value) === i)}
         />
       )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Date paid" htmlFor="w-date">
+        <Field label={t("ap.datePaid")} htmlFor="w-date">
           <Input id="w-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         {accounts.length > 1 && (
-          <Field label="Paid from" htmlFor="w-acc" hint={account ? <>Holds <Money paise={account.balancePaise} /></> : undefined}>
+          <Field label={t("ap.paidFrom")} htmlFor="w-acc" hint={account ? <>{t("wd.f.holds")} <Money paise={account.balancePaise} /></> : undefined}>
             <NativeSelect id="w-acc" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
               {accounts.map((a) => (
                 <option key={a._id} value={a._id}>
@@ -139,18 +139,18 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
           </Field>
         )}
       </div>
-      <MoreOptions bare icon={<StickyNote />} title="Note" description={note ? note : "Optional — e.g. medical, school fees."}>
-        <Field label="Note (optional)" htmlFor="w-note" className="sm:col-span-2">
-          <Input id="w-note" maxLength={300} placeholder="e.g. Medical, school fees" value={note} onChange={(e) => setNote(e.target.value)} />
+      <MoreOptions bare icon={<StickyNote />} title={t("wd.f.note")} description={note ? note : t("wd.f.noteD")}>
+        <Field label={t("ap.noteOpt")} htmlFor="w-note" className="sm:col-span-2">
+          <Input id="w-note" maxLength={300} placeholder={t("wd.f.notePh")} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
       </MoreOptions>
       {over && allowException && (
         <FormNote tone="warn">
           <div className="grid grid-cols-1 gap-2">
             <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={exceed} onCheckedChange={(c) => setExceed(!!c)} /> Allow this withdrawal above the member&apos;s balance (admin exception)
+              <Checkbox checked={exceed} onCheckedChange={(c) => setExceed(!!c)} /> {t("wd.f.allow")}
             </label>
-            {exceed && <Input placeholder="Reason (required)" value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} maxLength={300} />}
+            {exceed && <Input placeholder={t("wd.f.reasonReq")} value={exceptionReason} onChange={(e) => setExceptionReason(e.target.value)} maxLength={300} />}
           </div>
         </FormNote>
       )}
@@ -160,17 +160,17 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
             <p>{dup}</p>
             <div className="flex gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => setDup(null)} disabled={pending}>
-                Go back
+                {t("wd.f.back")}
               </Button>
               <Button type="button" size="sm" onClick={() => save(true)} disabled={pending}>
-                {pending && <Loader2 className="animate-spin" />} Yes, it&apos;s a second withdrawal
+                {pending && <Loader2 className="animate-spin" />} {t("wd.f.second")}
               </Button>
             </div>
           </div>
         </FormNote>
       ) : (
         <SubmitButton pending={pending} disabled={pending || (over && !exceed) || (exceed && exceptionReason.trim().length < 3)} icon={<ArrowUpFromLine />}>
-          Record cash paid to member
+          {t("wd.f.submit")}
         </SubmitButton>
       )}
     </form>
@@ -178,8 +178,9 @@ function Form({ members, accounts, allowException, defaultMemberId }: Props) {
 }
 
 export function WithdrawalDialog(props: Props & { triggerLabel?: string; triggerSize?: "default" | "sm"; defaultOpen?: boolean }) {
+  const t = useT();
   return (
-    <FormDialog defaultOpen={props.defaultOpen} trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? "Record withdrawal"}</>} triggerSize={props.triggerSize} title="Record a withdrawal" icon={<ArrowUpFromLine />} tone="rose" description="Cash paid out to a member from their savings balance. A voucher number is generated.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><ArrowUpFromLine /> {props.triggerLabel ?? t("wd.f.trigger")}</>} triggerSize={props.triggerSize} title={t("wd.f.title")} icon={<ArrowUpFromLine />} tone="rose" description={t("wd.f.desc")}>
       <Form {...props} />
     </FormDialog>
   );

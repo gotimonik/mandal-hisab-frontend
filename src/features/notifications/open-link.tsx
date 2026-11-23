@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useT } from "@/i18n/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Loader2 } from "lucide-react";
@@ -12,6 +13,7 @@ import { apiMutate } from "@/lib/api-client";
  */
 export function OpenNotificationLink({ id, href, unread }: { id: string; href: string; unread: boolean }) {
   const router = useRouter();
+  const t = useT();
   const [pending, start] = useTransition();
   return (
     <Link
@@ -30,7 +32,7 @@ export function OpenNotificationLink({ id, href, unread }: { id: string; href: s
       }}
       className="flex items-center gap-0.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/15"
     >
-      Open {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChevronRight className="size-3.5" />}
+      {t("upd.open")} {pending ? <Loader2 className="size-3.5 animate-spin" /> : <ChevronRight className="size-3.5" />}
     </Link>
   );
 }

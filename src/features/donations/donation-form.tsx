@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -13,24 +14,23 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
-import { useMoney } from "@/components/app/currency";
 import { AmountInput, MoreOptions, SubmitButton, MethodController } from "@/components/app/form-bits";
 
 const Schema = z.object({
-  donorName: z.string().trim().min(2, "Enter the donor's name").max(120),
+  donorName: z.string().trim().min(2, "don.v.name").max(120),
   donorPhone: z.string().max(20).optional(),
   amount: rupees,
   date: z.string().min(10),
   method: z.string(),
   reference: z.string().max(100).optional(),
-  accountId: z.string().min(1, "Choose an account"),
+  accountId: z.string().min(1, "don.v.account"),
   purpose: z.string().max(200).optional(),
   eventName: z.string().max(120).optional(),
   notes: z.string().max(500).optional(),
 });
 
 function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]; methods: string[] }) {
-  const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("don"));
@@ -47,31 +47,31 @@ function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]
       onSubmit={form.handleSubmit((v) =>
         submit(
           { path: `/orgs/${orgId}/donations`, body: { ...v, idempotencyKey: key } },
-          { success: "Donation recorded — receipt issued", onSuccess: close },
+          { success: t("don.saved"), onSuccess: close },
         ),
       )}
     >
       <div className="sm:col-span-2">
         <FormError message={error} />
       </div>
-      <Field label="Donor name" htmlFor="d-name" error={e.donorName?.message} className="sm:col-span-2">
+      <Field label={t("don.donorName")} htmlFor="d-name" error={e.donorName?.message} className="sm:col-span-2">
         <Input id="d-name" {...form.register("donorName")} />
       </Field>
-      <Field label={`Amount (${money.symbol})`} htmlFor="d-amt" error={e.amount?.message} className="sm:col-span-2">
+      <Field label={t("don.amount")} htmlFor="d-amt" error={e.amount?.message} className="sm:col-span-2">
         <AmountInput id="d-amt" {...form.register("amount")} />
       </Field>
-      <Field label="Date" htmlFor="d-date">
+      <Field label={t("ap.date")} htmlFor="d-date">
         <Input id="d-date" type="date" {...form.register("date")} />
       </Field>
       <MethodController control={form.control} methods={methods} />
-      <Field label="Event" htmlFor="d-event" hint="Used in the event-wise report.">
-        <Input id="d-event" placeholder="e.g. Ganeshotsav 2026" {...form.register("eventName")} />
+      <Field label={t("ap.event")} htmlFor="d-event" hint={t("don.eventHint")}>
+        <Input id="d-event" placeholder={t("don.eventPh")} {...form.register("eventName")} />
       </Field>
-      <Field label="Purpose" htmlFor="d-purpose">
+      <Field label={t("ap.purpose")} htmlFor="d-purpose">
         <Input id="d-purpose" {...form.register("purpose")} />
       </Field>
-      <MoreOptions bare icon={<SlidersHorizontal />} title="Account, reference & donor details" description="Donor mobile is optional." defaultOpen={!!e.accountId} className="sm:col-span-2">
-        <Field label="Received into" htmlFor="d-acc" error={e.accountId?.message}>
+      <MoreOptions bare icon={<SlidersHorizontal />} title={t("don.more")} description={t("don.moreD")} defaultOpen={!!e.accountId} className="sm:col-span-2">
+        <Field label={t("ap.receivedInto")} htmlFor="d-acc" error={e.accountId?.message}>
           <NativeSelect id="d-acc" {...form.register("accountId")}>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
@@ -80,23 +80,24 @@ function Form({ accounts, methods }: { accounts: { _id: string; name: string }[]
             ))}
           </NativeSelect>
         </Field>
-        <Field label="Reference" htmlFor="d-ref">
+        <Field label={t("ap.reference")} htmlFor="d-ref">
           <Input id="d-ref" {...form.register("reference")} />
         </Field>
-        <Field label="Donor mobile" htmlFor="d-phone">
+        <Field label={t("don.mobile")} htmlFor="d-phone">
           <Input id="d-phone" type="tel" {...form.register("donorPhone")} />
         </Field>
       </MoreOptions>
       <SubmitButton pending={pending} icon={<CheckCircle2 />} className="sm:col-span-2">
-        Save donation
+        {t("don.save")}
       </SubmitButton>
     </form>
   );
 }
 
 export function DonationDialog(props: { accounts: { _id: string; name: string }[]; methods: string[] }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><Heart /> Record donation</>} title="Record a donation" icon={<Heart />} tone="pink">
+    <FormDialog trigger={<><Heart /> {t("don.trigger")}</>} title={t("don.dlgTitle")} icon={<Heart />} tone="pink">
       <Form {...props} />
     </FormDialog>
   );

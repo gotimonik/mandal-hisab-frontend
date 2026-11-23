@@ -3,17 +3,19 @@ import { can, getOrg } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
 import { FormNote } from "@/components/app/form-bits";
 import { ReorderForm, type OrderRow } from "@/features/members/reorder-form";
+import { getT } from "@/i18n/server";
 
 export const metadata = { title: "Order of members" };
 
 export default async function MemberOrderPage({ params }: PageProps<"/org/[orgId]/members/order">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const org = await getOrg(orgId);
   if (!can(org, "members.manage")) {
     return (
       <div className="max-w-2xl">
-        <PageHeader title="Order of members" />
-        <FormNote tone="warn">Only the Mandal&apos;s admin can change the order.</FormNote>
+        <PageHeader title={t("misc.order.title")} />
+        <FormNote tone="warn">{t("misc.order.onlyAdmin")}</FormNote>
       </div>
     );
   }
@@ -26,7 +28,7 @@ export default async function MemberOrderPage({ params }: PageProps<"/org/[orgId
   }
   return (
     <div className="max-w-2xl">
-      <PageHeader title="Order of members" description="Drag members into the order you want. The members list, the hisab sheet and the monthly hapta follow it." />
+      <PageHeader title={t("misc.order.title")} description={t("misc.order.desc")} />
       <ReorderForm orgId={orgId} rows={rows} />
     </div>
   );

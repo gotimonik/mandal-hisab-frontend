@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/client";
+import type { Key } from "@/i18n/core";
 import { useParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,15 +24,16 @@ const Schema = z
     action: z.enum(["set_due_date", "set_amount", "defer", "waive", "cancel", "reactivate"]),
     dueDate: z.string().optional(),
     amount: optionalRupees,
-    reason: z.string().trim().min(3, "Please give a reason").max(500),
+    reason: z.string().trim().min(3, "inst.a.reason").max(500),
   })
   .superRefine((v, ctx) => {
-    if (v.action === "set_due_date" && !v.dueDate) ctx.addIssue({ code: "custom", path: ["dueDate"], message: "Pick the new due date" });
-    if (v.action === "set_amount" && !v.amount) ctx.addIssue({ code: "custom", path: ["amount"], message: "Enter the new amount" });
+    if (v.action === "set_due_date" && !v.dueDate) ctx.addIssue({ code: "custom", path: ["dueDate"], message: "inst.a.pickDate" });
+    if (v.action === "set_amount" && !v.amount) ctx.addIssue({ code: "custom", path: ["amount"], message: "inst.a.enterAmount" });
   });
 
 function ActionForm({ inst }: { inst: Installment }) {
   const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const active = inst.state === "active";
@@ -52,7 +55,7 @@ function ActionForm({ inst }: { inst: Installment }) {
             method: "PATCH",
             body: { action: v.action, reason: v.reason, dueDate: ["set_due_date", "defer", "reactivate"].includes(v.action) && v.dueDate ? v.dueDate : undefined, amount: v.action === "set_amount" ? v.amount : undefined },
           },
-          { success: "Installment updated", onSuccess: close },
+          { success: t("inst.a.updated"), onSuccess: close },
         ),
       )}
     >
@@ -63,44 +66,45 @@ function ActionForm({ inst }: { inst: Installment }) {
             {inst.member?.name} · {inst.periodLabel}
           </p>
           <p className="text-xs text-muted-foreground">
-            {inst.schemeName} · due {formatDate(inst.dueDate)} · {money.fmt(inst.amountPaise)} (paid {money.fmt(inst.paidPaise)})
+            {t("inst.a.summary", { scheme: inst.schemeName ?? "", date: formatDate(inst.dueDate), amount: money.fmt(inst.amountPaise), paid: money.fmt(inst.paidPaise) })}
           </p>
         </div>
       </div>
       <FormError message={error} />
-      <Field label="Action" htmlFor="ia-action">
+      <Field label={t("inst.a.action")} htmlFor="ia-action">
         <NativeSelect id="ia-action" {...form.register("action")}>
-          {active && <option value="set_due_date">Change due date</option>}
-          {active && <option value="set_amount">Change amount</option>}
-          {active && <option value="defer">Defer (put on hold)</option>}
-          {active && <option value="waive">Waive remaining amount</option>}
-          {active && inst.paidPaise === 0 && <option value="cancel">Cancel</option>}
-          {!active && <option value="reactivate">Reactivate</option>}
+          {active && <option value="set_due_date">{t("inst.a.setDate")}</option>}
+          {active && <option value="set_amount">{t("inst.a.setAmount")}</option>}
+          {active && <option value="defer">{t("inst.a.defer")}</option>}
+          {active && <option value="waive">{t("inst.a.waive")}</option>}
+          {active && inst.paidPaise === 0 && <option value="cancel">{t("inst.a.cancel")}</option>}
+          {!active && <option value="reactivate">{t("inst.a.reactivate")}</option>}
         </NativeSelect>
       </Field>
       {(action === "set_due_date" || action === "defer" || action === "reactivate") && (
-        <Field label={action === "set_due_date" ? "New due date" : "Due date (optional)"} htmlFor="ia-date" error={e.dueDate?.message}>
+        <Field label={action === "set_due_date" ? t("inst.a.newDate") : t("inst.a.dateOpt")} htmlFor="ia-date" error={e.dueDate?.message && t(e.dueDate.message as Key)}>
           <Input id="ia-date" type="date" {...form.register("dueDate")} />
         </Field>
       )}
       {action === "set_amount" && (
-        <Field label={`New amount (${money.symbol})`} htmlFor="ia-amt" error={e.amount?.message} hint="Cannot be less than what is already paid.">
+        <Field label={t("inst.a.newAmount")} htmlFor="ia-amt" error={e.amount?.message && t(e.amount.message as Key)} hint={t("inst.a.newAmountHint")}>
           <AmountInput id="ia-amt" {...form.register("amount")} />
         </Field>
       )}
-      <Field label="Reason" htmlFor="ia-reason" error={e.reason?.message}>
+      <Field label={t("inst.a.reasonLabel")} htmlFor="ia-reason" error={e.reason?.message && t(e.reason.message as Key)}>
         <Input id="ia-reason" {...form.register("reason")} />
       </Field>
       <SubmitButton pending={pending} icon={<CheckCircle2 />} variant={action === "waive" || action === "cancel" ? "destructive" : "default"}>
-        Save
+        {t("inst.a.save")}
       </SubmitButton>
     </form>
   );
 }
 
 export function InstallmentActionDialog({ inst }: { inst: Installment }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<SlidersHorizontal />} triggerVariant="ghost" triggerSize="xs" title="Adjust installment" icon={<CalendarClock />} tone="indigo" description="Every change is recorded in the installment history and audit log.">
+    <FormDialog trigger={<SlidersHorizontal />} triggerVariant="ghost" triggerSize="xs" title={t("inst.a.title")} icon={<CalendarClock />} tone="indigo" description={t("inst.a.desc")}>
       <ActionForm inst={inst} />
     </FormDialog>
   );

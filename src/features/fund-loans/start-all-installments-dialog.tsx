@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ interface Props {
 /** Put every running upad (above the Mandal's limit) on installments, from a chosen month. */
 function Form({ count, minAmountPaise }: Props) {
   const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -35,12 +37,12 @@ function Form({ count, minAmountPaise }: Props) {
         e.preventDefault();
         // shown inside the settings form: don't let this submit reach it (React events bubble through the portal)
         e.stopPropagation();
-        if (!MONTH.test(startMonth) || startMonth < thisMonth) return setError("Installments can start from this month at the earliest");
+        if (!MONTH.test(startMonth) || startMonth < thisMonth) return setError(t("setx.sa.earliest"));
         start(async () => {
           setError(null);
           const res = await apiMutate<{ started: number }>({ path: `/orgs/${orgId}/fund-loans/installments/start-all`, body: { count, startMonth } });
           if (!res.ok) return setError(res.error);
-          toast.success(res.data.started ? `${res.data.started} running upad put on installments` : "No running upad to put on installments");
+          toast.success(res.data.started ? t("setx.sa.done", { n: res.data.started }) : t("setx.sa.none"));
           close();
           router.refresh();
         });
@@ -49,18 +51,19 @@ function Form({ count, minAmountPaise }: Props) {
       <FormError message={error} />
       <InstallmentStartField id="sa-start" value={startMonth} min={thisMonth} onChange={setStartMonth} />
       <FormNote tone="warn">
-        What is still outstanding on each running upad{minAmountPaise > 0 ? ` of more than ${money.fmt(minAmountPaise)}` : ""} is split into {count} equal monthly installments, with the interest. Upads that already have installments are not changed.
+        {minAmountPaise > 0 ? t("setx.sa.noteMin", { min: money.fmt(minAmountPaise), count }) : t("setx.sa.note", { count })}
       </FormNote>
       <SubmitButton pending={pending} icon={<CalendarRange />}>
-        Start installments
+        {t("setx.sa.button")}
       </SubmitButton>
     </form>
   );
 }
 
 export function StartAllInstallmentsDialog(props: Props) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><CalendarRange /> Apply to running upads</>} triggerVariant="outline" triggerSize="xs" title="Installments for running upads" description="Upad given before installments were turned on." icon={<CalendarRange />} tone="orange" openParam="installments-all">
+    <FormDialog trigger={<><CalendarRange /> {t("setx.sa.trigger")}</>} triggerVariant="outline" triggerSize="xs" title={t("setx.sa.title")} description={t("setx.sa.desc")} icon={<CalendarRange />} tone="orange" openParam="installments-all">
       <Form {...props} />
     </FormDialog>
   );

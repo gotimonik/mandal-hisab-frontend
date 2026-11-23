@@ -12,6 +12,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
 import type { Tone } from "@/lib/tones";
 
+import { getT } from "@/i18n/server";
+import type { Key, T } from "@/i18n/core";
+
 export const metadata = { title: "Audit log" };
 
 interface Entry {
@@ -61,12 +64,18 @@ const look = (action: string) => {
   );
 };
 const pretty = (action: string) => action.replace(/[._]/g, " ");
+/** "payment.verify" → "Payment verified" in the chosen language; unknown actions fall back to the code. */
+const actionLabel = (t: T, action: string) => {
+  const key = `act.${action.replace(/\./g, "_")}`;
+  const out = t(key as Key);
+  return out === key ? pretty(action) : out;
+};
 
-function Changes({ e }: { e: Entry }) {
+function Changes({ e, t }: { e: Entry; t: T }) {
   if (e.after === undefined || e.after === null) return null;
   return (
     <details className="mt-1">
-      <summary className="cursor-pointer text-xs font-medium text-primary">Show changes</summary>
+      <summary className="cursor-pointer text-xs font-medium text-primary">{t("aud.showChanges")}</summary>
       <pre className="mt-1 max-h-48 overflow-auto rounded-lg bg-muted p-2 text-[11px] whitespace-pre-wrap">{JSON.stringify({ before: e.before, after: e.after }, null, 1)}</pre>
     </details>
   );
@@ -74,30 +83,31 @@ function Changes({ e }: { e: Entry }) {
 
 export default async function AuditPage({ params, searchParams }: PageProps<"/org/[orgId]/audit">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const sp = await searchParams;
   const entityType = typeof sp.entityType === "string" ? sp.entityType : "";
   const page = Number(sp.page ?? 1) || 1;
   const items = await api<Entry[]>(`/orgs/${orgId}/audit-logs${qs({ entityType, page })}`);
   return (
     <>
-      <PageHeader title="Audit log" description="Append-only record of who changed what, when and why." />
+      <PageHeader title={t("aud.title")} description={t("aud.desc")} />
       <FilterBar resetHref={`/org/${orgId}/audit`}>
-        <FilterField label="Record type">
+        <FilterField label={t("aud.recordType")}>
           <NativeSelect name="entityType" defaultValue={entityType}>
-            <option value="">All</option>
-            {TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
+            <option value="">{t("ap.all")}</option>
+            {TYPES.map((ty) => (
+              <option key={ty} value={ty}>
+                {t(`aud.type.${ty}` as Key)}
               </option>
             ))}
           </NativeSelect>
         </FilterField>
       </FilterBar>
       {items.length === 0 ? (
-        <EmptyState icon={<History />} title="No changes recorded" description={entityType ? "Try another record type." : undefined} />
+        <EmptyState icon={<History />} title={t("aud.none")} description={entityType ? t("aud.noneD") : undefined} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Audit log">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("aud.title")}>
             {items.map((e) => {
               const lk = look(e.action);
               return (
@@ -107,12 +117,12 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/or
                       {lk.icon}
                     </IconChip>
                     <div className="min-w-0 flex-1 text-sm">
-                      <p className="font-semibold capitalize">{pretty(e.action)}</p>
+                      <p className="font-semibold first-letter:uppercase">{actionLabel(t, e.action)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {e.actorName ?? "System"} · {formatDateTime(e.createdAt)}
+                        {e.actorName ?? t("aud.system")} · {formatDateTime(e.createdAt)}
                       </p>
-                      {e.reason && <p className="mt-1.5 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">Reason: {e.reason}</p>}
-                      <Changes e={e} />
+                      {e.reason && <p className="mt-1.5 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">{t("aud.reason", { reason: e.reason })}</p>}
+                      <Changes e={e} t={t} />
                     </div>
                   </div>
                 </li>
@@ -124,10 +134,10 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/or
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Who</TableHead>
-                    <TableHead>When</TableHead>
-                    <TableHead>Details</TableHead>
+                    <TableHead>{t("aud.action")}</TableHead>
+                    <TableHead>{t("aud.who")}</TableHead>
+                    <TableHead>{t("aud.when")}</TableHead>
+                    <TableHead>{t("aud.details")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -141,21 +151,21 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/or
                               {lk.icon}
                             </IconChip>
                             <span>
-                              <span className="block font-semibold capitalize">{pretty(e.action)}</span>
+                              <span className="block font-semibold first-letter:uppercase">{actionLabel(t, e.action)}</span>
                               <span className="block font-mono text-[11px] text-muted-foreground">{e.action}</span>
                             </span>
                           </span>
                         </TableCell>
                         <TableCell>
                           <span className="inline-flex items-center gap-2">
-                            <MemberAvatar name={e.actorName ?? "System"} size="sm" />
-                            {e.actorName ?? <span className="text-muted-foreground">System</span>}
+                            <MemberAvatar name={e.actorName ?? t("aud.system")} size="sm" />
+                            {e.actorName ?? <span className="text-muted-foreground">{t("aud.system")}</span>}
                           </span>
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{formatDateTime(e.createdAt)}</TableCell>
                         <TableCell className="max-w-md text-xs whitespace-normal">
-                          {e.reason && <div>Reason: {e.reason}</div>}
-                          <Changes e={e} />
+                          {e.reason && <div>{t("aud.reason", { reason: e.reason })}</div>}
+                          <Changes e={e} t={t} />
                         </TableCell>
                       </TableRow>
                     );
@@ -169,12 +179,12 @@ export default async function AuditPage({ params, searchParams }: PageProps<"/or
       <div className="mt-3 flex gap-2">
         {page > 1 && (
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={`/org/${orgId}/audit${qs({ entityType, page: page - 1 })}`}>
-            Newer
+            {t("aud.newer")}
           </Link>
         )}
         {items.length === 50 && (
           <Link className={buttonVariants({ variant: "outline", size: "sm" })} href={`/org/${orgId}/audit${qs({ entityType, page: page + 1 })}`}>
-            Older
+            {t("aud.older")}
           </Link>
         )}
       </div>

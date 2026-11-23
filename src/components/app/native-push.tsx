@@ -15,10 +15,19 @@ const DISMISSED = PUSH_PROMPT_DISMISSED;
 export const PUSH_CHANGED = "mh:push-changed";
 export const PROMPT_AGAIN_MS = 30 * 86_400_000;
 
+/** The account's push on/off switch (Settings → Notifications), as last told by the server ("0" = off). */
+export const PUSH_ENABLED = "mh.pushEnabled";
+
+/** Were push notifications switched off for the account? (The phone's own permission is separate.) */
+export async function pushSwitchedOff() {
+  return (await getPref(PUSH_ENABLED)) === "0";
+}
+
 async function register(token: string) {
   const platform = nativePlatform();
   if (platform === "web") return;
-  await apiMutate({ path: "/me/push-devices", body: { token, platform } }).catch(() => null);
+  const r = await apiMutate<{ enabled?: boolean }>({ path: "/me/push-devices", body: { token, platform } }).catch(() => null);
+  if (r?.ok && typeof r.data?.enabled === "boolean") await setPref(PUSH_ENABLED, r.data.enabled ? "1" : "0");
 }
 
 /** Ask the phone for permission and register it. True when alerts are now on. */
@@ -28,6 +37,20 @@ export async function enablePush(): Promise<boolean> {
   if (receive !== "granted") return false;
   const { token } = await fm.getToken();
   if (token) await register(token);
+  // asking for alerts always means "on", even if they were switched off here before
+  if (await pushSwitchedOff()) return setPushEnabled(true);
+  return true;
+}
+
+/**
+ * The account-wide switch (website or app): off = nothing is pushed to any of the person's
+ * phones (notifications still show under the bell). True when the change was saved.
+ */
+export async function setPushEnabled(enabled: boolean): Promise<boolean> {
+  const r = await apiMutate({ path: "/auth/me", method: "PATCH", body: { pushEnabled: enabled } });
+  if (!r.ok) return false;
+  if (isNativeApp()) await setPref(PUSH_ENABLED, enabled ? "1" : "0");
+  window.dispatchEvent(new Event(PUSH_CHANGED));
   return true;
 }
 

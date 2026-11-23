@@ -8,9 +8,12 @@ import { EmptyState } from "@/components/app/empty-state";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, ProgressBar } from "@/components/app/bits";
 import { buttonVariants } from "@/components/ui/button";
-import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
+
+import { getT } from "@/i18n/server";
+import { frequencyLabel } from "@/i18n/labels";
 
 export const metadata = { title: "Hapta schemes" };
 
@@ -18,6 +21,7 @@ const STATUS_TONE: Record<string, Tone> = { active: "emerald", draft: "slate", p
 
 export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/schemes">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const [org, schemes] = await Promise.all([getOrg(orgId), getSchemes(orgId)]);
   const manage = can(org, "schemes.manage");
   const due = schemes.reduce((s, x) => s + (x.duePaise ?? 0), 0);
@@ -28,28 +32,28 @@ export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/sc
   return (
     <>
       <PageHeader
-        title="Hapta schemes"
-        description="Contribution plans — each one creates installments for the members enrolled in it."
+        title={t("sch.title")}
+        description={t("sch.desc")}
         actions={
           manage ? (
             <Link href={`/org/${orgId}/schemes/new`} className={buttonVariants()}>
-              <Plus /> New scheme
+              <Plus /> {t("sch.new")}
             </Link>
           ) : null
         }
       />
       {schemes.length === 0 ? (
-        <EmptyState icon={<CalendarClock />} title="No schemes yet" description="Create a scheme such as 500 every month or 3,000 every quarter, then enroll members." />
+        <EmptyState icon={<CalendarClock />} title={t("sch.none")} description={t("sch.noneD")} />
       ) : (
         <>
           <SummaryBand
             icon={<CalendarClock />}
-            label="Collected so far, all schemes"
+            label={t("sch.collectedAll")}
             value={<Money paise={collected} />}
             stats={[
-              { label: "Due so far", value: <Money paise={due} short /> },
-              { label: "Collected", value: `${due ? Math.round((collected / due) * 100) : 100}%` },
-              { label: "Active schemes", value: schemes.filter((s) => s.status === "active").length },
+              { label: t("sch.dueSoFar"), value: <Money paise={due} short /> },
+              { label: t("sch.collected"), value: `${due ? Math.round((collected / due) * 100) : 100}%` },
+              { label: t("sch.active"), value: schemes.filter((s) => s.status === "active").length },
             ]}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -68,8 +72,8 @@ export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/sc
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate font-semibold">{s.name}</h2>
                       <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium">{label(FREQUENCY_LABEL, s.frequency)}</span>
-                        {s.amountMode === "member_specific" && <span>member-specific</span>}
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium">{frequencyLabel(t, s.frequency)}</span>
+                        {s.amountMode === "member_specific" && <span>{t("sch.memberSpecific")}</span>}
                         {s.status !== "active" && <StatusBadge status={s.status} />}
                       </p>
                     </div>
@@ -82,14 +86,14 @@ export default async function SchemesPage({ params }: PageProps<"/org/[orgId]/sc
                       <span className="text-xs font-semibold tabular-nums">{Math.min(100, pct)}%</span>
                     </div>
                     <p className="mt-1.5 text-xs text-muted-foreground">
-                      <Money paise={s.collectedPaise ?? 0} className="font-medium text-foreground" /> collected of <Money paise={s.duePaise ?? 0} /> due
+                      <Money paise={s.collectedPaise ?? 0} className="font-medium text-foreground" /> {t("sch.collectedOf")} <Money paise={s.duePaise ?? 0} /> {t("sch.due")}
                     </p>
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 px-4 py-2.5 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5">
-                      <Users className="size-3.5" /> {s.enrolledMembers} member{s.enrolledMembers === 1 ? "" : "s"}
+                      <Users className="size-3.5" /> {s.enrolledMembers === 1 ? t("sch.member1") : t("sch.membersN", { n: s.enrolledMembers ?? 0 })}
                     </span>
-                    <span>from {formatDate(s.startDate)}</span>
+                    <span>{t("sch.from", { date: formatDate(s.startDate) })}</span>
                   </div>
                 </Link>
               );

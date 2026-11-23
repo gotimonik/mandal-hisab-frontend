@@ -20,6 +20,8 @@ import { requestToday } from "@/lib/server/today";
 import { CashEntryDialog } from "@/features/cashbook/cash-entry-dialog";
 import { ExportCsvButton } from "@/components/app/export-csv-button";
 
+import { getT } from "@/i18n/server";
+
 export const metadata = { title: "Cash book" };
 
 interface CashBook {
@@ -87,6 +89,7 @@ const look = (l: { type: string; isReversal: boolean }) =>
 
 export default async function CashBookPage({ params, searchParams }: PageProps<"/org/[orgId]/cashbook">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const today = await requestToday();
@@ -101,11 +104,11 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
   return (
     <>
       <PageHeader
-        title="Cash book"
-        description="Every amount in and out, from recorded transactions only."
+        title={t("cb.title")}
+        description={t("cb.desc")}
         actions={
           <>
-            <ExportCsvButton href={`/api/export${qs({ path: `/orgs/${orgId}/cashbook`, ...f })}`}>Download CSV</ExportCsvButton>
+            <ExportCsvButton href={`/api/export${qs({ path: `/orgs/${orgId}/cashbook`, ...f })}`}>{t("cb.csv")}</ExportCsvButton>
             {can(org, "accounts.manage") && org.status === "active" && (
               <CashEntryDialog
                 defaultOpen={sp.new === "1"}
@@ -117,16 +120,16 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
         }
       />
       <FilterBar resetHref={`/org/${orgId}/cashbook`}>
-        <FilterField label="From">
+        <FilterField label={t("ap.from")}>
           <Input type="date" name="from" defaultValue={f.from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={t("ap.to")}>
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
         {active.length > 1 && (
-          <FilterField label="Account">
+          <FilterField label={t("ap.account")}>
             <NativeSelect name="accountId" defaultValue={f.accountId}>
-              <option value="">All cash & bank</option>
+              <option value="">{t("cb.allCash")}</option>
               {active.map((a) => (
                 <option key={a._id} value={a._id}>
                   {a.name}
@@ -139,34 +142,34 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
       <SummaryBand
         tone="green"
         icon={<BookOpenCheck />}
-        label={active.length > 1 && f.accountId ? `Closing balance · ${active.find((a) => a._id === f.accountId)?.name ?? ""}` : "Closing balance"}
+        label={active.length > 1 && f.accountId ? t("cb.closingIn", { name: active.find((a) => a._id === f.accountId)?.name ?? "" }) : t("cb.closing")}
         value={<Money paise={book.closingBalancePaise} />}
-        sub={`${formatDate(f.from)} – ${formatDate(f.to)}${book.closingBalancePaise < 0 ? " · below zero — check the entries" : ""}`}
+        sub={`${formatDate(f.from)} – ${formatDate(f.to)}${book.closingBalancePaise < 0 ? t("cb.belowZero") : ""}`}
         stats={[
           {
-            label: "Opening",
+            label: t("cb.opening"),
             value: <Money paise={book.openingBalancePaise} />,
           },
-          { label: "Money in", value: <Money paise={s.totalReceiptsPaise} /> },
-          { label: "Money out", value: <Money paise={s.totalPaymentsPaise} /> },
+          { label: t("cb.moneyIn"), value: <Money paise={s.totalReceiptsPaise} /> },
+          { label: t("cb.moneyOut"), value: <Money paise={s.totalPaymentsPaise} /> },
         ]}
       />
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <StatCard label="Hapta collected" value={<Money paise={s.haptaCollectedPaise} />} tone="good" icon={<ArrowDownToLine />} />
-        <StatCard label="Upad interest & repayments" value={<Money paise={s.loanPaymentsReceivedPaise} />} tone="good" icon={<HandCoins />} accent="orange" />
-        <StatCard label="Other receipts" value={<Money paise={s.otherReceiptsPaise} />} icon={<Heart />} accent="emerald" />
-        <StatCard label="Upad given" value={<Money paise={s.loansGivenPaise} />} icon={<HandCoins />} accent="orange" />
-        <StatCard label="Withdrawals paid" value={<Money paise={s.withdrawalsPaidPaise} />} icon={<ArrowUpFromLine />} accent="rose" />
-        <StatCard label="Other expenses" value={<Money paise={s.otherExpensesPaise} />} icon={<Receipt />} accent="pink" />
+        <StatCard label={t("cb.hapta")} value={<Money paise={s.haptaCollectedPaise} />} tone="good" icon={<ArrowDownToLine />} />
+        <StatCard label={t("cb.upadIn")} value={<Money paise={s.loanPaymentsReceivedPaise} />} tone="good" icon={<HandCoins />} accent="orange" />
+        <StatCard label={t("cb.otherIn")} value={<Money paise={s.otherReceiptsPaise} />} icon={<Heart />} accent="emerald" />
+        <StatCard label={t("cb.upadGiven")} value={<Money paise={s.loansGivenPaise} />} icon={<HandCoins />} accent="orange" />
+        <StatCard label={t("cb.withdrawals")} value={<Money paise={s.withdrawalsPaidPaise} />} icon={<ArrowUpFromLine />} accent="rose" />
+        <StatCard label={t("cb.otherOut")} value={<Money paise={s.otherExpensesPaise} />} icon={<Receipt />} accent="pink" />
       </div>
-      {book.lines.length > 0 && <SectionTitle>Entries</SectionTitle>}
+      {book.lines.length > 0 && <SectionTitle>{t("cb.entries")}</SectionTitle>}
       {book.lines.length === 0 ? (
-        <EmptyState icon={<BookOpenCheck />} title="No cash movements in this period" description="Try another date range." />
+        <EmptyState icon={<BookOpenCheck />} title={t("cb.none")} description={t("cb.noneD")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Cash book entries">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("cb.aria")}>
             <li className="flex items-center justify-between rounded-2xl bg-muted/50 px-3.5 py-2.5 text-sm font-semibold">
-              <span>Opening balance</span>
+              <span>{t("cb.openingBal")}</span>
               <Money paise={book.openingBalancePaise} />
             </li>
             {book.lines.map((l, i) => {
@@ -193,7 +196,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
                         </span>
                       ) : null}
                       <span className="text-[11px] text-muted-foreground">
-                        Bal <Money paise={l.balancePaise} colored={l.balancePaise < 0} />
+                        {t("cb.bal")} <Money paise={l.balancePaise} colored={l.balancePaise < 0} />
                       </span>
                     </div>
                   </div>
@@ -201,7 +204,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
               );
             })}
             <li className="flex items-center justify-between rounded-2xl bg-muted/50 px-3.5 py-2.5 text-sm font-bold">
-              <span>Closing balance</span>
+              <span>{t("cb.closing")}</span>
               <Money paise={book.closingBalancePaise} colored={book.closingBalancePaise < 0} />
             </li>
           </ul>
@@ -210,17 +213,17 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Particulars</TableHead>
-                    <TableHead className="text-right">In</TableHead>
-                    <TableHead className="text-right">Out</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead>{t("ap.date")}</TableHead>
+                    <TableHead>{t("cb.particulars")}</TableHead>
+                    <TableHead className="text-right">{t("cb.in")}</TableHead>
+                    <TableHead className="text-right">{t("cb.out")}</TableHead>
+                    <TableHead className="text-right">{t("cb.balance")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow className="bg-muted/40">
                     <TableCell />
-                    <TableCell className="font-semibold">Opening balance</TableCell>
+                    <TableCell className="font-semibold">{t("cb.openingBal")}</TableCell>
                     <TableCell />
                     <TableCell />
                     <TableCell className="text-right font-semibold">
@@ -255,7 +258,7 @@ export default async function CashBookPage({ params, searchParams }: PageProps<"
                   })}
                   <TableRow className="bg-muted/40 font-semibold">
                     <TableCell />
-                    <TableCell>Closing balance</TableCell>
+                    <TableCell>{t("cb.closing")}</TableCell>
                     <TableCell className="text-right">
                       <Money paise={s.totalReceiptsPaise} />
                     </TableCell>

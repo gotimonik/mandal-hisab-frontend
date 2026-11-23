@@ -10,10 +10,12 @@ import { EmptyState } from "@/components/app/empty-state";
 import { IconChip } from "@/components/app/bits";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { METHOD_LABEL, formatDate, formatDateTime, label } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
+import { getT } from "@/i18n/server";
+import { methodLabel } from "@/i18n/labels";
+import type { Key } from "@/i18n/core";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
-import { METHOD_INFO } from "./constants";
 import { getMoney } from "@/lib/server/data";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -24,12 +26,13 @@ export interface LoanDetailData {
   interestCalculations: any[];
 }
 
-const METHOD_NAME: Record<string, string> = { reducing_balance: "Reducing balance (EMI)", flat: "Flat rate", simple: "Simple interest", compound: "Compound (bullet)" };
+const methodName = (m: string) => `loan.mn.${m}` as Key;
 
 const CARD = "rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]";
 
 export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: { data: LoanDetailData; orgId: string; receiptBase: string; repaymentAction?: (rep: any, isLatest: boolean) => ReactNode }) {
   const money = await getMoney(orgId);
+  const { t } = await getT();
   const l = data.loan;
   const s = l.summary;
   const verified = data.repayments.filter((r) => r.status === "verified");
@@ -39,25 +42,25 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
   const receiptLink = (r: any) =>
     r.receiptId ? (
       <Link href={`${receiptBase}/${r.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-        <Receipt className="size-3.5" /> Receipt
+        <Receipt className="size-3.5" /> {t("loan.receipt")}
       </Link>
     ) : null;
   return (
     <>
       <SummaryBand
         icon={<Landmark />}
-        label="Outstanding principal"
+        label={t("loan.outPrincipal")}
         value={<Money paise={l.outstandingPrincipalPaise} />}
-        sub={`${money.fmt(principal)} ${l.principalPaise ? `disbursed ${formatDate(l.disbursedOn)}` : l.approvedPaise ? "approved" : "requested"}${s?.nextDue ? ` · next ${money.fmt(s.nextDue.amountPaise)} on ${formatDate(s.nextDue.dueDate)}` : ""}`}
+        sub={`${money.fmt(principal)} ${l.principalPaise ? t("loan.disbursed", { date: formatDate(l.disbursedOn) }) : l.approvedPaise ? t("loan.approvedW") : t("loan.requestedW")}${s?.nextDue ? t("loan.next", { amount: money.fmt(s.nextDue.amountPaise), date: formatDate(s.nextDue.dueDate) }) : ""}`}
         stats={[
-          { label: "Interest paid", value: <Money paise={l.totalInterestPaidPaise} short /> },
-          { label: "Interest due & unpaid", value: <Money paise={s?.interestOutstandingPaise ?? 0} short /> },
-          { label: "Overdue", value: <Money paise={overdue} short /> },
+          { label: t("loan.intPaid"), value: <Money paise={l.totalInterestPaidPaise} short /> },
+          { label: t("loan.intDue"), value: <Money paise={s?.interestOutstandingPaise ?? 0} short /> },
+          { label: t("loan.overdue"), value: <Money paise={overdue} short /> },
         ]}
       />
       {overdue > 0 && (
         <p className="mb-4 rounded-2xl bg-rose-500/10 px-3.5 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-500/25 dark:text-rose-300">
-          {money.fmt(overdue)} is overdue on this loan.
+          {t("loan.isOverdue", { amount: money.fmt(overdue) })}
         </p>
       )}
 
@@ -65,7 +68,7 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
         <Info
           icon={<User />}
           tone="sky"
-          k="Member"
+          k={t("loan.member")}
           v={
             data.member ? (
               <Link className="hover:underline" href={`/org/${orgId}/members/${data.member._id}`}>
@@ -77,32 +80,32 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
           }
           sub={data.member?.membershipNumber}
         />
-        <Info icon={<Calculator />} tone="violet" k="Method" v={METHOD_NAME[l.interestMethod]} sub={`Day count ${l.dayCount.replace("_", "/")}`} />
-        <Info icon={<Percent />} tone="amber" k="Rate" v={`${l.annualRate}% p.a.`} sub={l.rateInput.period === "monthly" ? `${l.rateInput.value}% p.m.` : undefined} />
-        <Info icon={<CalendarRange />} tone="indigo" k="Installments" v={`${l.tenure} × ${l.repaymentFrequency}`} sub={`Allocation: ${l.allocationOrder.join(" → ")}`} />
+        <Info icon={<Calculator />} tone="violet" k={t("loan.method")} v={t(methodName(l.interestMethod))} sub={t("loan.dayCount", { v: l.dayCount.replace("_", "/") })} />
+        <Info icon={<Percent />} tone="amber" k={t("loan.rate")} v={t("loan.pa", { rate: l.annualRate })} sub={l.rateInput.period === "monthly" ? t("loan.pm", { rate: l.rateInput.value }) : undefined} />
+        <Info icon={<CalendarRange />} tone="indigo" k={t("loan.installments")} v={`${l.tenure} × ${l.repaymentFrequency}`} sub={t("loan.allocation", { v: l.allocationOrder.join(" → ") })} />
       </div>
       <div className={cn(CARD, "mt-3 text-sm")}>
         {l.purpose && (
           <p>
-            <span className="text-muted-foreground">Purpose:</span> {l.purpose}
+            <span className="text-muted-foreground">{t("loan.purpose")}</span> {l.purpose}
           </p>
         )}
-        {l.rejectionReason && <p className="font-medium text-destructive">Rejected: {l.rejectionReason}</p>}
-        <p className={cn("text-xs text-muted-foreground", (l.purpose || l.rejectionReason) && "mt-1")}>{METHOD_INFO[l.interestMethod]}</p>
+        {l.rejectionReason && <p className="font-medium text-destructive">{t("loan.rejected", { reason: l.rejectionReason })}</p>}
+        <p className={cn("text-xs text-muted-foreground", (l.purpose || l.rejectionReason) && "mt-1")}>{t(`loan.mi.${l.interestMethod}` as Key)}</p>
       </div>
 
       <Tabs defaultValue="schedule" className="mt-6">
         <TabsList>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="repayments">Repayments ({data.repayments.length})</TabsTrigger>
-          <TabsTrigger value="calc">Interest calculations</TabsTrigger>
+          <TabsTrigger value="schedule">{t("loan.tSchedule")}</TabsTrigger>
+          <TabsTrigger value="repayments">{t("loan.tRepay", { n: data.repayments.length })}</TabsTrigger>
+          <TabsTrigger value="calc">{t("loan.tCalc")}</TabsTrigger>
         </TabsList>
         <TabsContent value="schedule">
           {l.schedule.length === 0 ? (
-            <EmptyState icon={<CalendarRange />} title="No schedule yet" description="The schedule is generated when the loan is disbursed." />
+            <EmptyState icon={<CalendarRange />} title={t("loan.noSchedule")} description={t("loan.noScheduleD")} />
           ) : (
             <>
-              <ul className="flex flex-col gap-2 md:hidden" aria-label="Schedule">
+              <ul className="flex flex-col gap-2 md:hidden" aria-label={t("loan.tSchedule")}>
                 {l.schedule.map((r) => {
                   const paid = r.principalPaidPaise + r.interestPaidPaise + r.penaltyPaidPaise;
                   return (
@@ -110,18 +113,18 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                       <div className="flex items-start gap-3">
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/12 text-sm font-bold text-indigo-600 tabular-nums dark:bg-indigo-400/15 dark:text-indigo-300">{r.sequence}</span>
                         <div className="min-w-0 flex-1 text-sm">
-                          <p className="font-semibold">Due {formatDate(r.dueDate)}</p>
+                          <p className="font-semibold">{t("loan.due", { date: formatDate(r.dueDate) })}</p>
                           <p className="text-xs text-muted-foreground">
-                            Principal <Money paise={r.principalDuePaise} /> · interest <Money paise={r.interestDuePaise} /> @ {r.rateApplied}%
+                            {t("loan.principalW")} <Money paise={r.principalDuePaise} /> · {t("loan.interestW")} <Money paise={r.interestDuePaise} /> @ {r.rateApplied}%
                             {r.penaltyPaise ? (
                               <>
                                 {" "}
-                                · late fee <Money paise={r.penaltyPaise} />
+                                · {t("loan.lateFeeW")} <Money paise={r.penaltyPaise} />
                               </>
                             ) : null}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Paid <Money paise={paid} /> · opening <Money paise={r.openingPrincipalPaise} />
+                            {t("loan.paidW")} <Money paise={paid} /> · {t("loan.openingW")} <Money paise={r.openingPrincipalPaise} />
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -139,14 +142,14 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                     <TableHeader>
                       <TableRow>
                         <TableHead>#</TableHead>
-                        <TableHead>Due</TableHead>
-                        <TableHead className="text-right">Opening principal</TableHead>
-                        <TableHead className="text-right">Principal</TableHead>
-                        <TableHead className="text-right">Interest</TableHead>
-                        <TableHead className="text-right">Late fee</TableHead>
-                        <TableHead className="text-right">Paid</TableHead>
-                        <TableHead className="text-right">Balance due</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>{t("loan.dueCol")}</TableHead>
+                        <TableHead className="text-right">{t("loan.openingPrincipal")}</TableHead>
+                        <TableHead className="text-right">{t("loan.principal")}</TableHead>
+                        <TableHead className="text-right">{t("loan.interest")}</TableHead>
+                        <TableHead className="text-right">{t("loan.lateFee")}</TableHead>
+                        <TableHead className="text-right">{t("loan.paidW")}</TableHead>
+                        <TableHead className="text-right">{t("loan.balanceDue")}</TableHead>
+                        <TableHead>{t("loan.status")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -185,10 +188,10 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
         </TabsContent>
         <TabsContent value="repayments">
           {data.repayments.length === 0 ? (
-            <EmptyState icon={<Receipt />} title="No repayments yet" />
+            <EmptyState icon={<Receipt />} title={t("loan.noRepay")} />
           ) : (
             <>
-              <ul className="flex flex-col gap-2 md:hidden" aria-label="Repayments">
+              <ul className="flex flex-col gap-2 md:hidden" aria-label={t("loan.tRepay", { n: data.repayments.length })}>
                 {data.repayments.map((r) => (
                   <li key={r._id} className={cn(CARD, r.status === "reversed" && "opacity-70")}>
                     <div className="flex items-start gap-3">
@@ -199,13 +202,13 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                         <p className="font-semibold">
                           {formatDate(r.date)} <span className="font-normal text-muted-foreground capitalize">· {r.kind}</span>
                         </p>
-                        <p className="text-xs text-muted-foreground">{label(METHOD_LABEL, r.method)}</p>
+                        <p className="text-xs text-muted-foreground">{methodLabel(t, r.method)}</p>
                         <p className="text-xs text-muted-foreground">
-                          Principal <Money paise={r.principalPaise} /> · interest <Money paise={r.interestPaise} />
+                          {t("loan.principalW")} <Money paise={r.principalPaise} /> · {t("loan.interestW")} <Money paise={r.interestPaise} />
                           {r.penaltyPaise ? (
                             <>
                               {" "}
-                              · late fee <Money paise={r.penaltyPaise} />
+                              · {t("loan.lateFeeW")} <Money paise={r.penaltyPaise} />
                             </>
                           ) : null}
                         </p>
@@ -227,13 +230,13 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Kind</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Principal</TableHead>
-                        <TableHead className="text-right">Interest</TableHead>
-                        <TableHead className="text-right">Late fee</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>{t("loan.date")}</TableHead>
+                        <TableHead>{t("loan.kind")}</TableHead>
+                        <TableHead className="text-right">{t("loan.amount")}</TableHead>
+                        <TableHead className="text-right">{t("loan.principal")}</TableHead>
+                        <TableHead className="text-right">{t("loan.interest")}</TableHead>
+                        <TableHead className="text-right">{t("loan.lateFee")}</TableHead>
+                        <TableHead>{t("loan.status")}</TableHead>
                         <TableHead />
                       </TableRow>
                     </TableHeader>
@@ -242,7 +245,7 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                         <TableRow key={r._id} className={cn(r.status === "reversed" && "text-muted-foreground")}>
                           <TableCell>
                             {formatDate(r.date)}
-                            <div className="text-xs text-muted-foreground">{label(METHOD_LABEL, r.method)}</div>
+                            <div className="text-xs text-muted-foreground">{methodLabel(t, r.method)}</div>
                           </TableCell>
                           <TableCell className="capitalize">{r.kind}</TableCell>
                           <TableCell className="text-right">
@@ -277,7 +280,7 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
         </TabsContent>
         <TabsContent value="calc">
           {data.interestCalculations.length === 0 ? (
-            <EmptyState icon={<Calculator />} title="No calculations recorded yet" />
+            <EmptyState icon={<Calculator />} title={t("loan.noCalc")} />
           ) : (
             <ul className="flex flex-col gap-2 text-sm">
               {data.interestCalculations.map((c) => (
@@ -291,9 +294,9 @@ export async function LoanDetail({ data, orgId, receiptBase, repaymentAction }: 
                       <span className="text-xs text-muted-foreground">{formatDateTime(c.createdAt)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {METHOD_NAME[c.method]} · principal {money.fmt(c.principalPaise)} · {c.annualRate}% p.a. · {formatDate(c.periodStart)} → {formatDate(c.periodEnd)}
-                      {c.days !== undefined && c.days !== null ? ` · ${c.days} days` : ""}
-                      {c.periods ? ` · ${c.periods} periods` : ""}
+                      {t("loan.calcLine", { method: t(methodName(c.method)), principal: money.fmt(c.principalPaise), rate: c.annualRate, from: formatDate(c.periodStart), to: formatDate(c.periodEnd) })}
+                      {c.days !== undefined && c.days !== null ? t("loan.daysN", { n: c.days }) : ""}
+                      {c.periods ? t("loan.periodsN", { n: c.periods }) : ""}
                     </p>
                   </div>
                   <span className="shrink-0 font-bold tabular-nums">{money.fmt(c.interestPaise)}</span>

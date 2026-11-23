@@ -68,7 +68,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
           ) : null
         }
       />
-      <section aria-label="Upad totals" className="bg-hero-warm relative mb-5 overflow-hidden rounded-3xl p-5 shadow-lg shadow-orange-500/20">
+      <section aria-label={tr("ax.upadTotals")} className="bg-hero-warm relative mb-5 overflow-hidden rounded-3xl p-5 shadow-lg shadow-orange-500/20">
         <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
         <div className="relative flex items-start justify-between gap-3">
           <div>
@@ -98,7 +98,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
         </div>
       </section>
       {claims.length > 0 && (
-        <section className="mb-5" aria-label="Upad payments to verify">
+        <section className="mb-5" aria-label={tr("ax.upadVerify")}>
           <h2 className="mb-1 text-base font-bold">{tr("upad.toVerify", { n: claims.length })}</h2>
           <p className="mb-2 text-sm text-muted-foreground">{tr("upad.toVerifyDesc")}</p>
           <Card className="divide-y gap-0 p-0 ring-2 ring-orange-400/40">
@@ -145,7 +145,7 @@ export default async function FundLoansPage({ params, searchParams }: PageProps<
         </section>
       )}
       {requests.items.length > 0 && (
-        <section className="mb-5" aria-label="Upad requests">
+        <section className="mb-5" aria-label={tr("ax.upadRequests")}>
           <h2 className="mb-1 text-base font-bold">{tr("upad.requests", { n: requests.items.length })}</h2>
           <p className="mb-2 text-sm text-muted-foreground">
             {tr("upad.availableNow")} <Money paise={requests.availablePaise} className="font-medium text-foreground" />

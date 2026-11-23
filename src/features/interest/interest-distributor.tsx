@@ -1,5 +1,7 @@
 "use client";
 
+import { useLang, useT } from "@/i18n/client";
+import { monthName, type Key } from "@/i18n/core";
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -38,9 +40,9 @@ interface Preview {
   alreadyCreditedCount: number;
 }
 
-const BASIS_LABEL: Record<string, string> = {
-  previous_month_closing: "Balance at the end of the previous month",
-  hapta_contributions: "Hapta paid up to the end of the previous month (no compounding)",
+const BASIS_LABEL: Record<string, Key> = {
+  previous_month_closing: "int.b.prev",
+  hapta_contributions: "int.b.hapta",
 };
 
 /**
@@ -49,6 +51,8 @@ const BASIS_LABEL: Record<string, string> = {
  */
 export function InterestDistributor({ defaults, defaultPeriod }: { defaults: InterestSettings; defaultPeriod: string }) {
   const money = useMoney();
+  const tr = useT();
+  const lang = useLang();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const [period, setPeriod] = useState(defaultPeriod);
@@ -94,7 +98,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
           : [];
       const res = await apiMutate({ path: `/orgs/${orgId}/interest/runs`, body: { period, mode, monthlyRate: mode === "rate" ? rate : undefined, basis: mode === "rate" ? basis : undefined, entries, note: note || undefined, idempotencyKey: key } });
       if (!res.ok) return setError(res.error);
-      toast.success(`Interest for ${period} credited`);
+      toast.success(tr("int.d.done", { period: /^\d{4}-\d{2}$/.test(period) ? monthName(lang, period) : period }));
       setPreview(null);
       setNote("");
       router.refresh();
@@ -107,12 +111,12 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
           <Percent />
         </IconChip>
         <div>
-          <h2 className="text-base font-bold">Credit monthly interest</h2>
-          <p className="text-sm text-muted-foreground">Choose the month and method, preview what each member gets, then credit it.</p>
+          <h2 className="text-base font-bold">{tr("int.d.title")}</h2>
+          <p className="text-sm text-muted-foreground">{tr("int.d.desc")}</p>
         </div>
       </div>
-      <ol className="flex items-center gap-2 text-xs font-semibold text-muted-foreground" aria-label="Steps">
-        {["Choose", "Preview", "Credit"].map((l, i) => {
+      <ol className="flex items-center gap-2 text-xs font-semibold text-muted-foreground" aria-label={tr("int.d.steps")}>
+        {[tr("int.d.s1"), tr("int.d.s2"), tr("int.d.s3")].map((l, i) => {
           const on = i === 0 ? !preview : i === 1 ? !!preview : false;
           return (
             <li key={l} className="flex items-center gap-2">
@@ -127,7 +131,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
       </ol>
       <FormError message={error} />
       <div className="grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3 sm:grid-cols-4">
-        <Field label="Month" htmlFor="i-period">
+        <Field label={tr("int.month")} htmlFor="i-period">
           <Input
             id="i-period"
             type="month"
@@ -139,7 +143,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
             }}
           />
         </Field>
-        <Field label="Method" htmlFor="i-mode">
+        <Field label={tr("int.method")} htmlFor="i-mode">
           <NativeSelect
             id="i-mode"
             value={mode}
@@ -148,13 +152,13 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
               invalidate();
             }}
           >
-            <option value="rate">Rate % per month</option>
-            <option value="manual">Enter amounts manually</option>
+            <option value="rate">{tr("int.d.rateOpt")}</option>
+            <option value="manual">{tr("int.d.manualOpt")}</option>
           </NativeSelect>
         </Field>
         {mode === "rate" && (
           <>
-            <Field label="Rate (% per month)" htmlFor="i-rate">
+            <Field label={tr("int.d.rate")} htmlFor="i-rate">
               <Input
                 id="i-rate"
                 inputMode="decimal"
@@ -165,7 +169,7 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
                 }}
               />
             </Field>
-            <Field label="Calculated on" htmlFor="i-basis">
+            <Field label={tr("int.d.on")} htmlFor="i-basis">
               <NativeSelect
                 id="i-basis"
                 value={basis}
@@ -174,15 +178,15 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
                   invalidate();
                 }}
               >
-                <option value="previous_month_closing">Previous month closing balance</option>
-                <option value="hapta_contributions">Hapta contributions only</option>
+                <option value="previous_month_closing">{tr("int.d.onPrev")}</option>
+                <option value="hapta_contributions">{tr("int.d.onHapta")}</option>
               </NativeSelect>
             </Field>
           </>
         )}
       </div>
       <Button variant={preview ? "outline" : "default"} className="self-start" onClick={runPreview} disabled={pending}>
-        {pending && !preview ? <Loader2 className="animate-spin" /> : <Calculator />} {preview ? "Preview again" : "Preview"}
+        {pending && !preview ? <Loader2 className="animate-spin" /> : <Calculator />} {preview ? tr("int.d.again") : tr("int.d.preview")}
       </Button>
 
       {preview && (
@@ -190,19 +194,19 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
           <p className="rounded-xl bg-sky-500/8 px-3 py-2.5 text-sm text-muted-foreground">
             {preview.mode === "rate" ? (
               <>
-                {preview.monthlyRate}% of the eligible balance — {BASIS_LABEL[preview.basis ?? ""]} ({formatDate(preview.basisDate)}). Rounded to the nearest paisa.
+                {tr("int.d.rateInfo", { rate: preview.monthlyRate ?? "", basis: BASIS_LABEL[preview.basis ?? ""] ? tr(BASIS_LABEL[preview.basis ?? ""]) : "", date: formatDate(preview.basisDate) })}
               </>
             ) : (
-              <>Enter the interest for each member. Leave blank for none.</>
+              <>{tr("int.d.manualInfo")}</>
             )}{" "}
-            Credited on {formatDate(preview.creditDate)}.
-            {preview.alreadyCreditedCount > 0 && <span className="text-warning-ink"> {preview.alreadyCreditedCount} member(s) were already credited for this month and are skipped.</span>}
+            {tr("int.d.creditedOn", { date: formatDate(preview.creditDate) })}
+            {preview.alreadyCreditedCount > 0 && <span className="text-warning-ink">{tr("int.d.skipped", { n: preview.alreadyCreditedCount })}</span>}
           </p>
           <div className="divide-y overflow-hidden rounded-2xl ring-1 ring-foreground/[0.08]">
             <div className="grid grid-cols-[1fr_auto_auto] gap-3 bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
-              <span>Member</span>
-              <span className="w-24 text-right sm:w-28">{preview.mode === "rate" ? "Eligible balance" : "Balance now"}</span>
-              <span className="w-24 text-right sm:w-28">Interest</span>
+              <span>{tr("int.d.member")}</span>
+              <span className="w-24 text-right sm:w-28">{preview.mode === "rate" ? tr("int.d.eligible") : tr("int.d.now")}</span>
+              <span className="w-24 text-right sm:w-28">{tr("int.d.interest")}</span>
             </div>
             {preview.rows.map((r) => (
               <div key={r.memberId} className={`grid grid-cols-[1fr_auto_auto] items-center gap-3 px-3 py-2 text-sm ${r.alreadyCredited ? "opacity-60" : ""}`}>
@@ -210,13 +214,13 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
                   <MemberAvatar name={r.name} size="sm" />
                   <div className="min-w-0">
                   <div className="truncate font-medium">{r.name}</div>
-                  <div className="text-xs text-muted-foreground">{r.alreadyCredited ? "Already credited" : r.membershipNumber}</div>
+                  <div className="text-xs text-muted-foreground">{r.alreadyCredited ? tr("int.d.already") : r.membershipNumber}</div>
                   </div>
                 </div>
                 <Money paise={preview.mode === "rate" ? r.eligibleBalancePaise : r.currentBalancePaise} className="w-24 text-right sm:w-28" />
                 <div className="w-24 text-right sm:w-28">
                   {preview.mode === "manual" && !r.alreadyCredited ? (
-                    <Input aria-label={`Interest for ${r.name}`} inputMode="decimal" className="h-7 text-right" placeholder="0" value={manual[r.memberId] ?? ""} onChange={(e) => setManual((m) => ({ ...m, [r.memberId]: e.target.value }))} />
+                    <Input aria-label={tr("int.d.forX", { name: r.name })} inputMode="decimal" className="h-7 text-right" placeholder="0" value={manual[r.memberId] ?? ""} onChange={(e) => setManual((m) => ({ ...m, [r.memberId]: e.target.value }))} />
                   ) : (
                     <Money paise={r.interestPaise} className="font-medium" />
                   )}
@@ -224,17 +228,17 @@ export function InterestDistributor({ defaults, defaultPeriod }: { defaults: Int
               </div>
             ))}
             <div className="grid grid-cols-[1fr_auto] bg-pink-500/8 px-3 py-2.5 text-sm font-bold">
-              <span>Total to credit</span>
+              <span>{tr("int.d.totalCredit")}</span>
               <Money paise={total} />
             </div>
           </div>
-          <Field label="Note (optional)" htmlFor="i-note">
-            <Input id="i-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. As decided in the monthly meeting" />
+          <Field label={tr("ap.noteOpt")} htmlFor="i-note">
+            <Input id="i-note" maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder={tr("int.d.notePh")} />
           </Field>
           <Button onClick={finalize} disabled={pending || total <= 0} size="lg" className="h-11 w-full rounded-2xl sm:w-auto sm:self-start">
-            {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Credit {total ? money.short(total) : ""} interest
+            {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} {tr("int.d.credit", { amount: total ? money.short(total) : "" })}
           </Button>
-          <p className="text-xs text-muted-foreground">Once credited, interest can&apos;t be edited or credited again for this month. Corrections are made as member balance adjustments.</p>
+          <p className="text-xs text-muted-foreground">{tr("int.d.final")}</p>
         </div>
       )}
     </section>

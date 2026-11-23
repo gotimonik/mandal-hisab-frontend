@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { useDict, useLang } from "./client";
+import { useDict, useLang, useT } from "./client";
+import type { Key } from "./core";
 import { en } from "./dict/en";
 
 /** English validation / form messages that aren't dictionary entries. */
@@ -58,6 +59,7 @@ const EXTRA: Record<string, Record<string, string>> = { gu: EXTRA_GU, hi: EXTRA_
 const cache = new WeakMap<object, Record<string, string>>();
 
 export function Translated({ text }: { text: string }) {
+  const t = useT();
   const lang = useLang();
   const dict = useDict();
   const map = useMemo(() => {
@@ -66,5 +68,8 @@ export function Translated({ text }: { text: string }) {
     if (!m) cache.set(dict, (m = buildMap(dict as unknown as Record<string, unknown>, EXTRA[lang] ?? {})));
     return m;
   }, [dict, lang]);
+  // a dictionary key ("cb.e.describe") is translated directly; English text is matched on the English
+  const byKey = /^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9_]+)+$/.test(text) ? t(text as Key) : text;
+  if (byKey !== text) return <>{byKey}</>;
   return <>{map?.[text] ?? text}</>;
 }

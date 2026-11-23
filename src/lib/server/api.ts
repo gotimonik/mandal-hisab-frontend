@@ -1,5 +1,6 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
+import { getLang } from "@/i18n/server";
 import { currentBook, getSessionToken } from "./session";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
@@ -22,6 +23,8 @@ export async function apiRequest(path: string, init: Init = {}): Promise<Respons
   const token = init.token === undefined ? await getSessionToken() : init.token;
   const headers: Record<string, string> = { Accept: "application/json", ...(init.headers ?? {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
+  // the API translates its messages and descriptions into the app's language
+  headers["X-Lang"] = await getLang();
   // Personal Hisab: which of the person's books this device is looking at (the API checks it's theirs)
   if (path.startsWith("/me/personal")) {
     const book = await currentBook();

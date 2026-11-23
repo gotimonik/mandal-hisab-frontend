@@ -16,19 +16,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+import { getT } from "@/i18n/server";
+import type { Key } from "@/i18n/core";
+
 export const metadata = { title: "Loans" };
 
-const STATUSES = [
-  ["", "All"],
-  ["applied", "Applied"],
-  ["approved", "Approved"],
-  ["active", "Active"],
-  ["closed", "Closed"],
-  ["rejected", "Rejected"],
-] as const;
+const STATUSES = ["", "applied", "approved", "active", "closed", "rejected"] as const;
 
 export default async function LoansPage({ params, searchParams }: PageProps<"/org/[orgId]/loans">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const sp = await searchParams;
   const status = typeof sp.status === "string" ? sp.status : "";
   const [org, loans] = await Promise.all([getOrg(orgId), api<Loan[]>(`/orgs/${orgId}/loans${qs({ status })}`)]);
@@ -41,33 +38,33 @@ export default async function LoansPage({ params, searchParams }: PageProps<"/or
   return (
     <>
       <PageHeader
-        title="Loans"
-        description="Loans to members are tracked separately from hapta: principal is an asset, only interest and late fees are income."
+        title={t("loan.title")}
+        description={t("loan.desc")}
         actions={
           can(org, "loans.manage") && org.status === "active" ? (
             <Link href={`/org/${orgId}/loans/new`} className={buttonVariants()}>
-              <Plus /> New loan
+              <Plus /> {t("loan.new")}
             </Link>
           ) : null
         }
       />
       <SummaryBand
         icon={<Landmark />}
-        label="Principal outstanding on the listed loans"
+        label={t("loan.listed")}
         value={<Money paise={outstanding} />}
-        sub={`${loans.length} loan${loans.length === 1 ? "" : "s"}`}
+        sub={loans.length === 1 ? t("loan.loan1") : t("loan.loansN", { n: loans.length })}
         stats={[
-          { label: "Active", value: activeCount },
-          { label: "Overdue", value: <Money paise={overdue} short /> },
-          { label: "Lent in total", value: <Money paise={loans.reduce((s, l) => s + (principalOf(l) ?? 0), 0)} short /> },
+          { label: t("loan.active"), value: activeCount },
+          { label: t("loan.overdue"), value: <Money paise={overdue} short /> },
+          { label: t("loan.lent"), value: <Money paise={loans.reduce((s, l) => s + (principalOf(l) ?? 0), 0)} short /> },
         ]}
       />
-      <ChipLinks label="Status" current={status} items={STATUSES.map(([k, l]) => ({ key: k, label: l, href: `/org/${orgId}/loans${qs({ status: k })}` }))} />
+      <ChipLinks label={t("loan.status")} current={status} items={STATUSES.map((k) => ({ key: k, label: k ? t(`loan.st.${k}` as Key) : t("ap.all"), href: `/org/${orgId}/loans${qs({ status: k })}` }))} />
       {loans.length === 0 ? (
-        <EmptyState icon={<Landmark />} title="No loans" description={status ? "Try another status." : undefined} />
+        <EmptyState icon={<Landmark />} title={t("loan.none")} description={status ? t("loan.noneD") : undefined} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Loans">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("loan.title")}>
             {loans.map((l) => {
               const od = l.summary?.overdueAmountPaise ?? 0;
               return (
@@ -97,12 +94,12 @@ export default async function LoansPage({ params, searchParams }: PageProps<"/or
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Terms</TableHead>
-                    <TableHead className="text-right">Principal</TableHead>
-                    <TableHead className="text-right">Outstanding</TableHead>
-                    <TableHead className="text-right">Overdue</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("loan.member")}</TableHead>
+                    <TableHead>{t("loan.terms")}</TableHead>
+                    <TableHead className="text-right">{t("loan.principal")}</TableHead>
+                    <TableHead className="text-right">{t("loan.outstanding")}</TableHead>
+                    <TableHead className="text-right">{t("loan.overdue")}</TableHead>
+                    <TableHead>{t("loan.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

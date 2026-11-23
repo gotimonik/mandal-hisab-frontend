@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/client";
+import type { T } from "@/i18n/core";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -16,16 +18,12 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { ChoicePills, FormNote, SubmitButton } from "@/components/app/form-bits";
 
 type Role = "member" | "manager" | "admin";
-const ROLE_OPTIONS: { value: Role; label: string; icon: React.ReactNode }[] = [
-  { value: "member", label: "Member", icon: <UserRound /> },
-  { value: "manager", label: "Manager", icon: <ShieldCheck /> },
-  { value: "admin", label: "Admin", icon: <Crown /> },
+const roleOptions = (t: T): { value: Role; label: string; icon: React.ReactNode }[] => [
+  { value: "member", label: t("shell.roles.member"), icon: <UserRound /> },
+  { value: "manager", label: t("shell.roles.manager"), icon: <ShieldCheck /> },
+  { value: "admin", label: t("shell.roles.admin"), icon: <Crown /> },
 ];
-const ROLE_INFO: Record<string, string> = {
-  admin: "Admins have full control of the Mandal.",
-  manager: "Managers handle day-to-day work as permitted in Settings.",
-  member: "Members see only their own data.",
-};
+const roleInfo = (t: T, role: string) => (role === "admin" ? t("users.info.admin") : role === "manager" ? t("users.info.manager") : t("users.info.member"));
 import { useApiSubmit } from "@/components/app/use-api-form";
 
 type Mem = { _id: string; name: string; membershipNumber: string };
@@ -34,6 +32,7 @@ type ManageProps = { membershipId: string; status: string; role: string; memberI
 
 function ManageForm({ membershipId, status, role, memberId, members, isSelf, autoCreateMember = true, hasMonthlyHapta = false }: ManageProps) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const close = useDialogClose();
   const pending = status === "pending";
   const form = useForm({ defaultValues: { role, memberId: memberId ?? "", createMember: autoCreateMember, haptaStartMonth: new Date().toISOString().slice(0, 7) } });
@@ -45,24 +44,24 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
   return (
     <div className="flex flex-col gap-3">
       <FormError message={error} />
-      <Field label="Role" htmlFor={`r-${membershipId}`}>
+      <Field label={t("users.role")} htmlFor={`r-${membershipId}`}>
         {isSelf ? (
           <NativeSelect id={`r-${membershipId}`} {...form.register("role")} disabled>
-            <option value="member">Member</option>
-            <option value="manager">Manager</option>
-            <option value="admin">Admin</option>
+            <option value="member">{t("shell.roles.member")}</option>
+            <option value="manager">{t("shell.roles.manager")}</option>
+            <option value="admin">{t("shell.roles.admin")}</option>
           </NativeSelect>
         ) : (
           <>
             <input type="hidden" id={`r-${membershipId}`} {...form.register("role")} />
-            <ChoicePills label="Role" options={ROLE_OPTIONS} value={form.watch("role") as Role} onChange={(r) => form.setValue("role", r, { shouldDirty: true })} />
+            <ChoicePills label={t("users.role")} options={roleOptions(t)} value={form.watch("role") as Role} onChange={(r) => form.setValue("role", r, { shouldDirty: true })} />
           </>
         )}
       </Field>
-      <FormNote>{ROLE_INFO[form.watch("role")] ?? ROLE_INFO.member}</FormNote>
-      <Field label="Linked member record" htmlFor={`m-${membershipId}`} hint="Links this login to a member so they can see their own hapta, receipts and loans.">
+      <FormNote>{roleInfo(t, form.watch("role"))}</FormNote>
+      <Field label={t("users.linked")} htmlFor={`m-${membershipId}`} hint={t("users.linkedHint")}>
         <NativeSelect id={`m-${membershipId}`} {...form.register("memberId")}>
-          <option value="">— not linked —</option>
+          <option value="">{t("users.notLinked")}</option>
           {members.map((m) => (
             <option key={m._id} value={m._id}>
               {m.name} ({m.membershipNumber})
@@ -71,17 +70,17 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
         </NativeSelect>
       </Field>
       {!pending && status === "active" && !memberId && !linking && hasMonthlyHapta && (
-        <Field label="If adding as a new member: hapta from month" htmlFor={`hs2-${membershipId}`} hint="Not a member record yet — pick an existing one above, or add them as a new member.">
+        <Field label={t("users.newFrom")} htmlFor={`hs2-${membershipId}`} hint={t("users.newFromHint")}>
           <Input id={`hs2-${membershipId}`} type="month" {...form.register("haptaStartMonth")} />
         </Field>
       )}
       {pending && !linking && (
         <div className="flex flex-col gap-2 rounded-2xl bg-sky-500/10 p-3 text-sm ring-1 ring-sky-500/20">
           <label className="flex cursor-pointer items-center gap-2 font-medium">
-            <Checkbox checked={form.watch("createMember")} onCheckedChange={(c) => form.setValue("createMember", !!c)} /> Add as a new member{hasMonthlyHapta ? " and start their monthly hapta" : ""}
+            <Checkbox checked={form.watch("createMember")} onCheckedChange={(c) => form.setValue("createMember", !!c)} /> {hasMonthlyHapta ? t("users.addNewHapta") : t("users.addNew")}
           </label>
           {creating && hasMonthlyHapta && (
-            <Field label="Hapta from month" htmlFor={`hs-${membershipId}`}>
+            <Field label={t("users.haptaFrom")} htmlFor={`hs-${membershipId}`}>
               <Input id={`hs-${membershipId}`} type="month" {...form.register("haptaStartMonth")} />
             </Field>
           )}
@@ -93,13 +92,13 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
             size="lg"
             disabled={busy}
             onClick={form.handleSubmit((v) =>
-              send({ action: "approve", role: v.role, memberId: v.memberId || null, createMember: v.memberId ? undefined : v.createMember, haptaStartMonth: !v.memberId && v.createMember && hasMonthlyHapta ? v.haptaStartMonth : undefined }, "Request approved"),
+              send({ action: "approve", role: v.role, memberId: v.memberId || null, createMember: v.memberId ? undefined : v.createMember, haptaStartMonth: !v.memberId && v.createMember && hasMonthlyHapta ? v.haptaStartMonth : undefined }, t("users.approved")),
             )}
           >
-            {busy ? <Loader2 className="animate-spin" /> : <UserRoundCheck />} Approve
+            {busy ? <Loader2 className="animate-spin" /> : <UserRoundCheck />} {t("users.approve")}
           </Button>
-          <Button size="lg" variant="outline" disabled={busy} onClick={() => send({ action: "reject" }, "Request rejected")}>
-            <X /> Reject
+          <Button size="lg" variant="outline" disabled={busy} onClick={() => send({ action: "reject" }, t("users.rejected"))}>
+            <X /> {t("users.reject")}
           </Button>
         </div>
       ) : (
@@ -109,11 +108,11 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
             className="w-full"
             disabled={busy}
             onClick={form.handleSubmit(async (v) => {
-              if (v.role !== role) send({ action: "change_role", role: v.role, memberId: v.memberId || null }, "Role updated");
-              else send({ action: "link_member", memberId: v.memberId || null }, "Member link updated");
+              if (v.role !== role) send({ action: "change_role", role: v.role, memberId: v.memberId || null }, t("users.roleUpdated"));
+              else send({ action: "link_member", memberId: v.memberId || null }, t("users.linkUpdated"));
             })}
           >
-            {busy ? <Loader2 className="animate-spin" /> : <Check />} Save
+            {busy ? <Loader2 className="animate-spin" /> : <Check />} {t("users.save")}
           </Button>
           <div className="flex flex-wrap gap-2 empty:hidden">
           {status === "active" && !memberId && !linking && (
@@ -121,19 +120,19 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
               variant="secondary"
               className="flex-1"
               disabled={busy}
-              onClick={form.handleSubmit((v) => send({ action: "link_member", createMember: true, haptaStartMonth: hasMonthlyHapta ? v.haptaStartMonth : undefined }, "Added to members"))}
+              onClick={form.handleSubmit((v) => send({ action: "link_member", createMember: true, haptaStartMonth: hasMonthlyHapta ? v.haptaStartMonth : undefined }, t("users.addedToMembers")))}
             >
-              <UserPlus /> Add as a new member
+              <UserPlus /> {t("users.addNew")}
             </Button>
           )}
           {!isSelf && status === "active" && (
-            <Button variant="destructive" className="flex-1" disabled={busy} onClick={() => send({ action: "deactivate" }, "Access removed")}>
-              Deactivate access
+            <Button variant="destructive" className="flex-1" disabled={busy} onClick={() => send({ action: "deactivate" }, t("users.accessRemoved"))}>
+              {t("users.deactivate")}
             </Button>
           )}
           {status === "deactivated" && (
-            <Button variant="outline" className="flex-1" disabled={busy} onClick={() => send({ action: "reactivate" }, "Access restored")}>
-              Reactivate
+            <Button variant="outline" className="flex-1" disabled={busy} onClick={() => send({ action: "reactivate" }, t("users.accessRestored"))}>
+              {t("users.reactivate")}
             </Button>
           )}
           </div>
@@ -144,8 +143,9 @@ function ManageForm({ membershipId, status, role, memberId, members, isSelf, aut
 }
 
 export function ManageMembershipDialog(props: ManageProps & { name: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={props.status === "pending" ? "Review" : <UserCog />} triggerVariant={props.status === "pending" ? "default" : "ghost"} triggerSize="xs" title={props.status === "pending" ? `Join request: ${props.name}` : `Manage ${props.name}`} icon={props.status === "pending" ? <UserPlus /> : <UserCog />} tone={props.status === "pending" ? "amber" : "indigo"}>
+    <FormDialog trigger={props.status === "pending" ? t("users.review") : <UserCog />} triggerVariant={props.status === "pending" ? "default" : "ghost"} triggerSize="xs" title={props.status === "pending" ? t("users.joinReq", { name: props.name }) : t("users.manage", { name: props.name })} icon={props.status === "pending" ? <UserPlus /> : <UserCog />} tone={props.status === "pending" ? "amber" : "indigo"}>
       <ManageForm {...props} />
     </FormDialog>
   );
@@ -155,6 +155,7 @@ const InviteSchema = z.object({ email: z.string().trim().email("Enter a valid em
 
 function InviteForm({ members }: { members: Mem[] }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const [link, setLink] = useState<string | null>(null);
   const [existing, setExisting] = useState(false);
   const [emailed, setEmailed] = useState(false);
@@ -164,20 +165,20 @@ function InviteForm({ members }: { members: Mem[] }) {
     <form
       noValidate
       className="flex flex-col gap-3"
-      onSubmit={form.handleSubmit((v) => submit<{ inviteLink: string; existingUser: boolean; emailed: boolean }>({ path: `/orgs/${orgId}/invitations`, body: { ...v, memberId: v.memberId || undefined } }, { success: "Invitation sent", onSuccess: (r) => { setLink(r.inviteLink); setExisting(r.existingUser); setEmailed(r.emailed); }, refresh: true }))}
+      onSubmit={form.handleSubmit((v) => submit<{ inviteLink: string; existingUser: boolean; emailed: boolean }>({ path: `/orgs/${orgId}/invitations`, body: { ...v, memberId: v.memberId || undefined } }, { success: t("users.invSent"), onSuccess: (r) => { setLink(r.inviteLink); setExisting(r.existingUser); setEmailed(r.emailed); }, refresh: true }))}
     >
       <FormError message={error} />
-      <Field label="Email" htmlFor="inv-email" error={form.formState.errors.email?.message}>
+      <Field label={t("users.email")} htmlFor="inv-email" error={form.formState.errors.email?.message}>
         <Input id="inv-email" type="email" {...form.register("email")} />
       </Field>
-      <Field label="Role" htmlFor="inv-role">
+      <Field label={t("users.role")} htmlFor="inv-role">
         <input type="hidden" id="inv-role" {...form.register("role")} />
-        <ChoicePills label="Role" options={ROLE_OPTIONS} value={form.watch("role")} onChange={(r) => form.setValue("role", r, { shouldDirty: true })} />
+        <ChoicePills label={t("users.role")} options={roleOptions(t)} value={form.watch("role")} onChange={(r) => form.setValue("role", r, { shouldDirty: true })} />
       </Field>
-      <FormNote>{ROLE_INFO[form.watch("role")]}</FormNote>
-      <Field label="Link to member record (optional)" htmlFor="inv-member">
+      <FormNote>{roleInfo(t, form.watch("role"))}</FormNote>
+      <Field label={t("users.linkOpt")} htmlFor="inv-member">
         <NativeSelect id="inv-member" {...form.register("memberId")}>
-          <option value="">— none —</option>
+          <option value="">{t("users.none")}</option>
           {members.map((m) => (
             <option key={m._id} value={m._id}>
               {m.name} ({m.membershipNumber})
@@ -186,12 +187,12 @@ function InviteForm({ members }: { members: Mem[] }) {
         </NativeSelect>
       </Field>
       <SubmitButton pending={pending} icon={<Send />}>
-        Send invitation
+        {t("users.sendInv")}
       </SubmitButton>
       {link && (
         <FormNote tone={emailed ? "good" : "warn"} className="text-sm">
-          {emailed ? "Invitation emailed. " : "Email isn't set up yet — share this link (WhatsApp, SMS). "}
-          {existing ? "They already use MandalHisab: the invitation is also waiting for them in the app." : "They create their account with that email and join in one step."}
+          {emailed ? t("users.emailed") : t("users.noEmail")}{" "}
+          {existing ? t("users.existing") : t("users.newUser")}
         </FormNote>
       )}
       {link && (
@@ -203,10 +204,10 @@ function InviteForm({ members }: { members: Mem[] }) {
             variant="outline"
             onClick={async () => {
               await navigator.clipboard.writeText(link);
-              toast.success("Link copied");
+              toast.success(t("users.copied"));
             }}
           >
-            <Copy /> Copy
+            <Copy /> {t("users.copy")}
           </Button>
         </div>
       )}
@@ -215,8 +216,9 @@ function InviteForm({ members }: { members: Mem[] }) {
 }
 
 export function InviteDialog({ members }: { members: Mem[] }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><MailPlus /> Invite</>} title="Invite someone" icon={<MailPlus />} tone="indigo" description="Existing users see the invitation in the app. Others get an email link (valid 7 days) that you can also share directly.">
+    <FormDialog trigger={<><MailPlus /> {t("users.invite")}</>} title={t("users.inviteTitle")} icon={<MailPlus />} tone="indigo" description={t("users.inviteDesc")}>
       <InviteForm members={members} />
     </FormDialog>
   );

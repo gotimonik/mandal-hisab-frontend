@@ -31,8 +31,9 @@ export function addMonths(month: string, n: number) {
 /** Month picker for the first installment. */
 export function InstallmentStartField({ id, value, onChange, min }: { id: string; value: string; onChange: (v: string) => void; min: string }) {
   const lang = useLang();
+  const t = useT();
   return (
-    <Field label="First installment month" htmlFor={id} hint={MONTH.test(value) ? monthName(lang, value) : undefined}>
+    <Field label={t("ax.firstInst")} htmlFor={id} hint={MONTH.test(value) ? monthName(lang, value) : undefined}>
       <Input id={id} type="month" min={min} max={addMonths(min, 24)} value={value} onChange={(e) => onChange(e.target.value)} />
     </Field>
   );

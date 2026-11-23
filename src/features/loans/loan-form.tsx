@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/client";
+import type { Key } from "@/i18n/core";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -18,21 +20,19 @@ import { useApiSubmit } from "@/components/app/use-api-form";
 import { apiMutate } from "@/lib/api-client";
 import { formatDate, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
-import { METHOD_INFO } from "./constants";
-import { useMoney } from "@/components/app/currency";
 import { FormSection as Section, MoreOptions, SubmitButton } from "@/components/app/form-bits";
 
 
 const Schema = z.object({
-  memberId: z.string().min(1, "Select the member"),
+  memberId: z.string().min(1, "lf.v.member"),
   amount: rupees,
   purpose: z.string().max(300).optional(),
   interestMethod: z.enum(["reducing_balance", "flat", "simple", "compound"]),
-  rate: z.string().regex(/^\d{1,3}(\.\d{1,4})?$/, "Enter a rate like 12 or 10.5"),
+  rate: z.string().regex(/^\d{1,3}(\.\d{1,4})?$/, "lf.v.rate"),
   ratePeriod: z.enum(["annual", "monthly"]),
   compoundingPerYear: z.coerce.number().int(),
   dayCount: z.enum(["actual_365", "actual_360", "30_360"]),
-  tenure: z.coerce.number().int().min(1, "At least 1").max(360),
+  tenure: z.coerce.number().int().min(1, "lf.v.min1").max(360),
   repaymentFrequency: z.enum(["monthly", "quarterly", "weekly", "biweekly"]),
   graceDays: z.coerce.number().int().min(0).max(90),
   prepaymentMode: z.enum(["reduce_emi", "reduce_tenure"]),
@@ -57,7 +57,7 @@ function nextMonth(iso: string) {
 }
 
 export function LoanForm({ orgId, members, canSetRate }: { orgId: string; members: { _id: string; name: string; membershipNumber: string }[]; canSetRate: boolean }) {
-  const money = useMoney();
+  const t = useT();
   const router = useRouter();
   const today = todayISO();
   const form = useForm<In, unknown, Out>({
@@ -90,15 +90,15 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
         className="flex flex-col gap-4"
         onSubmit={form.handleSubmit((v) => {
           const { previewStart: _a, previewFirstDue: _b, ...body } = v;
-          submit<{ _id: string }>({ path: `/orgs/${orgId}/loans`, body: { ...body, compoundingPerYear: v.interestMethod === "compound" ? v.compoundingPerYear : null, lateFee: { enabled: false, type: "fixed", value: 0, graceDays: 0 } } }, { success: "Loan application created", onSuccess: (l) => router.push(`/org/${orgId}/loans/${l._id}`) });
+          submit<{ _id: string }>({ path: `/orgs/${orgId}/loans`, body: { ...body, compoundingPerYear: v.interestMethod === "compound" ? v.compoundingPerYear : null, lateFee: { enabled: false, type: "fixed", value: 0, graceDays: 0 } } }, { success: t("lf.created"), onSuccess: (l) => router.push(`/org/${orgId}/loans/${l._id}`) });
         })}
       >
         <FormError message={error} />
-        <Section icon={<FileText />} tone="indigo" title="Application">
+        <Section icon={<FileText />} tone="indigo" title={t("lf.application")}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Member" htmlFor="l-member" error={e.memberId?.message} className="sm:col-span-2">
+            <Field label={t("lf.member")} htmlFor="l-member" error={e.memberId?.message} className="sm:col-span-2">
               <NativeSelect id="l-member" {...form.register("memberId")}>
-                <option value="">Select member</option>
+                <option value="">{t("lf.select")}</option>
                 {members.map((m) => (
                   <option key={m._id} value={m._id}>
                     {m.name} ({m.membershipNumber})
@@ -106,59 +106,59 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
                 ))}
               </NativeSelect>
             </Field>
-            <Field label={`Requested amount (${money.symbol})`} htmlFor="l-amt" error={e.amount?.message}>
+            <Field label={t("lf.requested")} htmlFor="l-amt" error={e.amount?.message}>
               <Input id="l-amt" inputMode="decimal" {...form.register("amount")} />
             </Field>
-            <Field label="Purpose" htmlFor="l-purpose">
-              <Input id="l-purpose" placeholder="e.g. Shop renovation" {...form.register("purpose")} />
+            <Field label={t("lf.purpose")} htmlFor="l-purpose">
+              <Input id="l-purpose" placeholder={t("lf.purposePh")} {...form.register("purpose")} />
             </Field>
           </div>
         </Section>
-        <Section icon={<Percent />} tone="violet" title="Interest & repayment">
+        <Section icon={<Percent />} tone="violet" title={t("lf.interestRepay")}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Interest method" htmlFor="l-method" hint={METHOD_INFO[method]} className="sm:col-span-2">
+            <Field label={t("lf.method")} htmlFor="l-method" hint={t(`loan.mi.${method}` as Key)} className="sm:col-span-2">
               <NativeSelect id="l-method" {...form.register("interestMethod")}>
-                <option value="reducing_balance">Reducing balance (EMI)</option>
-                <option value="flat">Flat rate</option>
-                <option value="simple">Simple interest</option>
-                <option value="compound">Compound (bullet)</option>
+                <option value="reducing_balance">{t("loan.mn.reducing_balance")}</option>
+                <option value="flat">{t("loan.mn.flat")}</option>
+                <option value="simple">{t("loan.mn.simple")}</option>
+                <option value="compound">{t("loan.mn.compound")}</option>
               </NativeSelect>
             </Field>
-            <Field label="Rate (%)" htmlFor="l-rate" error={e.rate?.message} hint={canSetRate ? undefined : "Proposed rate; an approver with interest rights may change it."}>
+            <Field label={t("lf.rate")} htmlFor="l-rate" error={e.rate?.message} hint={canSetRate ? undefined : t("lf.rateHint")}>
               <Input id="l-rate" inputMode="decimal" {...form.register("rate")} />
             </Field>
-            <Field label="Rate period" htmlFor="l-rp">
+            <Field label={t("lf.ratePeriod")} htmlFor="l-rp">
               <NativeSelect id="l-rp" {...form.register("ratePeriod")}>
-                <option value="annual">Per year</option>
-                <option value="monthly">Per month</option>
+                <option value="annual">{t("lf.perYear")}</option>
+                <option value="monthly">{t("lf.perMonth")}</option>
               </NativeSelect>
             </Field>
-            <Field label={method === "compound" ? "Tenure (periods to maturity)" : "Number of installments"} htmlFor="l-tenure" error={e.tenure?.message}>
+            <Field label={method === "compound" ? t("lf.tenureC") : t("lf.count")} htmlFor="l-tenure" error={e.tenure?.message}>
               <Input id="l-tenure" type="number" min={1} {...form.register("tenure")} />
             </Field>
-            <Field label="Repayment frequency" htmlFor="l-freq">
+            <Field label={t("lf.freq")} htmlFor="l-freq">
               <NativeSelect id="l-freq" {...form.register("repaymentFrequency")}>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="biweekly">Every 2 weeks</option>
-                <option value="weekly">Weekly</option>
+                <option value="monthly">{t("lf.monthly")}</option>
+                <option value="quarterly">{t("lf.quarterly")}</option>
+                <option value="biweekly">{t("lf.biweekly")}</option>
+                <option value="weekly">{t("lf.weekly")}</option>
               </NativeSelect>
             </Field>
           </div>
         </Section>
-        <MoreOptions icon={<SlidersHorizontal />} title="More options" description="Grace days, prepayment, compounding and notes — the defaults suit most loans." defaultOpen={method === "compound" || method === "simple"}>
+        <MoreOptions icon={<SlidersHorizontal />} title={t("lf.more")} description={t("lf.moreD")} defaultOpen={method === "compound" || method === "simple"}>
             {method === "compound" && (
-              <Field label="Compounding" htmlFor="l-comp">
+              <Field label={t("lf.compounding")} htmlFor="l-comp">
                 <NativeSelect id="l-comp" {...form.register("compoundingPerYear")}>
-                  <option value={12}>Monthly</option>
-                  <option value={4}>Quarterly</option>
-                  <option value={2}>Half-yearly</option>
-                  <option value={1}>Yearly</option>
+                  <option value={12}>{t("lf.monthly")}</option>
+                  <option value={4}>{t("lf.quarterly")}</option>
+                  <option value={2}>{t("lf.halfYearly")}</option>
+                  <option value={1}>{t("lf.yearly")}</option>
                 </NativeSelect>
               </Field>
             )}
             {(method === "simple" || method === "compound") && (
-              <Field label="Day count" htmlFor="l-dc">
+              <Field label={t("lf.dayCount")} htmlFor="l-dc">
                 <NativeSelect id="l-dc" {...form.register("dayCount")}>
                   <option value="actual_365">Actual/365</option>
                   <option value="actual_360">Actual/360</option>
@@ -166,21 +166,21 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
                 </NativeSelect>
               </Field>
             )}
-            <Field label="Grace days" htmlFor="l-grace">
+            <Field label={t("lf.grace")} htmlFor="l-grace">
               <Input id="l-grace" type="number" min={0} {...form.register("graceDays")} />
             </Field>
-            <Field label="On prepayment" htmlFor="l-prep">
+            <Field label={t("lf.prepay")} htmlFor="l-prep">
               <NativeSelect id="l-prep" {...form.register("prepaymentMode")}>
-                <option value="reduce_emi">Reduce installment amount</option>
-                <option value="reduce_tenure">Reduce number of installments</option>
+                <option value="reduce_emi">{t("lf.reduceEmi")}</option>
+                <option value="reduce_tenure">{t("lf.reduceTenure")}</option>
               </NativeSelect>
             </Field>
-            <Field label="Notes" htmlFor="l-notes" className="sm:col-span-2">
+            <Field label={t("lf.notes")} htmlFor="l-notes" className="sm:col-span-2">
               <Textarea id="l-notes" rows={2} {...form.register("notes")} />
             </Field>
         </MoreOptions>
         <SubmitButton page pending={pending}>
-          Submit application
+          {t("lf.submit")}
         </SubmitButton>
       </form>
 
@@ -189,19 +189,19 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
           <IconChip tone="emerald" size="sm">
             <Landmark />
           </IconChip>
-          Repayment preview
+          {t("lf.preview")}
         </h2>
-        <p className="-mt-1 text-xs text-muted-foreground">See the EMI and full schedule before submitting. Approval and disbursement happen separately.</p>
+        <p className="-mt-1 text-xs text-muted-foreground">{t("lf.previewD")}</p>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Disbursement date" htmlFor="l-pstart">
+            <Field label={t("lf.disbDate")} htmlFor="l-pstart">
               <Input id="l-pstart" type="date" {...form.register("previewStart")} />
             </Field>
-            <Field label="First due date" htmlFor="l-pfirst">
+            <Field label={t("lf.firstDue")} htmlFor="l-pfirst">
               <Input id="l-pfirst" type="date" {...form.register("previewFirstDue")} />
             </Field>
           </div>
           <Button type="button" variant="outline" onClick={runPreview} disabled={previewing}>
-            {previewing ? <Loader2 className="animate-spin" /> : <Calculator />} Calculate schedule
+            {previewing ? <Loader2 className="animate-spin" /> : <Calculator />} {t("lf.calc")}
           </Button>
           <FormError message={pErr} />
           {preview && <ScheduleTable preview={preview} />}
@@ -211,13 +211,14 @@ export function LoanForm({ orgId, members, canSetRate }: { orgId: string; member
 }
 
 export function ScheduleTable({ preview }: { preview: Preview }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2 text-sm">
       <div className="bg-hero-green grid grid-cols-3 gap-2 rounded-2xl p-3 text-white">
         {[
-          [preview.emiPaise !== null ? "EMI" : "Rate", preview.emiPaise !== null ? <Money key="e" paise={preview.emiPaise} short /> : `${preview.annualRate}% p.a.`],
-          ["Total interest", <Money key="i" paise={preview.totals.interestPaise} short />],
-          ["Total to repay", <Money key="t" paise={preview.totals.totalPaise} short />],
+          [preview.emiPaise !== null ? t("lf.emi") : t("lf.rateL"), preview.emiPaise !== null ? <Money key="e" paise={preview.emiPaise} short /> : t("lf.pa", { rate: preview.annualRate })],
+          [t("lf.totalInterest"), <Money key="i" paise={preview.totals.interestPaise} short />],
+          [t("lf.totalRepay"), <Money key="t" paise={preview.totals.totalPaise} short />],
         ].map(([l, v], i) => (
           <div key={i} className="min-w-0 rounded-xl bg-white/15 px-2.5 py-2">
             <p className="truncate text-[11px] text-white/85">{l}</p>
@@ -225,16 +226,16 @@ export function ScheduleTable({ preview }: { preview: Preview }) {
           </div>
         ))}
       </div>
-      {preview.emiPaise !== null && <p className="text-xs text-muted-foreground">Rate {preview.annualRate}% per year · {preview.rows.length} installments</p>}
+      {preview.emiPaise !== null && <p className="text-xs text-muted-foreground">{t("lf.rateLine", { rate: preview.annualRate, n: preview.rows.length })}</p>}
       <div className="max-h-96 overflow-auto rounded-2xl ring-1 ring-foreground/10">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
-              <TableHead>Due</TableHead>
-              <TableHead className="text-right">Principal</TableHead>
-              <TableHead className="text-right">Interest</TableHead>
-              <TableHead className="text-right">Total</TableHead>
+              <TableHead>{t("lf.due")}</TableHead>
+              <TableHead className="text-right">{t("lf.principal")}</TableHead>
+              <TableHead className="text-right">{t("lf.interest")}</TableHead>
+              <TableHead className="text-right">{t("lf.total")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -256,7 +257,7 @@ export function ScheduleTable({ preview }: { preview: Preview }) {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2}>Total</TableCell>
+              <TableCell colSpan={2}>{t("lf.total")}</TableCell>
               <TableCell className="text-right">
                 <Money paise={preview.totals.principalPaise} />
               </TableCell>

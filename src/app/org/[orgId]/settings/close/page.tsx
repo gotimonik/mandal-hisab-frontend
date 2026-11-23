@@ -10,7 +10,8 @@ import { TableWrap } from "@/components/app/table-wrap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
-import { monthLabelYM } from "@/lib/months";
+import { getT } from "@/i18n/server";
+import { monthName } from "@/i18n/core";
 import { cn } from "@/lib/utils";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, MemberAvatar } from "@/components/app/bits";
@@ -45,6 +46,7 @@ function Step({ n, title, done, children, description }: { n: number; title: str
 
 export default async function ClosePage({ params }: PageProps<"/org/[orgId]/settings/close">) {
   const { orgId } = await params;
+  const { t, lang } = await getT();
   const [org, p] = await Promise.all([getOrg(orgId), api<Preview>(`/orgs/${orgId}/settlement`)]);
   // getOrg is already in flight above (and cached), so this resolves without a second wait
   const money = await getMoney(orgId);
@@ -58,7 +60,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
   const payout = (r: Row) =>
     r.paidOut ? (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-        <CheckCircle2 className="size-3.5" /> Paid {formatDate(r.paidOut.at)}
+        <CheckCircle2 className="size-3.5" /> {t("close.paid", { date: formatDate(r.paidOut.at) })}
       </span>
     ) : started && live && r.netPaise >= 0 && (r.savingsPaise !== 0 || r.upadOwedPaise !== 0) ? (
       <ActionButton
@@ -66,49 +68,49 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
         body={{ idempotencyKey: `settle-payout:${r.memberId}` }}
         size="xs"
         variant="default"
-        successMessage={`${r.name} paid out`}
+        successMessage={t("close.paidOut", { name: r.name })}
         confirm={{
-          title: `Pay ${money.fmt(r.netPaise)} to ${r.name}?`,
-          description: `Savings ${money.fmt(r.savingsPaise)}${r.upadOwedPaise ? ` − upad ${money.fmt(r.upadOwedPaise)} (settled from the payout)` : ""}. Paid from the cash account; a payout voucher is recorded.`,
-          confirmLabel: "Pay out",
+          title: t("close.payQ", { amount: money.fmt(r.netPaise), name: r.name }),
+          description: r.upadOwedPaise ? t("close.payDescUpad", { savings: money.fmt(r.savingsPaise), upad: money.fmt(r.upadOwedPaise) }) : t("close.payDesc", { savings: money.fmt(r.savingsPaise) }),
+          confirmLabel: t("close.payOut"),
         }}
       >
-        Pay out
+        {t("close.payOut")}
       </ActionButton>
     ) : null;
 
   return (
     <div className="max-w-4xl">
-      <PageHeader title="Close & settle the Mandal" description={p.endMonth ? `Runs until ${monthLabelYM(p.endMonth)}` : "Share out the money by hapta shares, pay every member, then close."} actions={<PrintButton />} />
+      <PageHeader title={t("close.title")} description={p.endMonth ? t("close.runsUntil", { month: monthName(lang, p.endMonth) }) : t("close.desc")} actions={<PrintButton />} />
 
       {closed && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-200">
           <Lock className="size-5 shrink-0" />
-          Closed and settled on {formatDate(p.state!.closedAt)}. Everything stays available to read.
+          {t("close.closedOn", { date: formatDate(p.state!.closedAt) })}
         </div>
       )}
 
       <SummaryBand
         tone={closed ? "green" : "warm"}
         icon={<Scale />}
-        label={closed ? "Settled — still to pay" : "Still to pay members"}
+        label={closed ? t("close.settledToPay") : t("close.stillToPayMembers")}
         value={<Money paise={p.totals.netPayoutPaise} />}
         sub={
           <>
-            Members&apos; savings <Money paise={p.totals.memberFundsPaise} /> · {p.totals.totalShares} hapta share{p.totals.totalShares === 1 ? "" : "s"}
+            {t("close.membersSavings")} <Money paise={p.totals.memberFundsPaise} /> · {p.totals.totalShares === 1 ? t("close.sharesOne") : t("close.sharesN", { n: p.totals.totalShares })}
           </>
         }
         stats={[
-          { label: "Cash in the Mandal", value: <Money paise={p.totals.cashPaise} /> },
-          { label: "Upad still out", value: <Money paise={p.totals.upadOutstandingPaise} /> },
-          { label: "Mandal's own money", value: <Money paise={p.totals.mandalOwnPaise} /> },
+          { label: t("close.cash"), value: <Money paise={p.totals.cashPaise} /> },
+          { label: t("close.upadOut"), value: <Money paise={p.totals.upadOutstandingPaise} /> },
+          { label: t("close.mandalOwn"), value: <Money paise={p.totals.mandalOwnPaise} /> },
         ]}
       />
 
-      <Step n={1} title="Finish what's still open" done={openItems.length === 0} description="Everything must be collected, verified or waived before money is shared out.">
+      <Step n={1} title={t("close.s1")} done={openItems.length === 0} description={t("close.s1d")}>
         {openItems.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
-            <CheckCircle2 className="size-4" /> Nothing open.
+            <CheckCircle2 className="size-4" /> {t("close.nothingOpen")}
           </p>
         ) : (
           <ul className="flex flex-col gap-1">
@@ -130,17 +132,17 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
           <div className="mt-3">
             <ActionButton
               path={`/orgs/${orgId}/settlement/waive-hapta`}
-              successMessage="Unpaid hapta waived"
+              successMessage={t("close.waived")}
               confirm={{
-                title: `Waive ${money.fmt(unpaidHapta.amountPaise ?? 0)} of unpaid hapta?`,
-                description: "All hapta not yet paid up to today is waived. Members' savings stay as they are.",
+                title: t("close.waiveQ", { amount: money.fmt(unpaidHapta.amountPaise ?? 0) }),
+                description: t("close.waiveDesc"),
                 reason: "required",
-                reasonLabel: "Why (e.g. members agreed)",
-                confirmLabel: "Waive",
+                reasonLabel: t("close.waiveWhy"),
+                confirmLabel: t("close.waive"),
                 destructive: true,
               }}
             >
-              Waive all unpaid hapta…
+              {t("close.waiveAll")}
             </ActionButton>
           </div>
         )}
@@ -148,38 +150,38 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
 
       <Step
         n={2}
-        title="Share out the Mandal's own money"
+        title={t("close.s2")}
         done={started && p.totals.mandalOwnPaise === 0}
-        description="Donations, other income and anything not in members' savings, shared by hapta shares (a member paying 3 haptas gets 3 parts). Future hapta stops."
+        description={t("close.s2d")}
       >
         <p className="mb-3 text-sm">
-          <Money paise={p.totals.mandalOwnPaise} className="font-bold" /> ÷ {p.totals.totalShares} share{p.totals.totalShares === 1 ? "" : "s"} = <Money paise={p.totals.perSharePaise} className="font-bold" /> per share
-          {p.totals.mandalOwnPaise < 0 && <span className="text-destructive"> (a loss — it is taken off members&apos; balances)</span>}
+          <Money paise={p.totals.mandalOwnPaise} className="font-bold" /> ÷ {p.totals.totalShares === 1 ? t("close.shareOne") : t("close.shareN", { n: p.totals.totalShares })} = <Money paise={p.totals.perSharePaise} className="font-bold" /> {t("close.perShare")}
+          {p.totals.mandalOwnPaise < 0 && <span className="text-destructive">{t("close.loss")}</span>}
         </p>
         {p.state?.distributions.map((d, i) => (
           <p key={i} className="mb-1 text-xs text-muted-foreground">
-            Shared {money.fmt(d.totalPaise)} on {formatDate(d.at)} ({money.fmt(d.perShare)} per share)
+            {t("close.sharedOn", { amount: money.fmt(d.totalPaise), date: formatDate(d.at), per: money.fmt(d.perShare) })}
           </p>
         ))}
         {live && !closed && (!started || p.totals.mandalOwnPaise !== 0) && (
           <ActionButton
             path={`/orgs/${orgId}/settlement/start`}
             variant="default"
-            successMessage={started ? "Shared out" : "Closing started — money shared out"}
+            successMessage={started ? t("close.sharedOut") : t("close.closingStarted")}
             confirm={{
-              title: started ? `Share out the remaining ${money.fmt(p.totals.mandalOwnPaise)}?` : "Start closing the Mandal?",
-              description: `${money.fmt(p.totals.mandalOwnPaise)} is added to members' balances by hapta shares. ${started ? "" : "No new hapta will be created after today. "}This can't be undone automatically.`,
-              confirmLabel: started ? "Share out" : "Start closing",
+              title: started ? t("close.shareRemainingQ", { amount: money.fmt(p.totals.mandalOwnPaise) }) : t("close.startQ"),
+              description: started ? t("close.shareDesc", { amount: money.fmt(p.totals.mandalOwnPaise) }) : t("close.startDesc", { amount: money.fmt(p.totals.mandalOwnPaise) }),
+              confirmLabel: started ? t("close.shareOut") : t("close.startClosing"),
             }}
           >
-            {started ? "Share out the remaining money" : "Start closing & share out"}
+            {started ? t("close.shareRemaining") : t("close.startAndShare")}
           </ActionButton>
         )}
-        {!started && !p.canStart && <p className="mt-2 text-xs text-muted-foreground">Finish step 1 first.</p>}
+        {!started && !p.canStart && <p className="mt-2 text-xs text-muted-foreground">{t("close.finish1")}</p>}
       </Step>
 
-      <Step n={3} title="Pay each member" done={started && toPay.length === 0} description="Each member gets their savings + their share; upad they still owe is taken off. A payout voucher is recorded for each.">
-        <ul className="flex flex-col gap-2 md:hidden print:hidden" aria-label="Payouts">
+      <Step n={3} title={t("close.s3")} done={started && toPay.length === 0} description={t("close.s3d")}>
+        <ul className="flex flex-col gap-2 md:hidden print:hidden" aria-label={t("close.payouts")}>
           {p.rows.map((r) => (
             <li key={r.memberId} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", r.paidOut && "opacity-80")}>
               <div className="flex items-start gap-3">
@@ -188,22 +190,22 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
                   <span className="font-semibold">{r.name}</span>
                   <p className="text-xs text-muted-foreground">
                     {r.membershipNumber}
-                    {r.shares > 1 ? ` · ${r.shares} shares` : ""}
+                    {r.shares > 1 ? t("close.nShares", { n: r.shares }) : ""}
                   </p>
                 </div>
                 <Money paise={r.paidOut ? r.paidOut.netPaise : r.netPaise} className={cn("shrink-0 font-bold", r.netPaise < 0 && !r.paidOut && "text-destructive")} />
               </div>
               <div className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
                 <div className="rounded-lg bg-muted/60 px-2 py-1.5">
-                  <span className="block text-muted-foreground">Savings</span>
+                  <span className="block text-muted-foreground">{t("close.savings")}</span>
                   <Money paise={r.savingsPaise} className="font-semibold" />
                 </div>
                 <div className="rounded-lg bg-emerald-500/8 px-2 py-1.5">
-                  <span className="block text-muted-foreground">+ Share</span>
+                  <span className="block text-muted-foreground">{t("close.plusShare")}</span>
                   {r.mandalSharePaise ? <Money paise={r.mandalSharePaise} className="font-semibold" /> : "—"}
                 </div>
                 <div className="rounded-lg bg-rose-500/8 px-2 py-1.5">
-                  <span className="block text-muted-foreground">− Upad</span>
+                  <span className="block text-muted-foreground">{t("close.minusUpad")}</span>
                   {r.upadOwedPaise ? <Money paise={-r.upadOwedPaise} className="font-semibold text-rose-600 dark:text-rose-300" /> : "—"}
                 </div>
               </div>
@@ -211,7 +213,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             </li>
           ))}
           <li className="flex items-center justify-between rounded-2xl bg-secondary/50 px-3.5 py-3 text-sm font-semibold">
-            Still to pay <Money paise={p.totals.netPayoutPaise} className="font-bold" />
+            {t("close.stillToPay")} <Money paise={p.totals.netPayoutPaise} className="font-bold" />
           </li>
         </ul>
         <div className="hidden md:block print:block">
@@ -219,11 +221,11 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead className="text-right">Savings</TableHead>
-                  <TableHead className="text-right">+ Share</TableHead>
-                  <TableHead className="text-right">− Upad</TableHead>
-                  <TableHead className="text-right">Payout</TableHead>
+                  <TableHead>{t("close.member")}</TableHead>
+                  <TableHead className="text-right">{t("close.savings")}</TableHead>
+                  <TableHead className="text-right">{t("close.plusShare")}</TableHead>
+                  <TableHead className="text-right">{t("close.minusUpad")}</TableHead>
+                  <TableHead className="text-right">{t("close.payout")}</TableHead>
                   <TableHead className="text-right" />
                 </TableRow>
               </TableHeader>
@@ -237,7 +239,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
                           <span className="font-semibold">{r.name}</span>
                           <span className="block text-xs text-muted-foreground">
                             {r.membershipNumber}
-                            {r.shares > 1 ? ` · ${r.shares} shares` : ""}
+                            {r.shares > 1 ? t("close.nShares", { n: r.shares }) : ""}
                           </span>
                         </div>
                       </div>
@@ -257,7 +259,7 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={4} className="font-semibold">
-                    Still to pay
+                    {t("close.stillToPay")}
                   </TableCell>
                   <TableCell className="text-right font-bold">
                     <Money paise={p.totals.netPayoutPaise} />
@@ -268,12 +270,12 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
             </Table>
           </TableWrap>
         </div>
-        {!started && <p className="mt-2 text-xs text-muted-foreground">Payouts open after step 2.</p>}
+        {!started && <p className="mt-2 text-xs text-muted-foreground">{t("close.after2")}</p>}
       </Step>
 
-      <Step n={4} title="Close the Mandal" done={closed} description="When everyone is paid and every account is at zero, close it. It becomes read-only; nothing is deleted.">
+      <Step n={4} title={t("close.s4")} done={closed} description={t("close.s4d")}>
         {closed ? (
-          <p className="text-sm">Closed on {formatDate(p.state!.closedAt)}.</p>
+          <p className="text-sm">{t("close.closedOnShort", { date: formatDate(p.state!.closedAt) })}</p>
         ) : (
           <>
             {!p.canClose && started && (
@@ -281,17 +283,17 @@ export default async function ClosePage({ params }: PageProps<"/org/[orgId]/sett
                 {p.accounts
                   .filter((a) => a.balancePaise !== 0)
                   .map((a) => `${a.name}: ${money.fmt(a.balancePaise)}`)
-                  .join(" · ") || "Pay everyone out first."}
+                  .join(" · ") || t("close.payFirst")}
               </p>
             )}
             {live && (
               <ActionButton
                 path={`/orgs/${orgId}/settlement/close`}
                 variant={p.canClose ? "destructive" : "outline"}
-                successMessage="The Mandal is closed"
-                confirm={{ title: `Close ${org.name}?`, description: "It becomes read-only for everyone. All history stays available.", confirmLabel: "Close the Mandal", destructive: true }}
+                successMessage={t("close.isClosed")}
+                confirm={{ title: t("close.closeQ", { name: org.name }), description: t("close.closeDesc"), confirmLabel: t("close.closeBtn"), destructive: true }}
               >
-                <Lock /> Close the Mandal
+                <Lock /> {t("close.closeBtn")}
               </ActionButton>
             )}
           </>

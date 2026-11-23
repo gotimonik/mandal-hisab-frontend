@@ -12,13 +12,16 @@ import type { Tone } from "@/lib/tones";
 import type { Account } from "@/lib/types";
 import { NewAccountDialog, TransferDialog, AdjustDialog } from "@/features/accounts/account-dialogs";
 
+import { getT } from "@/i18n/server";
+import type { Key } from "@/i18n/core";
+
 export const metadata = { title: "Accounts" };
 
-const TYPE: Record<Account["type"], { icon: typeof Wallet; tone: Tone; label: string }> = {
-  cash: { icon: Wallet, tone: "emerald", label: "Cash" },
-  bank: { icon: Landmark, tone: "sky", label: "Bank" },
-  upi: { icon: Smartphone, tone: "violet", label: "UPI" },
-  other: { icon: CircleDollarSign, tone: "slate", label: "Other" },
+const TYPE: Record<Account["type"], { icon: typeof Wallet; tone: Tone; label: Key }> = {
+  cash: { icon: Wallet, tone: "emerald", label: "acc.type.cash" },
+  bank: { icon: Landmark, tone: "sky", label: "acc.type.bank" },
+  upi: { icon: Smartphone, tone: "violet", label: "acc.type.upi" },
+  other: { icon: CircleDollarSign, tone: "slate", label: "acc.type.other" },
 };
 
 /** "HDFC Bank · ••1234 · HDFC0001234" / "mandal@upi" — what identifies the account. */
@@ -26,6 +29,7 @@ const detail = (a: Account) => (a.type === "bank" ? [a.bankName, a.accountNumber
 
 export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/accounts">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const [org, accounts] = await Promise.all([getOrg(orgId), getAccounts(orgId)]);
   const active = accounts.filter((a) => a.isActive).map((a) => ({ _id: a._id, name: a.name }));
   const total = accounts.reduce((s, a) => s + a.balancePaise, 0);
@@ -37,8 +41,8 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
   return (
     <>
       <PageHeader
-        title="Accounts"
-        description="Where the Mandal's money is kept — cash in hand, bank and UPI."
+        title={t("acc.title")}
+        description={t("acc.desc")}
         actions={
           writable ? (
             <>
@@ -50,12 +54,13 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
         }
       />
 
-      <section aria-label="Total in all accounts" className="bg-hero-green relative mb-5 overflow-hidden rounded-3xl p-5 shadow-lg shadow-emerald-600/15 sm:p-6">
+      <section aria-label={t("acc.total")} className="bg-hero-green relative mb-5 overflow-hidden rounded-3xl p-5 shadow-lg shadow-emerald-600/15 sm:p-6">
         <div className="pointer-events-none absolute -top-12 -right-10 size-40 rounded-full bg-white/10" />
-        <p className="relative text-sm font-medium text-white/85">Total in all accounts</p>
+        <p className="relative text-sm font-medium text-white/85">{t("acc.total")}</p>
         <Money paise={total} className="relative mt-0.5 block text-4xl font-extrabold tracking-tight" />
         <p className="relative mt-1 text-xs text-white/80">
-          {active.length} active account{active.length === 1 ? "" : "s"} · balances come from recorded transactions, so they can&apos;t be edited directly — use an adjustment to correct one.
+          {active.length === 1 ? t("acc.active1") : t("acc.activeN", { n: active.length })}
+          {t("acc.balNote")}
         </p>
       </section>
 
@@ -73,7 +78,7 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-semibold">{a.name}</h2>
                   <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium">{ty.label}</span>
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 font-medium">{t(ty.label)}</span>
                     {info && <span className="truncate">{info}</span>}
                     {!a.isActive && <StatusBadge status="inactive" />}
                   </p>
@@ -86,26 +91,26 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
                   <div className="flex items-center gap-2 rounded-xl bg-emerald-500/8 px-2.5 py-2">
                     <ArrowDownLeft className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span className="min-w-0">
-                      <span className="block text-muted-foreground">Money in</span>
+                      <span className="block text-muted-foreground">{t("acc.in")}</span>
                       <Money paise={a.totalInPaise} className="font-semibold" />
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl bg-rose-500/8 px-2.5 py-2">
                     <ArrowUpRight className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
                     <span className="min-w-0">
-                      <span className="block text-muted-foreground">Money out</span>
+                      <span className="block text-muted-foreground">{t("acc.out")}</span>
                       <Money paise={a.totalOutPaise} className="font-semibold" />
                     </span>
                   </div>
                 </div>
                 <p className="mt-2.5 text-xs text-muted-foreground">
-                  Opened {formatDate(a.openingDate)} with <Money paise={a.openingBalancePaise} />
+                  {t("acc.opened", { date: formatDate(a.openingDate) })} <Money paise={a.openingBalancePaise} />
                 </p>
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/60 px-2 py-1.5">
                 <Link href={`/org/${orgId}/transactions?accountId=${a._id}`} className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-primary hover:bg-primary/5">
-                  View transactions <ArrowRight className="size-3.5" />
+                  {t("acc.viewTxn")} <ArrowRight className="size-3.5" />
                 </Link>
                 {manage &&
                   (a.isActive ? (
@@ -116,14 +121,14 @@ export default async function AccountsPage({ params }: PageProps<"/org/[orgId]/a
                       size="sm"
                       variant="ghost"
                       className="text-muted-foreground"
-                      successMessage="Account deactivated"
-                      confirm={{ title: `Deactivate ${a.name}?`, description: "It won't be offered when recording money any more. Its history stays, and you can reactivate it later.", confirmLabel: "Deactivate" }}
+                      successMessage={t("acc.deactivated")}
+                      confirm={{ title: t("acc.deactivateQ", { name: a.name }), description: t("acc.deactivateD"), confirmLabel: t("acc.deactivate") }}
                     >
-                      Deactivate
+                      {t("acc.deactivate")}
                     </ActionButton>
                   ) : (
-                    <ActionButton path={`/orgs/${orgId}/accounts/${a._id}`} method="PATCH" body={{ isActive: true }} size="sm" variant="ghost" successMessage="Account reactivated">
-                      Reactivate
+                    <ActionButton path={`/orgs/${orgId}/accounts/${a._id}`} method="PATCH" body={{ isActive: true }} size="sm" variant="ghost" successMessage={t("acc.reactivated")}>
+                      {t("acc.reactivate")}
                     </ActionButton>
                   ))}
               </div>

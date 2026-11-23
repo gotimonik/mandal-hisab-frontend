@@ -1,22 +1,24 @@
+import type { Key } from "@/i18n/core";
+
 export interface ReportMeta {
   kind: string;
-  title: string;
-  description: string;
+  title: Key;
+  description: Key;
   permission: string;
   filters: ("range" | "asOf" | "groupBy" | "scheme" | "event" | "account" | "method")[];
 }
 
 export const REPORTS: ReportMeta[] = [
-  { kind: "collections", title: "Collections", description: "Money collected by period and category (daily, monthly, quarterly, yearly).", permission: "reports.view", filters: ["range", "groupBy"] },
-  { kind: "hapta", title: "Hapta collection", description: "Due vs collected per scheme, with outstanding and overdue amounts.", permission: "reports.view", filters: ["range", "scheme"] },
-  { kind: "overdue", title: "Pending & overdue installments", description: "Who owes what, how late, with contact numbers.", permission: "reports.view", filters: ["scheme"] },
-  { kind: "donations", title: "Donations", description: "Donations by donor, event and payment method.", permission: "reports.view", filters: ["range", "event", "method"] },
-  { kind: "events", title: "Event-wise", description: "Income and expenses tagged to each event.", permission: "reports.view", filters: ["range", "event"] },
-  { kind: "loans", title: "Loans outstanding", description: "Outstanding principal, interest due and overdue per loan.", permission: "loans.view", filters: [] },
-  { kind: "interest", title: "Interest", description: "Interest charged, received and outstanding, with calculation records.", permission: "reports.sensitive", filters: ["range"] },
-  { kind: "income-expense", title: "Income & expenditure (P&L)", description: "Income and expenses by category with surplus or deficit.", permission: "reports.sensitive", filters: ["range"] },
-  { kind: "cash-flow", title: "Cash flow", description: "Movement of cash and bank balances by activity. Transfers excluded.", permission: "reports.sensitive", filters: ["range"] },
-  { kind: "account-summary", title: "Cash & bank summary", description: "Opening, receipts, payments and closing balance per account.", permission: "reports.sensitive", filters: ["range", "account"] },
-  { kind: "trial-balance", title: "Trial balance", description: "All ledger accounts with debit and credit balances.", permission: "reports.sensitive", filters: ["asOf"] },
-  { kind: "balance-sheet", title: "Balance sheet", description: "Assets, liabilities and funds as of a date.", permission: "reports.sensitive", filters: ["asOf"] },
+  { kind: "collections", title: "rep.k.collections.title", description: "rep.k.collections.desc", permission: "reports.view", filters: ["range", "groupBy"] },
+  { kind: "hapta", title: "rep.k.hapta.title", description: "rep.k.hapta.desc", permission: "reports.view", filters: ["range", "scheme"] },
+  { kind: "overdue", title: "rep.k.overdue.title", description: "rep.k.overdue.desc", permission: "reports.view", filters: ["scheme"] },
+  { kind: "donations", title: "rep.k.donations.title", description: "rep.k.donations.desc", permission: "reports.view", filters: ["range", "event", "method"] },
+  { kind: "events", title: "rep.k.events.title", description: "rep.k.events.desc", permission: "reports.view", filters: ["range", "event"] },
+  { kind: "loans", title: "rep.k.loans.title", description: "rep.k.loans.desc", permission: "loans.view", filters: [] },
+  { kind: "interest", title: "rep.k.interest.title", description: "rep.k.interest.desc", permission: "reports.sensitive", filters: ["range"] },
+  { kind: "income-expense", title: "rep.k.incomeExpense.title", description: "rep.k.incomeExpense.desc", permission: "reports.sensitive", filters: ["range"] },
+  { kind: "cash-flow", title: "rep.k.cashFlow.title", description: "rep.k.cashFlow.desc", permission: "reports.sensitive", filters: ["range"] },
+  { kind: "account-summary", title: "rep.k.accountSummary.title", description: "rep.k.accountSummary.desc", permission: "reports.sensitive", filters: ["range", "account"] },
+  { kind: "trial-balance", title: "rep.k.trialBalance.title", description: "rep.k.trialBalance.desc", permission: "reports.sensitive", filters: ["asOf"] },
+  { kind: "balance-sheet", title: "rep.k.balanceSheet.title", description: "rep.k.balanceSheet.desc", permission: "reports.sensitive", filters: ["asOf"] },
 ];

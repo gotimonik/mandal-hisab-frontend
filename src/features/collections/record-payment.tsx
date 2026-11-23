@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
@@ -81,6 +82,7 @@ export function RecordPaymentDialog({
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
   const router = useRouter();
+  const t = useT();
   return (
     <>
       <Button onClick={() => setOpen(true)} size={trigger?.size} variant={trigger?.variant} className={trigger?.className} aria-label={trigger?.ariaLabel}>
@@ -88,7 +90,7 @@ export function RecordPaymentDialog({
           trigger.label
         ) : (
           <>
-            <HandCoins /> Record collection
+            <HandCoins /> {t("rp.trigger")}
           </>
         )}
       </Button>
@@ -105,8 +107,8 @@ export function RecordPaymentDialog({
               <HandCoins />
             </IconChip>
             <div className="flex min-w-0 flex-col gap-1">
-              <DialogTitle>Record a collection</DialogTitle>
-              <DialogDescription>Hapta payments are applied to the member&apos;s oldest dues first (late fee, then amount).</DialogDescription>
+              <DialogTitle>{t("rp.title")}</DialogTitle>
+              <DialogDescription>{t("rp.desc")}</DialogDescription>
             </div>
           </DialogHeader>
           {open && <RecordForm members={members} accounts={accounts} schemes={schemes} methods={methods} defaultMemberId={defaultMemberId} defaultSchemeId={defaultSchemeId} defaultAmountPaise={defaultAmountPaise} onDone={() => setOpen(false)} />}
@@ -117,7 +119,7 @@ export function RecordPaymentDialog({
 }
 
 function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defaultSchemeId, defaultAmountPaise, onDone }: { members: (Opt & { membershipNumber: string })[]; accounts: Opt[]; schemes: Opt[]; methods: string[]; defaultMemberId?: string; defaultSchemeId?: string; defaultAmountPaise?: number; onDone: () => void }) {
-  const money = useMoney();
+  const tr = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const [key, setKey] = useState(() => newIdempotencyKey("pay"));
   const [search, setSearch] = useState("");
@@ -159,7 +161,7 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
             body: { ...v, memberId: v.memberId || null, payerName: v.payerName || undefined, schemeId: v.schemeId || null, eventName: v.eventName || undefined, reference: v.reference || undefined, notes: v.notes || undefined, idempotencyKey: key },
           },
           {
-            success: "Collection recorded",
+            success: tr("rp.saved"),
             onSuccess: () => {
               setKey(newIdempotencyKey("pay"));
               onDone();
@@ -171,25 +173,25 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
       <div className="sm:col-span-2">
         <FormError message={error} />
       </div>
-      <Field label="Type" className="sm:col-span-2">
+      <Field label={tr("ap.type")} className="sm:col-span-2">
         <input type="hidden" id="rp-kind" {...form.register("kind")} />
         <ChoicePills
-          label="Type"
+          label={tr("ap.type")}
           value={kind}
           onChange={(v) => form.setValue("kind", v, { shouldValidate: form.formState.isSubmitted })}
           options={[
-            { value: "hapta", label: "Hapta", icon: <CalendarDays /> },
-            { value: "membership_fee", label: "Membership fee" },
-            { value: "event", label: "Event" },
-            { value: "other_income", label: "Other income" },
+            { value: "hapta", label: tr("ap.col.kind.hapta"), icon: <CalendarDays /> },
+            { value: "membership_fee", label: tr("ap.col.kind.membership_fee") },
+            { value: "event", label: tr("ap.col.kind.event") },
+            { value: "other_income", label: tr("ap.col.kind.other_income") },
           ]}
         />
       </Field>
-      <Field label={kind === "hapta" ? "Member" : "Member (optional)"} htmlFor="rp-member" error={e.memberId?.message} className="sm:col-span-2">
+      <Field label={kind === "hapta" ? tr("ap.member") : tr("rp.memberOpt")} htmlFor="rp-member" error={e.memberId?.message} className="sm:col-span-2">
         <div className="flex flex-col gap-1.5 sm:flex-row">
-          <Input placeholder="Search…" value={search} onChange={(ev) => setSearch(ev.target.value)} aria-label="Search members" className="sm:w-40" />
+          <Input placeholder={tr("rp.search")} value={search} onChange={(ev) => setSearch(ev.target.value)} aria-label={tr("rp.searchMembers")} className="sm:w-40" />
           <NativeSelect id="rp-member" {...form.register("memberId")}>
-            <option value="">{kind === "hapta" ? "Select member" : "— none —"}</option>
+            <option value="">{kind === "hapta" ? tr("rp.select") : tr("rp.none")}</option>
             {shown.map((m) => (
               <option key={m._id} value={m._id}>
                 {m.name} ({m.membershipNumber})
@@ -199,26 +201,26 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
         </div>
       </Field>
       {kind !== "hapta" && !memberId && (
-        <Field label="Payer name" htmlFor="rp-payer" error={e.payerName?.message} className="sm:col-span-2">
+        <Field label={tr("rp.payerName")} htmlFor="rp-payer" error={e.payerName?.message} className="sm:col-span-2">
           <Input id="rp-payer" {...form.register("payerName")} />
         </Field>
       )}
-      <Field label={`Amount (${money.symbol})`} htmlFor="rp-amount" error={e.amount?.message} className="sm:col-span-2">
+      <Field label={tr("rp.amount")} htmlFor="rp-amount" error={e.amount?.message} className="sm:col-span-2">
         <AmountInput id="rp-amount" autoFocus={!isTouchDevice()} {...form.register("amount")} />
       </Field>
       {kind === "hapta" && previewKey && (
         <div className="rounded-2xl bg-emerald-500/10 p-3 text-sm sm:col-span-2" aria-live="polite">
-          <p className="mb-1 font-semibold text-emerald-800 dark:text-emerald-200">Will be applied to</p>
-          {previewing && <p className="text-muted-foreground">Calculating…</p>}
+          <p className="mb-1 font-semibold text-emerald-800 dark:text-emerald-200">{tr("rp.applied")}</p>
+          {previewing && <p className="text-muted-foreground">{tr("rp.calc")}</p>}
           {shownPreview && "error" in shownPreview && <p className="text-destructive">{shownPreview.error}</p>}
-          {shownPreview && "allocs" in shownPreview && shownPreview.allocs.length === 0 && <p className="text-muted-foreground">No open installments for this member.</p>}
+          {shownPreview && "allocs" in shownPreview && shownPreview.allocs.length === 0 && <p className="text-muted-foreground">{tr("rp.noOpen")}</p>}
           {shownPreview && "allocs" in shownPreview && <AllocList allocs={shownPreview.allocs} />}
         </div>
       )}
       {kind === "hapta" && schemes.length > 1 && (
-        <Field label="Scheme (optional)" htmlFor="rp-scheme" hint="Limit allocation to one scheme." className="sm:col-span-2">
+        <Field label={tr("rp.schemeOpt")} htmlFor="rp-scheme" hint={tr("rp.schemeHint")} className="sm:col-span-2">
           <NativeSelect id="rp-scheme" {...form.register("schemeId")}>
-            <option value="">Any scheme</option>
+            <option value="">{tr("rp.anyScheme")}</option>
             {schemes.map((s) => (
               <option key={s._id} value={s._id}>
                 {s.name}
@@ -228,16 +230,16 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
         </Field>
       )}
       {kind === "event" && (
-        <Field label="Event" htmlFor="rp-event" className="sm:col-span-2">
-          <Input id="rp-event" placeholder="e.g. Ganeshotsav 2026" {...form.register("eventName")} />
+        <Field label={tr("ap.event")} htmlFor="rp-event" className="sm:col-span-2">
+          <Input id="rp-event" placeholder={tr("rp.eventPh")} {...form.register("eventName")} />
         </Field>
       )}
-      <Field label="Date" htmlFor="rp-date" error={e.date?.message}>
+      <Field label={tr("ap.date")} htmlFor="rp-date" error={e.date?.message}>
         <Input id="rp-date" type="date" {...form.register("date")} />
       </Field>
       <MethodController control={form.control} methods={methods} />
-      <MoreOptions bare icon={<SlidersHorizontal />} title="Account, reference & notes" description={accountName(accounts, accountId)} defaultOpen={!!e.accountId} className="sm:col-span-2">
-        <Field label="Received into" htmlFor="rp-account" error={e.accountId?.message}>
+      <MoreOptions bare icon={<SlidersHorizontal />} title={tr("rp.more")} description={accountName(accounts, accountId, (n) => tr("rp.into", { name: n }))} defaultOpen={!!e.accountId} className="sm:col-span-2">
+        <Field label={tr("ap.receivedInto")} htmlFor="rp-account" error={e.accountId?.message}>
           <NativeSelect id="rp-account" {...form.register("accountId")}>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
@@ -246,37 +248,38 @@ function RecordForm({ members, accounts, schemes, methods, defaultMemberId, defa
             ))}
           </NativeSelect>
         </Field>
-        <Field label="Reference (UPI transaction ID)" htmlFor="rp-ref">
+        <Field label={tr("rp.ref")} htmlFor="rp-ref">
           <Input id="rp-ref" {...form.register("reference")} />
         </Field>
-        <Field label="Notes" htmlFor="rp-notes" className="sm:col-span-2">
+        <Field label={tr("rp.notes")} htmlFor="rp-notes" className="sm:col-span-2">
           <Textarea id="rp-notes" rows={2} {...form.register("notes")} />
         </Field>
       </MoreOptions>
       <SubmitButton pending={pending} icon={<CheckCircle2 />} className="sm:col-span-2">
-        Save collection
+        {tr("rp.save")}
       </SubmitButton>
     </form>
   );
 }
 
-function accountName(accounts: Opt[], id: string | undefined) {
+function accountName(accounts: Opt[], id: string | undefined, into: (name: string) => string) {
   const a = accounts.find((x) => x._id === id);
-  return a ? `Into ${a.name}` : undefined;
+  return a ? into(a.name) : undefined;
 }
 
 function AllocList({ allocs }: { allocs: Alloc[] }) {
   const money = useMoney();
+  const t = useT();
   return (
     <ul className="flex flex-col gap-0.5">
       {allocs.map((a) => (
         <li key={a.installmentId} className="flex justify-between gap-2">
           <span className="min-w-0 truncate">
-            {a.schemeName} · {a.periodLabel} <span className="text-muted-foreground">(due {formatDate(a.dueDate)})</span>
+            {a.schemeName} · {a.periodLabel} <span className="text-muted-foreground">{t("rp.due", { date: formatDate(a.dueDate) })}</span>
           </span>
           <span className="tabular-nums">
             {money.fmt(a.amountPaise)}
-            {a.penaltyPaise ? ` + ${money.fmt(a.penaltyPaise)} late fee` : ""}
+            {a.penaltyPaise ? t("rp.lateFee", { amount: money.fmt(a.penaltyPaise) }) : ""}
           </span>
         </li>
       ))}

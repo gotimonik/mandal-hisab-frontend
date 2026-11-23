@@ -8,7 +8,8 @@ import { Money } from "@/components/app/money";
 import { FormNote } from "@/components/app/form-bits";
 import { buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
-import { monthLabelYM } from "@/lib/months";
+import { getT } from "@/i18n/server";
+import { monthName } from "@/i18n/core";
 import { OpeningImportForm, type ImportStatus } from "@/features/opening-import/opening-import-form";
 import { ActionButton } from "@/components/app/action-button";
 
@@ -16,12 +17,13 @@ export const metadata = { title: "Bring in an existing Mandal" };
 
 export default async function OpeningImportPage({ params }: PageProps<"/org/[orgId]/settings/import">) {
   const { orgId } = await params;
+  const { t, lang } = await getT();
   const org = await getOrg(orgId);
   if (!can(org, "org.settings.manage")) {
     return (
       <div className="max-w-3xl">
-        <PageHeader title="Bring in an existing Mandal" />
-        <FormNote tone="warn">Only the Mandal&apos;s admin can bring in the old hisab.</FormNote>
+        <PageHeader title={t("close.imp.title")} />
+        <FormNote tone="warn">{t("close.imp.onlyAdmin")}</FormNote>
       </div>
     );
   }
@@ -29,30 +31,30 @@ export default async function OpeningImportPage({ params }: PageProps<"/org/[org
   if (done) {
     return (
       <div className="max-w-3xl">
-        <PageHeader title="Old hisab brought in" description={`Paper books closed on ${formatDate(done.cutoverDate)} · brought in on ${formatDate(done.at)}`} />
+        <PageHeader title={t("close.imp.doneTitle")} description={t("close.imp.doneDesc", { cutover: formatDate(done.cutoverDate), at: formatDate(done.at) })} />
         <SummaryBand
           tone="green"
           icon={<CheckCircle2 />}
-          label="Members' savings brought in"
+          label={t("close.imp.savings")}
           value={<Money paise={done.savingsPaise} />}
-          sub={`${done.members} members · hapta in the app from ${monthLabelYM(done.haptaStartMonth)}`}
+          sub={t("close.imp.sub", { n: done.members, month: monthName(lang, done.haptaStartMonth) })}
           stats={[
-            { label: "Cash in hand", value: <Money paise={done.cashPaise} /> },
-            { label: "Upad still out", value: <Money paise={done.upadPaise} /> },
-            { label: "Mandal's own money", value: <Money paise={done.mandalOwnPaise} /> },
+            { label: t("close.imp.cash"), value: <Money paise={done.cashPaise} /> },
+            { label: t("close.upadOut"), value: <Money paise={done.upadPaise} /> },
+            { label: t("close.mandalOwn"), value: <Money paise={done.mandalOwnPaise} /> },
           ]}
         />
-        {done.note && <p className="mb-4 text-sm text-muted-foreground">Note: {done.note}</p>}
+        {done.note && <p className="mb-4 text-sm text-muted-foreground">{t("close.imp.note", { note: done.note })}</p>}
         {done.interestDuePaise > 0 && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-500/8 p-4 text-sm ring-1 ring-amber-500/20">
             <p className="min-w-0 flex-1">
               <b>
-                Unpaid upad interest brought in: <Money paise={done.interestDuePaise} />
+                {t("close.imp.interest")} <Money paise={done.interestDuePaise} />
               </b>
               <span className="block text-xs text-muted-foreground">
                 {done.interestInSavings
-                  ? "Marked as already in members' savings: when it is collected it only adds to the cash."
-                  : "Shared among members' savings when it is collected. If the paper savings already include it, mark it so it isn't added twice."}
+                  ? t("close.imp.inSavings")
+                  : t("close.imp.shared")}
               </span>
             </p>
             {org.status === "active" && (
@@ -60,32 +62,32 @@ export default async function OpeningImportPage({ params }: PageProps<"/org/[org
                 path={`/orgs/${orgId}/opening-import/interest-in-savings`}
                 body={{ inSavings: !done.interestInSavings }}
                 variant={done.interestInSavings ? "outline" : "default"}
-                successMessage={done.interestInSavings ? "It will be shared among members when collected" : "Marked: it will only add to the cash when collected"}
+                successMessage={done.interestInSavings ? t("close.imp.okShared") : t("close.imp.okCash")}
                 confirm={{
-                  title: done.interestInSavings ? "Share this interest among members when it's collected?" : "Is this interest already in members' savings?",
+                  title: done.interestInSavings ? t("close.imp.qShare") : t("close.imp.qIn"),
                   description: done.interestInSavings
-                    ? "Use this only if the paper savings did NOT include the unpaid interest."
-                    : "Then collecting it adds to the cash only, and members' savings stay as they are. This can only be changed before any of it is collected.",
-                  confirmLabel: done.interestInSavings ? "Share when collected" : "Yes, already in savings",
+                    ? t("close.imp.dShare")
+                    : t("close.imp.dIn"),
+                  confirmLabel: done.interestInSavings ? t("close.imp.cShare") : t("close.imp.cIn"),
                 }}
               >
-                {done.interestInSavings ? "Undo" : "Already in members' savings"}
+                {done.interestInSavings ? t("close.imp.undo") : t("close.imp.already")}
               </ActionButton>
             )}
           </div>
         )}
         <FormNote>
-          Keep the old registers (or photos of them) safe — they are the record of everything before {formatDate(done.cutoverDate)}. A wrong figure for one member is fixed from their page with an adjustment; a wrong upad is cancelled on the upad screen and given again.
+          {t("close.imp.keep", { date: formatDate(done.cutoverDate) })}
         </FormNote>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link href={`/org/${orgId}/members`} className={buttonVariants({ variant: "outline" })}>
-            <Users /> Members
+            <Users /> {t("close.imp.members")}
           </Link>
           <Link href={`/org/${orgId}/fund-loans`} className={buttonVariants({ variant: "outline" })}>
-            <HandCoins /> Upad
+            <HandCoins /> {t("close.imp.upad")}
           </Link>
           <Link href={`/org/${orgId}/monthly`} className={buttonVariants({ variant: "default" })}>
-            Collect this month&apos;s hapta
+            {t("close.imp.collect")}
           </Link>
         </div>
       </div>
@@ -95,7 +97,7 @@ export default async function OpeningImportPage({ params }: PageProps<"/org/[org
   const status = await api<ImportStatus>(`/orgs/${orgId}/opening-import`);
   return (
     <div className="max-w-3xl">
-      <PageHeader title="Bring in an existing Mandal" description="For a Mandal that has been running on paper. Bring in where things stand today; old months are not typed in again." />
+      <PageHeader title={t("close.imp.title")} description={t("close.imp.desc")} />
       {!status.canImport ? (
         <div className="flex flex-col gap-2">
           {status.blockers.map((b, i) => (
@@ -108,16 +110,16 @@ export default async function OpeningImportPage({ params }: PageProps<"/org/[org
         <>
           <div className="mb-4 rounded-2xl bg-card p-4 text-sm shadow-card ring-1 ring-foreground/[0.06]">
             <p className="mb-2 flex items-center gap-2 font-semibold">
-              <History className="size-4" /> How it works
+              <History className="size-4" /> {t("close.imp.how")}
             </p>
             <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
-              <li>Close the registers on one date and write each member&apos;s savings, shares and any upad still owed (with unpaid interest).</li>
-              <li>Get the members to agree the sheet at a meeting. The tally below must make sense.</li>
-              <li>Enter it here (or paste it from Excel), check, and bring it in — once.</li>
-              <li>From the next month on, collect hapta, upad and interest in the app.</li>
+              <li>{t("close.imp.h1")}</li>
+              <li>{t("close.imp.h2")}</li>
+              <li>{t("close.imp.h3")}</li>
+              <li>{t("close.imp.h4")}</li>
             </ol>
             <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Lock className="size-3.5" /> Your typing is saved on this device as you go, so you can finish it later.
+              <Lock className="size-3.5" /> {t("close.imp.saved")}
             </p>
           </div>
           <OpeningImportForm orgId={orgId} status={status} />

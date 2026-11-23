@@ -20,6 +20,9 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ExpenseDialog, ReimburseDialog } from "@/features/expenses/expense-form";
 
+import { getT } from "@/i18n/server";
+import type { Key } from "@/i18n/core";
+
 export const metadata = { title: "Expenses" };
 
 interface Expense {
@@ -40,16 +43,11 @@ interface Expense {
   submittedByName: string | null;
 }
 
-const STATUSES = [
-  ["", "All"],
-  ["pending", "Pending approval"],
-  ["approved", "Approved"],
-  ["rejected", "Rejected"],
-  ["reversed", "Reversed"],
-] as const;
+const STATUSES = ["", "pending", "approved", "rejected", "reversed"] as const;
 
 export default async function ExpensesPage({ params, searchParams }: PageProps<"/org/[orgId]/expenses">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const f = { status: str("status"), categoryKey: str("categoryKey"), from: str("from"), to: str("to"), eventName: str("eventName") };
@@ -62,7 +60,7 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
   const href = (over: Record<string, string>) => `/org/${orgId}/expenses${qs({ ...f, ...over })}`;
 
   const byLine = (x: Expense) =>
-    [`by ${x.submittedByName ?? "—"}`, x.eventName, x.paidBy === "out_of_pocket" ? `out of pocket (${x.reimbursement?.status ?? "pending"})` : ""].filter(Boolean).join(" · ");
+    [t("exp.by", { name: x.submittedByName ?? "—" }), x.eventName, x.paidBy === "out_of_pocket" ? t("exp.oop", { status: t(`status.${x.reimbursement?.status ?? "pending"}` as Key) }) : ""].filter(Boolean).join(" · ");
   const attachments = (x: Expense) =>
     x.attachments?.map((a) => (
       <a key={a.url} href={a.url} target="_blank" rel="noreferrer" className="mr-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
@@ -73,18 +71,18 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
     <>
       {x.status === "pending" && canApprove && (
         <>
-          <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/reject`} size="xs" variant="ghost" successMessage="Expense rejected" confirm={{ title: "Reject this expense?", reason: "required", destructive: true, confirmLabel: "Reject" }}>
-            Reject
+          <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/reject`} size="xs" variant="ghost" successMessage={t("exp.rejected")} confirm={{ title: t("exp.rejectQ"), reason: "required", destructive: true, confirmLabel: t("ap.reject") }}>
+            {t("ap.reject")}
           </ActionButton>
-          <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/approve`} size="xs" variant="default" successMessage="Expense approved" confirm={{ title: "Approve this expense?", description: "It will be posted to the ledger and reduce the account balance." }}>
-            Approve
+          <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/approve`} size="xs" variant="default" successMessage={t("exp.approved")} confirm={{ title: t("exp.approveQ"), description: t("exp.approveD") }}>
+            {t("ap.approve")}
           </ActionButton>
         </>
       )}
       {x.status === "approved" && x.paidBy === "out_of_pocket" && x.reimbursement?.status === "pending" && canApprove && <ReimburseDialog expenseId={x._id} accounts={active} payee={x.payeeName} amountPaise={x.amountPaise} />}
       {x.status === "approved" && can(org, "transactions.adjust") && x.reimbursement?.status !== "reimbursed" && (
-        <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/reverse`} size="xs" variant="ghost" successMessage="Expense reversed" confirm={{ title: "Reverse this expense?", description: "A reversal entry is posted; the original stays in the ledger.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-          Reverse
+        <ActionButton path={`/orgs/${orgId}/expenses/${x._id}/reverse`} size="xs" variant="ghost" successMessage={t("exp.reversed")} confirm={{ title: t("exp.reverseQ"), description: t("exp.reverseD"), reason: "required", destructive: true, confirmLabel: t("ap.reverse") }}>
+          {t("ap.reverse")}
         </ActionButton>
       )}
     </>
@@ -93,8 +91,8 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
   return (
     <>
       <PageHeader
-        title="Expenses"
-        description="Money spent by the Mandal. Pending expenses are not counted until approved."
+        title={t("exp.title")}
+        description={t("exp.desc")}
         actions={
           can(org, "expenses.submit") && org.status === "active" ? (
             <ExpenseDialog accounts={active} methods={org.settings.paymentMethods} categories={cats.filter((c) => c.isActive)} thresholdPaise={org.settings.expenseApprovalThresholdPaise} />
@@ -104,16 +102,16 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
       <SummaryBand
         tone="warm"
         icon={<Wallet />}
-        label="Approved expenses in view"
+        label={t("exp.inView")}
         value={<Money paise={data.approvedTotalPaise} />}
-        sub={`${data.total} record${data.total === 1 ? "" : "s"}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : "start"} – ${f.to ? formatDate(f.to) : "today"}` : ""}`}
+        sub={`${data.total === 1 ? t("ap.record1") : t("ap.records", { n: data.total })}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : t("ap.start")} – ${f.to ? formatDate(f.to) : t("ap.today")}` : ""}`}
       />
-      <ChipLinks label="Status" current={f.status} items={STATUSES.map(([k, l]) => ({ key: k, label: l, href: href({ status: k, page: "" }) }))} />
+      <ChipLinks label={t("ap.status")} current={f.status} items={STATUSES.map((k) => ({ key: k, label: k ? t(`exp.st.${k}` as Key) : t("ap.all"), href: href({ status: k, page: "" }) }))} />
       <FilterBar resetHref={`/org/${orgId}/expenses`}>
         {f.status && <input type="hidden" name="status" value={f.status} />}
-        <FilterField label="Category">
+        <FilterField label={t("ap.category")}>
           <NativeSelect name="categoryKey" defaultValue={f.categoryKey}>
-            <option value="">All</option>
+            <option value="">{t("ap.all")}</option>
             {cats.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.name}
@@ -121,18 +119,18 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="From">
+        <FilterField label={t("ap.from")}>
           <Input type="date" name="from" defaultValue={f.from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={t("ap.to")}>
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
       </FilterBar>
       {data.items.length === 0 ? (
-        <EmptyState icon={<Receipt />} title="No expenses found" description="Try another status, category or date range." />
+        <EmptyState icon={<Receipt />} title={t("exp.none")} description={t("exp.noneD")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Expenses">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("exp.title")}>
             {data.items.map((x) => (
               <li key={x._id} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", x.status === "pending" && "ring-2 ring-amber-400/40", (x.status === "rejected" || x.status === "reversed") && "opacity-70")}>
                 <div className="flex items-start gap-3">
@@ -163,10 +161,10 @@ export default async function ExpensesPage({ params, searchParams }: PageProps<"
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Payee / description</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("exp.payeeDesc")}</TableHead>
+                    <TableHead>{t("ap.category")}</TableHead>
+                    <TableHead className="text-right">{t("ap.amount")}</TableHead>
+                    <TableHead>{t("ap.status")}</TableHead>
                     <TableHead className="text-right" />
                   </TableRow>
                 </TableHeader>

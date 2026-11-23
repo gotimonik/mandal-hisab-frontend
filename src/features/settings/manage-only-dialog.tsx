@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface ManageOnlyStatus {
 
 function SwitchForm({ orgId }: { orgId: string }) {
   const router = useRouter();
+  const t = useT();
   const close = useDialogClose();
   const [st, setSt] = useState<ManageOnlyStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ function SwitchForm({ orgId }: { orgId: string }) {
   if (!st)
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> {error ?? "Loading…"}
+        <Loader2 className="size-4 animate-spin" /> {error ?? t("setd.loading")}
       </div>
     );
 
@@ -46,7 +48,7 @@ function SwitchForm({ orgId }: { orgId: string }) {
       setError(null);
       const r = await apiMutate<{ ok: boolean }>({ path: `/orgs/${orgId}/me/manage-only`, body: { reason: reason.trim() || undefined } });
       if (!r.ok) return setError(r.error);
-      toast.success("Done — you now only manage this Mandal");
+      toast.success(t("setd.mo.done"));
       close();
       router.refresh();
     });
@@ -54,14 +56,14 @@ function SwitchForm({ orgId }: { orgId: string }) {
   return (
     <div className="flex flex-col gap-3 text-sm">
       <FormNote>
-        <b>You stay {st.role === "admin" ? "an admin" : "a manager"}</b> and can do everything as before, and you still show under Users. <b>You won&apos;t be a member:</b> not in the members list, no monthly hapta, not counted in the totals or the share-out, and no &quot;My account&quot; page.
+        <b>{st.role === "admin" ? t("setd.mo.stayAdmin") : t("setd.mo.stayManager")}</b> {t("setd.mo.stayRest")} <b>{t("setd.mo.notMember")}</b> {t("setd.mo.notMemberRest")}
       </FormNote>
       {st.member && st.action === "delete" && st.canSwitch && (
         <FormNote tone="warn">
-          Your member record <b>{st.member.name} ({st.member.membershipNumber})</b> has no money in it, so it is deleted with its unpaid hapta months. You can add yourself back as a member later.
+          {t("setd.mo.deleteRec", { rec: `${st.member.name} (${st.member.membershipNumber})` })}
         </FormNote>
       )}
-      {st.member && st.action === "unlink" && <FormNote>You have left the Mandal as a member: {st.member.name} ({st.member.membershipNumber}) stays in the records as a past member, without your login.</FormNote>}
+      {st.member && st.action === "unlink" && <FormNote>{t("setd.mo.unlinked", { rec: `${st.member.name} (${st.member.membershipNumber})` })}</FormNote>}
       {st.blockers.map((b, i) => (
         <FormNote key={i} tone="warn">
           {b}
@@ -69,12 +71,12 @@ function SwitchForm({ orgId }: { orgId: string }) {
       ))}
       {st.canSwitch && (
         <>
-          <Field label="Reason (optional)" htmlFor="mo-reason" hint="Kept in the activity log.">
-            <Input id="mo-reason" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. I only keep the books" />
+          <Field label={t("setd.reasonOpt")} htmlFor="mo-reason" hint={t("setd.keptInLog")}>
+            <Input id="mo-reason" value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder={t("setd.mo.reasonPh")} />
           </Field>
           <FormError message={error} />
           <Button size="lg" disabled={pending} onClick={run}>
-            {pending ? <Loader2 className="animate-spin" /> : <UserMinus />} Only manage — remove me from members
+            {pending ? <Loader2 className="animate-spin" /> : <UserMinus />} {t("setd.mo.button")}
           </Button>
         </>
       )}
@@ -85,8 +87,9 @@ function SwitchForm({ orgId }: { orgId: string }) {
 
 /** For an admin / manager who is also a member: stay on only to manage the Mandal. */
 export function ManageOnlyDialog({ orgId }: { orgId: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><UserMinus /> Only manage this Mandal…</>} triggerVariant="outline" title="Only manage this Mandal" icon={<UserMinus />} tone="amber">
+    <FormDialog trigger={<><UserMinus /> {t("setd.mo.trigger")}</>} triggerVariant="outline" title={t("setd.mo.title")} icon={<UserMinus />} tone="amber">
       <SwitchForm orgId={orgId} />
     </FormDialog>
   );
@@ -94,6 +97,7 @@ export function ManageOnlyDialog({ orgId }: { orgId: string }) {
 
 function AddBackForm({ orgId, hasMonthlyHapta, thisMonth }: { orgId: string; hasMonthlyHapta: boolean; thisMonth: string }) {
   const router = useRouter();
+  const t = useT();
   const close = useDialogClose();
   const [month, setMonth] = useState(thisMonth);
   const [error, setError] = useState<string | null>(null);
@@ -103,21 +107,21 @@ function AddBackForm({ orgId, hasMonthlyHapta, thisMonth }: { orgId: string; has
       setError(null);
       const r = await apiMutate<{ ok: boolean }>({ path: `/orgs/${orgId}/me/member`, body: { haptaStartMonth: hasMonthlyHapta ? month : undefined } });
       if (!r.ok) return setError(r.error);
-      toast.success("You are a member of the Mandal again");
+      toast.success(t("setd.ab.done"));
       close();
       router.refresh();
     });
   return (
     <div className="flex flex-col gap-3 text-sm">
-      <FormNote>You get a new member record{hasMonthlyHapta ? " and pay the monthly hapta from the month you pick" : ""}, like any other member.</FormNote>
+      <FormNote>{hasMonthlyHapta ? t("setd.ab.noteHapta") : t("setd.ab.note")}</FormNote>
       {hasMonthlyHapta && (
-        <Field label="Hapta from month" htmlFor="mo-month">
+        <Field label={t("setd.ab.month")} htmlFor="mo-month">
           <Input id="mo-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
         </Field>
       )}
       <FormError message={error} />
       <Button size="lg" disabled={pending} onClick={run}>
-        {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} Add me as a member
+        {pending ? <Loader2 className="animate-spin" /> : <UserPlus />} {t("setd.ab.button")}
       </Button>
     </div>
   );
@@ -125,8 +129,9 @@ function AddBackForm({ orgId, hasMonthlyHapta, thisMonth }: { orgId: string; has
 
 /** Undo: the admin who only manages becomes a member again. */
 export function AddMeAsMemberDialog(props: { orgId: string; hasMonthlyHapta: boolean; thisMonth: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><UserPlus /> Add me as a member…</>} triggerVariant="outline" title="Become a member again" icon={<UserPlus />} tone="emerald">
+    <FormDialog trigger={<><UserPlus /> {t("setd.ab.trigger")}</>} triggerVariant="outline" title={t("setd.ab.title")} icon={<UserPlus />} tone="emerald">
       <AddBackForm {...props} />
     </FormDialog>
   );

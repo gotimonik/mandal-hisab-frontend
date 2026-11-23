@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/client";
+import type { T } from "@/i18n/core";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -36,10 +38,11 @@ function Row({ label, hint, children, strong }: { label: ReactNode; hint?: React
 }
 
 function AccountField({ id, accounts, value, onChange, label }: { id: string; accounts: Account[]; value: string; onChange: (v: string) => void; label: string }) {
+  const t = useT();
   const account = accounts.find((a) => a._id === value);
   if (accounts.length <= 1) return null;
   return (
-    <Field label={label} htmlFor={id} hint={account ? <>Holds <Money paise={account.balancePaise} /></> : undefined}>
+    <Field label={label} htmlFor={id} hint={account ? <>{t("mship.holds")} <Money paise={account.balancePaise} /></> : undefined}>
       <NativeSelect id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         {accounts.map((a) => (
           <option key={a._id} value={a._id}>
@@ -51,27 +54,28 @@ function AccountField({ id, accounts, value, onChange, label }: { id: string; ac
   );
 }
 
-const shareWord = (n: number) => `${n} share${n === 1 ? "" : "s"}`;
+const shareWord = (t: T, n: number) => (n === 1 ? t("mship.sharesOne") : t("mship.sharesN", { n }));
 
 /* ------------------------------------------------------------------ joining */
 
 function JoiningBreakdown({ q }: { q: JoiningQuote }) {
   const money = useMoney();
+  const t = useT();
   return (
     <div className="flex flex-col gap-2 rounded-2xl bg-muted/50 p-3">
-      <Row label="Price of one share" hint={`${money.fmt(q.perShareSavingsPaise)} hapta savings + ${money.fmt(q.perShareMandalPaise)} Mandal's own money`}>
+      <Row label={t("mship.price")} hint={t("mship.priceHint", { savings: money.fmt(q.perShareSavingsPaise), own: money.fmt(q.perShareMandalPaise) })}>
         <Money paise={q.perSharePaise} className="font-semibold" />
       </Row>
-      <Row label={`× ${shareWord(q.shares)}`}>
+      <Row label={`× ${shareWord(t, q.shares)}`}>
         <span />
       </Row>
-      <Row label="Goes into their savings">
+      <Row label={t("mship.intoSavings")}>
         <Money paise={q.savingsPaise} />
       </Row>
-      <Row label="Goes into the Mandal's own money">
+      <Row label={t("mship.intoOwn")}>
         <Money paise={q.totalPaise - q.savingsPaise} />
       </Row>
-      <Row label="Joining amount" strong>
+      <Row label={t("mship.joining")} strong>
         <Money paise={q.totalPaise} />
       </Row>
     </div>
@@ -80,6 +84,7 @@ function JoiningBreakdown({ q }: { q: JoiningQuote }) {
 
 function CollectJoiningForm({ memberId, quote, accounts }: { memberId: string; quote: JoiningQuote; accounts: Account[] }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const router = useRouter();
   const close = useDialogClose();
   const [date, setDate] = useState(todayISO());
@@ -96,7 +101,7 @@ function CollectJoiningForm({ memberId, quote, accounts }: { memberId: string; q
         body: { date, note: note || undefined, accountId: accountId || undefined, expectedTotalPaise: quote.totalPaise, idempotencyKey: key },
       });
       if (!res.ok) return setError(res.error);
-      toast.success("Joining amount received — they're now a full member");
+      toast.success(t("mship.joinDone"));
       close();
       router.refresh();
     });
@@ -112,20 +117,20 @@ function CollectJoiningForm({ memberId, quote, accounts }: { memberId: string; q
       <FormError message={error} />
       <JoiningBreakdown q={quote} />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Field label="Date received" htmlFor="jn-date">
+        <Field label={t("mship.dateReceived")} htmlFor="jn-date">
           <Input id="jn-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <AccountField id="jn-acc" label="Received into" accounts={accounts} value={accountId} onChange={setAccountId} />
+        <AccountField id="jn-acc" label={t("mship.receivedInto")} accounts={accounts} value={accountId} onChange={setAccountId} />
       </div>
       <PaidInCash />
-      <Field label="Note (optional)" htmlFor="jn-note">
+      <Field label={t("mship.noteOpt")} htmlFor="jn-note">
         <Input id="jn-note" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} />
       </Field>
       <FormNote>
-        After this, they stand exactly where an existing member does: the same savings per share and the same part of the Mandal&apos;s own money when it closes.
+        {t("mship.after")}
       </FormNote>
       <SubmitButton pending={pending} icon={<HandCoins />}>
-        Receive <Money paise={quote.totalPaise} />
+        {t("mship.receive")} <Money paise={quote.totalPaise} />
       </SubmitButton>
     </form>
   );
@@ -133,6 +138,7 @@ function CollectJoiningForm({ memberId, quote, accounts }: { memberId: string; q
 
 function WaiveJoiningForm({ memberId }: { memberId: string }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const router = useRouter();
   const close = useDialogClose();
   const [reason, setReason] = useState("");
@@ -144,23 +150,23 @@ function WaiveJoiningForm({ memberId }: { memberId: string }) {
       className="grid grid-cols-1 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
-        if (reason.trim().length < 3) return setError("Please give a reason");
+        if (reason.trim().length < 3) return setError(t("mship.giveReason"));
         start(async () => {
           const res = await apiMutate({ path: `/orgs/${orgId}/members/${memberId}/joining/waive`, body: { reason } });
           if (!res.ok) return setError(res.error);
-          toast.success("Joining amount waived");
+          toast.success(t("mship.waived"));
           close();
           router.refresh();
         });
       }}
     >
       <FormError message={error} />
-      <Field label="Reason" htmlFor="jw-reason">
-        <Input id="jw-reason" value={reason} maxLength={500} placeholder="e.g. Was a member from the start, added late" onChange={(e) => setReason(e.target.value)} />
+      <Field label={t("mship.reason")} htmlFor="jw-reason">
+        <Input id="jw-reason" value={reason} maxLength={500} placeholder={t("mship.waivePh")} onChange={(e) => setReason(e.target.value)} />
       </Field>
-      <FormNote tone="warn">They&apos;ll share the Mandal&apos;s own money like everyone else without having paid in for it.</FormNote>
+      <FormNote tone="warn">{t("mship.waiveWarn")}</FormNote>
       <SubmitButton pending={pending} variant="outline" icon={<CircleSlash />}>
-        Waive joining amount
+        {t("mship.waiveBtn")}
       </SubmitButton>
     </form>
   );
@@ -168,6 +174,7 @@ function WaiveJoiningForm({ memberId }: { memberId: string }) {
 
 /** Shown on a member's page while they still owe the price of their shares. */
 export function JoiningDueCard({ memberId, quote, accounts, canCollect }: { memberId: string; quote: JoiningQuote; accounts: Account[]; canCollect: boolean }) {
+  const t = useT();
   return (
     <section className="mb-5 rounded-2xl bg-amber-500/10 p-4 ring-1 ring-amber-500/25">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -177,19 +184,19 @@ export function JoiningDueCard({ memberId, quote, accounts, canCollect }: { memb
           </IconChip>
           <div className="min-w-0">
             <h2 className="font-semibold">
-              Joining amount due: <Money paise={quote.totalPaise} />
+              {t("mship.due")} <Money paise={quote.totalPaise} />
             </h2>
             <p className="text-sm text-muted-foreground">
-              Hapta started {quote.haptaStart ? formatDate(quote.haptaStart) : "after the first month"}, so they buy in at the price of {shareWord(quote.shares)}. Until it&apos;s paid they don&apos;t share in the Mandal&apos;s money.
+              {t("mship.dueDesc", { start: quote.haptaStart ? formatDate(quote.haptaStart) : t("mship.afterFirst"), shares: shareWord(t, quote.shares) })}
             </p>
           </div>
         </div>
         {canCollect && (
           <div className="flex shrink-0 flex-wrap gap-2">
-            <FormDialog trigger={<><HandCoins /> Collect</>} triggerSize="sm" title="Collect joining amount" icon={<UserPlus />} tone="amber">
+            <FormDialog trigger={<><HandCoins /> {t("mship.collect")}</>} triggerSize="sm" title={t("mship.collectTitle")} icon={<UserPlus />} tone="amber">
               <CollectJoiningForm memberId={memberId} quote={quote} accounts={accounts} />
             </FormDialog>
-            <FormDialog trigger="Waive" triggerVariant="outline" triggerSize="sm" title="Waive the joining amount" icon={<CircleSlash />} tone="amber">
+            <FormDialog trigger={t("mship.waive")} triggerVariant="outline" triggerSize="sm" title={t("mship.waiveTitle")} icon={<CircleSlash />} tone="amber">
               <WaiveJoiningForm memberId={memberId} />
             </FormDialog>
           </div>
@@ -203,6 +210,7 @@ export function JoiningDueCard({ memberId, quote, accounts, canCollect }: { memb
 
 function LeaveForm({ memberId, memberName, accounts }: { memberId: string; memberName: string; accounts: Account[] }) {
   const { orgId } = useParams<{ orgId: string }>();
+  const t = useT();
   const router = useRouter();
   const close = useDialogClose();
   const [q, setQ] = useState<LeavingQuote | null>(null);
@@ -230,9 +238,9 @@ function LeaveForm({ memberId, memberName, accounts }: { memberId: string; membe
   const waiveHapta = () =>
     start(async () => {
       setError(null);
-      const res = await apiMutate({ path: `/orgs/${orgId}/members/${memberId}/leaving/waive-hapta`, body: { reason: reason.trim().length >= 3 ? reason : "Leaving the Mandal" } });
+      const res = await apiMutate({ path: `/orgs/${orgId}/members/${memberId}/leaving/waive-hapta`, body: { reason: reason.trim().length >= 3 ? reason : t("mship.leavingReason") } });
       if (!res.ok) return setError(res.error);
-      toast.success("Unpaid hapta waived");
+      toast.success(t("mship.haptaWaived"));
       setReload((n) => n + 1);
     });
 
@@ -249,7 +257,7 @@ function LeaveForm({ memberId, memberName, accounts }: { memberId: string; membe
         setReload((n) => n + 1);
         return;
       }
-      toast.success(`${memberName} has left the Mandal`);
+      toast.success(t("mship.left", { name: memberName }));
       close();
       router.refresh();
     });
@@ -274,24 +282,24 @@ function LeaveForm({ memberId, memberName, accounts }: { memberId: string; membe
     >
       <FormError message={error} />
       <div className="flex flex-col gap-2 rounded-2xl bg-muted/50 p-3">
-        <Row label="Their savings balance">
+        <Row label={t("mship.theirSavings")}>
           <Money paise={q.savingsPaise} />
         </Row>
-        <Row label="Their part of the Mandal's own money" hint={q.shares ? `${shareWord(q.shares)} of ${q.holderShares}` : q.joiningDue ? "None — the joining amount was never paid" : undefined}>
+        <Row label={t("mship.theirPart")} hint={q.shares ? t("mship.sharesOf", { shares: shareWord(t, q.shares), total: q.holderShares }) : q.joiningDue ? t("mship.neverPaid") : undefined}>
           <Money paise={q.mandalSharePaise} colored />
         </Row>
         {q.upadOwedPaise > 0 && (
-          <Row label="Upad they still owe" hint="Taken off the payout">
+          <Row label={t("mship.upadOwed")} hint={t("mship.offPayout")}>
             <Money paise={-q.upadOwedPaise} colored />
           </Row>
         )}
-        <Row label="Pay them" strong>
+        <Row label={t("mship.payThem")} strong>
           <Money paise={q.netPaise} />
         </Row>
       </div>
       {q.blockers.length > 0 && (
         <div className="flex flex-col gap-2">
-          <FormNote tone="warn">Finish these first:</FormNote>
+          <FormNote tone="warn">{t("mship.finishFirst")}</FormNote>
           <ul className="flex flex-col gap-1.5 text-sm">
             {q.blockers.map((b) => (
               <li key={b.key} className="flex items-center justify-between gap-2 rounded-xl bg-card px-3 py-2 ring-1 ring-foreground/10">
@@ -306,34 +314,34 @@ function LeaveForm({ memberId, memberName, accounts }: { memberId: string; membe
                 </span>
                 {b.key === "hapta" ? (
                   <Button type="button" size="sm" variant="outline" disabled={pending} onClick={waiveHapta}>
-                    Waive
+                    {t("mship.waive")}
                   </Button>
                 ) : (
                   <Link href={b.link} className="shrink-0 text-xs font-medium text-primary hover:underline" onClick={close}>
-                    Open
+                    {t("mship.open")}
                   </Link>
                 )}
               </li>
             ))}
           </ul>
-          {onlyHapta && <p className="text-xs text-muted-foreground">Or collect their unpaid hapta first, then come back here.</p>}
+          {onlyHapta && <p className="text-xs text-muted-foreground">{t("mship.orCollect")}</p>}
         </div>
       )}
       {q.canLeave && (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Date paid" htmlFor="lv-date">
+            <Field label={t("mship.datePaid")} htmlFor="lv-date">
               <Input id="lv-date" type="date" max={todayISO()} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <AccountField id="lv-acc" label="Paid from" accounts={accounts} value={accountId} onChange={setAccountId} />
+            <AccountField id="lv-acc" label={t("mship.paidFrom")} accounts={accounts} value={accountId} onChange={setAccountId} />
           </div>
           <PaidInCash />
-          <Field label="Reason (optional)" htmlFor="lv-reason">
-            <Input id="lv-reason" value={reason} maxLength={300} placeholder="e.g. Moving to another city" onChange={(e) => setReason(e.target.value)} />
+          <Field label={t("mship.reasonOpt")} htmlFor="lv-reason">
+            <Input id="lv-reason" value={reason} maxLength={300} placeholder={t("mship.leavePh")} onChange={(e) => setReason(e.target.value)} />
           </Field>
-          <FormNote tone="warn">Their future hapta stops and they&apos;re marked as left. This can&apos;t be undone from here.</FormNote>
+          <FormNote tone="warn">{t("mship.leaveWarn")}</FormNote>
           <SubmitButton pending={pending} variant="destructive" icon={<ArrowUpFromLine />}>
-            Pay <Money paise={q.netPaise} /> and mark as left
+            {t("mship.pay")} <Money paise={q.netPaise} /> {t("mship.andLeft")}
           </SubmitButton>
         </>
       )}
@@ -342,8 +350,9 @@ function LeaveForm({ memberId, memberName, accounts }: { memberId: string; membe
 }
 
 export function LeaveMandalDialog({ memberId, memberName, accounts }: { memberId: string; memberName: string; accounts: Account[] }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><LogOut /> Leave Mandal</>} triggerVariant="outline" title={`${memberName} leaves the Mandal`} description="Pay out their share and stop their hapta." icon={<LogOut />} tone="rose">
+    <FormDialog trigger={<><LogOut /> {t("mship.leave")}</>} triggerVariant="outline" title={t("mship.leavesTitle", { name: memberName })} description={t("mship.leavesDesc")} icon={<LogOut />} tone="rose">
       <LeaveForm memberId={memberId} memberName={memberName} accounts={accounts} />
     </FormDialog>
   );

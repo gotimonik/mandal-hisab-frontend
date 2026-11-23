@@ -12,7 +12,8 @@ import { IconChip, MemberAvatar, SectionTitle } from "@/components/app/bits";
 import type { Tone } from "@/lib/tones";
 import { Input } from "@/components/ui/input";
 import { buttonVariants } from "@/components/ui/button";
-import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { frequencyLabel } from "@/i18n/labels";
 import { MemberDialog } from "@/features/members/member-form";
 import { StatementView, type Statement } from "@/features/statement/statement-view";
 import { getT } from "@/i18n/server";
@@ -100,7 +101,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             {can(org, "members.manage") && <MemberDialog orgId={orgId} member={m} />}
             {can(org, "payments.record") && (
               <Link href={`/org/${orgId}/collections?new=1&memberId=${m._id}`} className={buttonVariants({ variant: "outline" })}>
-                <HandCoins /> Record payment
+                <HandCoins /> {tr("mem.recordPay")}
               </Link>
             )}
             {canWithdraw && accounts.length > 0 && m.status !== "left" && (
@@ -109,7 +110,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                 defaultMemberId={m._id}
                 accounts={accounts.map((a) => ({ _id: a._id, name: a.name, balancePaise: a.balancePaise }))}
                 allowException={org.myRole === "admin" && org.settings.withdrawals.allowExceptions}
-                triggerLabel="Withdrawal"
+                triggerLabel={tr("mem.withdrawal")}
               />
             )}
             {canWithdraw && can(org, "members.manage") && m.status !== "left" && <LeaveMandalDialog memberId={m._id} memberName={m.name} accounts={accountOptions} />}
@@ -120,14 +121,14 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
       {m.status === "left" && m.leaving?.status === "done" && (
         <section className="mb-5 rounded-2xl bg-muted/60 p-4 text-sm ring-1 ring-foreground/[0.06]">
           <h2 className="font-semibold">
-            Left the Mandal on {formatDate(m.leaving.date)} — paid <Money paise={m.leaving.netPaise} />
+            {tr("mem.left", { date: formatDate(m.leaving.date) })} <Money paise={m.leaving.netPaise} />
           </h2>
           <p className="text-muted-foreground">
-            Savings <Money paise={m.leaving.savingsPaise} /> + share of the Mandal&apos;s own money <Money paise={m.leaving.mandalSharePaise} />
+            {tr("mem.leftSavings")} <Money paise={m.leaving.savingsPaise} /> {tr("mem.leftShare")} <Money paise={m.leaving.mandalSharePaise} />
             {m.leaving.upadSettledPaise > 0 && (
               <>
                 {" "}
-                − upad <Money paise={m.leaving.upadSettledPaise} />
+                {tr("mem.leftUpad")} <Money paise={m.leaving.upadSettledPaise} />
               </>
             )}
             {m.leaving.reason ? ` · ${m.leaving.reason}` : ""}
@@ -135,7 +136,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
         </section>
       )}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <InfoCard tone="sky" icon={<Phone />} title="Contact">
+        <InfoCard tone="sky" icon={<Phone />} title={tr("mem.contact")}>
           <div className="flex flex-col gap-1.5 text-sm">
             <span className="flex items-center gap-2">
               <Phone className="size-3.5 shrink-0 text-muted-foreground" />
@@ -144,12 +145,12 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                   {m.phone}
                 </a>
               ) : (
-                <span className="text-muted-foreground">No phone</span>
+                <span className="text-muted-foreground">{tr("mem.noPhone")}</span>
               )}
             </span>
             <span className="flex min-w-0 items-center gap-2">
               <Mail className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className={m.email ? "truncate" : "text-muted-foreground"}>{m.email ?? "No email"}</span>
+              <span className={m.email ? "truncate" : "text-muted-foreground"}>{m.email ?? tr("mem.noEmail")}</span>
             </span>
             {m.address && (
               <span className="flex items-start gap-2 text-muted-foreground">
@@ -161,28 +162,28 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             <div className="mt-2 rounded-xl bg-secondary/50 p-3">
               {m.userId ? (
                 <span className="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                  <CheckCircle2 className="size-4" /> Signs in to the app
+                  <CheckCircle2 className="size-4" /> {tr("mem.signsIn")}
                 </span>
               ) : pendingInvite ? (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs">
-                    <span className="block font-medium">Invitation sent {formatDate(pendingInvite.createdAt)}</span>
-                    <span className="text-muted-foreground">to {pendingInvite.email} · waiting for them to join</span>
+                    <span className="block font-medium">{tr("mem.inviteSent", { date: formatDate(pendingInvite.createdAt) })}</span>
+                    <span className="text-muted-foreground">{tr("mem.waiting", { email: pendingInvite.email })}</span>
                   </span>
                   {canInvite && <InviteMemberButton orgId={orgId} memberId={m._id} memberName={m.name} email={pendingInvite.email} again />}
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground">No app login yet</span>
+                  <span className="text-xs text-muted-foreground">{tr("mem.noLogin")}</span>
                   {canInvite && <InviteMemberButton orgId={orgId} memberId={m._id} memberName={m.name} email={m.email} />}
                 </div>
               )}
             </div>
           </div>
         </InfoCard>
-        <InfoCard tone="indigo" icon={<CalendarDays />} title="Hapta schemes">
+        <InfoCard tone="indigo" icon={<CalendarDays />} title={tr("mem.schemes")}>
           {detail.enrollments.length === 0 ? (
-            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">Not enrolled in any scheme.</p>
+            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">{tr("mem.notEnrolled")}</p>
           ) : (
             <ul className="divide-y text-sm">
               {detail.enrollments.map((e) => (
@@ -190,7 +191,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                   <Link href={`/org/${orgId}/schemes/${e.scheme._id}`} className="min-w-0 hover:underline">
                     <span className="block truncate font-medium">{e.scheme.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {label(FREQUENCY_LABEL, e.scheme.frequency)} · <Money paise={e.amountPaise ?? e.scheme.amountPaise} />
+                      {frequencyLabel(tr, e.scheme.frequency)} · <Money paise={e.amountPaise ?? e.scheme.amountPaise} />
                     </span>
                   </Link>
                   <StatusBadge status={e.status} />
@@ -199,9 +200,9 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             </ul>
           )}
         </InfoCard>
-        <InfoCard tone="violet" icon={<Landmark />} title="Loans">
+        <InfoCard tone="violet" icon={<Landmark />} title={tr("mem.loans")}>
           {detail.loans.length === 0 ? (
-            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">No loans.</p>
+            <p className="rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">{tr("mem.noLoans")}</p>
           ) : (
             <ul className="divide-y text-sm">
               {detail.loans.map((l) => (
@@ -209,7 +210,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                   <Link href={`/org/${orgId}/loans/${l._id}`} className="hover:underline">
                     <span className="block font-medium">{l.loanNumber}</span>
                     <span className="text-xs text-muted-foreground">
-                      Outstanding <Money paise={l.outstandingPrincipalPaise} />
+                      {tr("mem.outstanding")} <Money paise={l.outstandingPrincipalPaise} />
                     </span>
                   </Link>
                   <StatusBadge status={l.status} />
@@ -230,7 +231,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
           ) : undefined
         }
       >
-        Savings
+        {tr("mem.savings")}
       </SectionTitle>
       <SummaryBand
         tone="green"
@@ -254,7 +255,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
             <IconChip tone="orange" size="sm">
               <HandCoins />
             </IconChip>
-            <h3 className="font-semibold">Upad</h3>
+            <h3 className="font-semibold">{tr("mem.upad")}</h3>
           </div>
           <ul className="flex flex-col">
             {memberLoans.map((l) => (
@@ -263,7 +264,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
                   <span>
                     <span className="font-mono text-xs">{l.number}</span> · <Money paise={l.principalPaise} /> @ {l.monthlyRate}%
                     <span className="block text-xs text-muted-foreground">
-                      Outstanding <Money paise={l.outstandingPaise} /> · interest due <Money paise={l.interestDuePaise} />
+                      {tr("mem.outstanding")} <Money paise={l.outstandingPaise} /> · {tr("mem.interestDue")} <Money paise={l.interestDuePaise} />
                     </span>
                   </span>
                   <StatusBadge status={l.status} />
@@ -274,17 +275,17 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/o
         </div>
       )}
       <FilterBar resetHref={`/org/${orgId}/members/${memberId}`}>
-        <FilterField label="From">
+        <FilterField label={tr("ap.from")}>
           <Input type="date" name="from" defaultValue={from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={tr("ap.to")}>
           <Input type="date" name="to" defaultValue={to} />
         </FilterField>
       </FilterBar>
       <div className="mb-8">
         <SavingsLedgerTable l={ledger} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/members/${memberId}/ledger`, from, to })}`} />
       </div>
-      <SectionTitle>Dues statement</SectionTitle>
+      <SectionTitle>{tr("mem.dues")}</SectionTitle>
       <StatementView s={statement} csvHref={`/api/export${qs({ path: `/orgs/${orgId}/members/${memberId}/statement`, from, to })}`} />
     </>
   );

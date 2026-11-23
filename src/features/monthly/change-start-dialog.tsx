@@ -1,5 +1,7 @@
 "use client";
 
+import { useLang, useT } from "@/i18n/client";
+import { monthName } from "@/i18n/core";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -10,10 +12,11 @@ import { Field, FormError } from "@/components/app/field";
 import { FormNote } from "@/components/app/form-bits";
 import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { apiMutate } from "@/app/actions/api";
-import { monthLabelYM } from "@/lib/months";
 
 function ChangeStartForm({ orgId, currentMonth }: { orgId: string; currentMonth: string }) {
   const router = useRouter();
+  const t = useT();
+  const lang = useLang();
   const close = useDialogClose();
   const [startMonth, setStartMonth] = useState(currentMonth);
   const [founders, setFounders] = useState(true);
@@ -24,16 +27,16 @@ function ChangeStartForm({ orgId, currentMonth }: { orgId: string; currentMonth:
   return (
     <div className="flex flex-col gap-3 text-sm">
       <FormNote>
-        Months before the new start month disappear (so they no longer show as overdue). This works only while no hapta has been collected. Hapta collected by mistake? Reset the money first.
+        {t("setx.cs.note")}
       </FormNote>
-      <Field label="Hapta starts from" htmlFor="hs-new-start" hint={valid ? `First hapta month: ${monthLabelYM(startMonth)}` : undefined}>
+      <Field label={t("setx.cs.from")} htmlFor="hs-new-start" hint={valid ? t("setx.cs.first", { month: monthName(lang, startMonth) }) : undefined}>
         <Input id="hs-new-start" type="month" value={startMonth} onChange={(e) => setStartMonth(e.target.value)} />
       </Field>
       <label className="flex items-start gap-2.5 rounded-2xl bg-muted/50 px-3 py-2.5">
         <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={founders} onChange={(e) => setFounders(e.target.checked)} />
         <span>
-          <b>Everyone pays from this month</b>
-          <span className="block text-xs text-muted-foreground">Untick if members who joined later should start in their joining month and pay a joining amount.</span>
+          <b>{t("setx.cs.everyone")}</b>
+          <span className="block text-xs text-muted-foreground">{t("setx.cs.everyoneHint")}</span>
         </span>
       </label>
       <FormError message={error} />
@@ -45,21 +48,22 @@ function ChangeStartForm({ orgId, currentMonth }: { orgId: string; currentMonth:
             setError(null);
             const r = await apiMutate({ path: `/orgs/${orgId}/monthly-hapta/start`, body: { startMonth, founders } });
             if (!r.ok) return setError(r.error);
-            toast.success(`Hapta now starts in ${monthLabelYM(startMonth)}`);
+            toast.success(t("setx.cs.done", { month: monthName(lang, startMonth) }));
             router.refresh();
             close();
           })
         }
       >
-        {pending ? <Loader2 className="animate-spin" /> : <CalendarClock />} Change start month
+        {pending ? <Loader2 className="animate-spin" /> : <CalendarClock />} {t("setx.cs.button")}
       </Button>
     </div>
   );
 }
 
 export function ChangeStartDialog({ orgId, currentMonth }: { orgId: string; currentMonth: string }) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><CalendarClock /> Start month</>} triggerVariant="outline" triggerSize="sm" title="When the hapta starts" icon={<CalendarClock />} tone="indigo" openParam="start">
+    <FormDialog trigger={<><CalendarClock /> {t("setx.cs.trigger")}</>} triggerVariant="outline" triggerSize="sm" title={t("setx.cs.title")} icon={<CalendarClock />} tone="indigo" openParam="start">
       <ChangeStartForm orgId={orgId} currentMonth={currentMonth} />
     </FormDialog>
   );

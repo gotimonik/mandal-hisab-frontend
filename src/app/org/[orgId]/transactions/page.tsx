@@ -34,53 +34,56 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/tones";
 
+import { getT } from "@/i18n/server";
+import type { Key, T } from "@/i18n/core";
+
 export const metadata = { title: "Transactions" };
 
 /** Every transaction type the backend posts: label, icon and colour. */
-const TYPES: Record<string, { label: string; tone: Tone; icon: React.ReactNode }> = {
-  hapta_collection: { label: "Hapta collection", tone: "emerald", icon: <ArrowDownToLine /> },
-  fund_loan_given: { label: "Upad given", tone: "orange", icon: <HandCoins /> },
-  fund_loan_payment: { label: "Upad payment", tone: "orange", icon: <HandCoins /> },
-  withdrawal: { label: "Withdrawal", tone: "rose", icon: <ArrowUpFromLine /> },
-  interest_credit: { label: "Interest credited", tone: "pink", icon: <Percent /> },
-  donation: { label: "Donation", tone: "emerald", icon: <Heart /> },
-  other_income: { label: "Other income", tone: "emerald", icon: <ArrowDownToLine /> },
-  expense: { label: "Expense", tone: "pink", icon: <Receipt /> },
-  expense_reimbursement: { label: "Reimbursement", tone: "pink", icon: <Receipt /> },
-  transfer: { label: "Transfer", tone: "slate", icon: <ArrowLeftRight /> },
-  loan_disbursement: { label: "Loan disbursed", tone: "violet", icon: <Landmark /> },
-  loan_repayment: { label: "Loan repayment", tone: "violet", icon: <Landmark /> },
-  opening_balance: { label: "Opening balance", tone: "slate", icon: <Wallet /> },
-  member_opening: { label: "Member opening balance", tone: "slate", icon: <Wallet /> },
-  member_adjustment: { label: "Member adjustment", tone: "slate", icon: <Scale /> },
-  adjustment: { label: "Adjustment", tone: "slate", icon: <Scale /> },
-  reversal: { label: "Reversal", tone: "rose", icon: <RotateCcw /> },
-  closing_distribution: { label: "Closing share-out", tone: "violet", icon: <Lock /> },
-  member_joining: { label: "Joining amount", tone: "emerald", icon: <UserPlus /> },
-  member_leaving: { label: "Leaving share-out", tone: "rose", icon: <LogOut /> },
+const TYPES: Record<string, { label: Key; tone: Tone; icon: React.ReactNode }> = {
+  hapta_collection: { label: "txn.type.hapta_collection", tone: "emerald", icon: <ArrowDownToLine /> },
+  fund_loan_given: { label: "txn.type.fund_loan_given", tone: "orange", icon: <HandCoins /> },
+  fund_loan_payment: { label: "txn.type.fund_loan_payment", tone: "orange", icon: <HandCoins /> },
+  withdrawal: { label: "txn.type.withdrawal", tone: "rose", icon: <ArrowUpFromLine /> },
+  interest_credit: { label: "txn.type.interest_credit", tone: "pink", icon: <Percent /> },
+  donation: { label: "txn.type.donation", tone: "emerald", icon: <Heart /> },
+  other_income: { label: "txn.type.other_income", tone: "emerald", icon: <ArrowDownToLine /> },
+  expense: { label: "txn.type.expense", tone: "pink", icon: <Receipt /> },
+  expense_reimbursement: { label: "txn.type.expense_reimbursement", tone: "pink", icon: <Receipt /> },
+  transfer: { label: "txn.type.transfer", tone: "slate", icon: <ArrowLeftRight /> },
+  loan_disbursement: { label: "txn.type.loan_disbursement", tone: "violet", icon: <Landmark /> },
+  loan_repayment: { label: "txn.type.loan_repayment", tone: "violet", icon: <Landmark /> },
+  opening_balance: { label: "txn.type.opening_balance", tone: "slate", icon: <Wallet /> },
+  member_opening: { label: "txn.type.member_opening", tone: "slate", icon: <Wallet /> },
+  member_adjustment: { label: "txn.type.member_adjustment", tone: "slate", icon: <Scale /> },
+  adjustment: { label: "txn.type.adjustment", tone: "slate", icon: <Scale /> },
+  reversal: { label: "txn.type.reversal", tone: "rose", icon: <RotateCcw /> },
+  closing_distribution: { label: "txn.type.closing_distribution", tone: "violet", icon: <Lock /> },
+  member_joining: { label: "txn.type.member_joining", tone: "emerald", icon: <UserPlus /> },
+  member_leaving: { label: "txn.type.member_leaving", tone: "rose", icon: <LogOut /> },
 };
-const typeOf = (t: string) => TYPES[t] ?? { label: t.replace(/_/g, " "), tone: "slate" as Tone, icon: <BookText /> };
+const typeOf = (t: string) => TYPES[t] ?? { label: t.replace(/_/g, " ") as Key, tone: "slate" as Tone, icon: <BookText /> };
 
 /** Plain names for the Mandal's internal ledger accounts. */
-const SYSTEM: Record<string, string> = {
-  "liability:member_funds": "Member savings",
-  "asset:fund_loans": "Upad given out",
-  "asset:loans_receivable": "Loans receivable",
-  "liability:reimbursements_payable": "Reimbursements payable",
-  "equity:opening_balance": "Opening balance",
-  "equity:adjustments": "Adjustments",
-  "equity:accumulated_surplus": "Mandal's own money",
-  "equity:closing_distribution": "Closing share-out",
-  "equity:member_joining": "Joining amounts (Mandal's part)",
-  "equity:member_leaving": "Leaving share-outs",
-  "income:hapta": "Hapta income",
-  "income:donation": "Donations",
-  "income:interest": "Interest income",
-  "income:penalty": "Late fees",
-  "income:membership_fee": "Membership fees",
-  "income:event": "Event income",
-  "income:other": "Other income",
-  "expense:member_interest": "Interest paid to members",
+const SYSTEM: Record<string, Key> = {
+  "liability:member_funds": "txn.sys.memberFunds",
+  "asset:fund_loans": "txn.sys.fundLoans",
+  "asset:loans_receivable": "txn.sys.loansReceivable",
+  "liability:reimbursements_payable": "txn.sys.reimbPayable",
+  "equity:opening_balance": "txn.sys.openingBalance",
+  "equity:adjustments": "txn.sys.adjustments",
+  "equity:accumulated_surplus": "txn.sys.surplus",
+  "equity:closing_distribution": "txn.sys.closingDist",
+  "equity:member_joining": "txn.sys.joining",
+  "equity:member_leaving": "txn.sys.leaving",
+  "income:hapta": "txn.sys.incHapta",
+  "income:donation": "txn.sys.incDonation",
+  "income:interest": "txn.sys.incInterest",
+  "income:penalty": "txn.sys.incPenalty",
+  "income:membership_fee": "txn.sys.incFee",
+  "income:event": "txn.sys.incEvent",
+  "income:other": "txn.sys.incOther",
+  "expense:member_interest": "txn.sys.memberInterest",
 };
 
 type Group = { side: "Dr" | "Cr"; key: string; total: number; count: number };
@@ -99,7 +102,7 @@ function groupLines(lines: Txn["lines"]): Group[] {
   return [...map.values()].sort((a, b) => (a.side === b.side ? 0 : a.side === "Dr" ? -1 : 1));
 }
 
-function Entries({ t, names, className }: { t: Txn; names: Record<string, string>; className?: string }) {
+function Entries({ t, names, className, tr }: { t: Txn; names: Record<string, string>; className?: string; tr: T }) {
   const groups = groupLines(t.lines);
   const name = (k: string) => names[k] ?? k;
   return (
@@ -107,7 +110,7 @@ function Entries({ t, names, className }: { t: Txn; names: Record<string, string
       <dl className="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-2 gap-y-0.5">
         {groups.map((g) => (
           <div key={`${g.side}${g.key}`} className="contents">
-            <dt className={cn("font-semibold", g.side === "Dr" ? "text-emerald-700 dark:text-emerald-400" : "pl-3 text-sky-700 dark:text-sky-400")}>{g.side}</dt>
+            <dt className={cn("font-semibold", g.side === "Dr" ? "text-emerald-700 dark:text-emerald-400" : "pl-3 text-sky-700 dark:text-sky-400")}>{g.side === "Dr" ? tr("txn.dr") : tr("txn.cr")}</dt>
             <dd className="min-w-0 truncate">
               {name(g.key)}
               {g.count > 1 && <span className="ml-1 rounded bg-muted px-1 text-[10px] text-muted-foreground tabular-nums">×{g.count}</span>}
@@ -120,12 +123,12 @@ function Entries({ t, names, className }: { t: Txn; names: Record<string, string
       </dl>
       {groups.length < t.lines.length && (
         <details className="mt-1">
-          <summary className="cursor-pointer text-[11px] font-medium text-primary">Show all {t.lines.length} lines</summary>
+          <summary className="cursor-pointer text-[11px] font-medium text-primary">{tr("txn.showAll", { n: t.lines.length })}</summary>
           <div className="mt-1 max-h-56 overflow-y-auto rounded-lg bg-muted/50 p-2">
             {t.lines.map((l, i) => (
               <div key={i} className="flex justify-between gap-3">
                 <span className={l.creditPaise ? "pl-3" : ""}>
-                  {l.debitPaise ? "Dr" : "Cr"} {name(l.accountKey)}
+                  {l.debitPaise ? tr("txn.dr") : tr("txn.cr")} {name(l.accountKey)}
                 </span>
                 <Money paise={l.debitPaise || l.creditPaise} />
               </div>
@@ -139,43 +142,44 @@ function Entries({ t, names, className }: { t: Txn; names: Record<string, string
 
 export default async function TransactionsPage({ params, searchParams }: PageProps<"/org/[orgId]/transactions">) {
   const { orgId } = await params;
+  const { t: tr } = await getT();
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const f = { type: str("type"), accountId: str("accountId"), from: str("from"), to: str("to") };
   const page = Number(sp.page ?? 1) || 1;
   const [org, data, accounts] = await Promise.all([getOrg(orgId), api<Paged<Txn>>(`/orgs/${orgId}/transactions${qs({ ...f, page })}`), getAccounts(orgId)]);
-  const names: Record<string, string> = { ...SYSTEM };
+  const names: Record<string, string> = Object.fromEntries(Object.entries(SYSTEM).map(([k, v]) => [k, tr(v)]));
   for (const a of accounts) names[`fa:${a._id}`] = a.name;
-  for (const c of org.settings.expenseCategories) names[`expense:${c.key}`] = `Expense · ${c.name}`;
+  for (const c of org.settings.expenseCategories) names[`expense:${c.key}`] = tr("txn.expenseX", { name: c.name });
   const canAdjust = can(org, "transactions.adjust") && org.status === "active";
   const reversible = (t: Txn) => canAdjust && !t.reversedBy && ["transfer", "adjustment", "opening_balance"].includes(t.type);
   const reverse = (t: Txn) => (
-    <ActionButton path={`/orgs/${orgId}/transactions/${t._id}/reverse`} size="xs" variant="ghost" successMessage="Reversal posted" confirm={{ title: `Reverse ${t.number}?`, description: "A mirror entry is posted today. The original stays visible.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-      <RotateCcw /> Reverse
+    <ActionButton path={`/orgs/${orgId}/transactions/${t._id}/reverse`} size="xs" variant="ghost" successMessage={tr("txn.posted")} confirm={{ title: tr("txn.reverseQ", { number: t.number }), description: tr("txn.reverseD"), reason: "required", destructive: true, confirmLabel: tr("ap.reverse") }}>
+      <RotateCcw /> {tr("ap.reverse")}
     </ActionButton>
   );
   const typePill = (t: Txn) => {
     const ty = typeOf(t.type);
-    return <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{ty.label}</span>;
+    return <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{tr(ty.label)}</span>;
   };
 
   return (
     <>
-      <PageHeader title="Transactions" description="Every money movement, newest first. Each entry balances (Dr = Cr); mistakes are corrected with a reversal, never edited." />
+      <PageHeader title={tr("txn.title")} description={tr("txn.desc")} />
       <FilterBar resetHref={`/org/${orgId}/transactions`}>
-        <FilterField label="Type">
+        <FilterField label={tr("ap.type")}>
           <NativeSelect name="type" defaultValue={f.type}>
-            <option value="">All</option>
+            <option value="">{tr("ap.all")}</option>
             {Object.entries(TYPES).map(([k, v]) => (
               <option key={k} value={k}>
-                {v.label}
+                {tr(v.label)}
               </option>
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="Account">
+        <FilterField label={tr("ap.account")}>
           <NativeSelect name="accountId" defaultValue={f.accountId}>
-            <option value="">All</option>
+            <option value="">{tr("ap.all")}</option>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
                 {a.name}
@@ -183,20 +187,20 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="From">
+        <FilterField label={tr("ap.from")}>
           <Input type="date" name="from" defaultValue={f.from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={tr("ap.to")}>
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
       </FilterBar>
 
       {data.items.length === 0 ? (
-        <EmptyState icon={<BookText />} title="No transactions" description="Nothing matches these filters." />
+        <EmptyState icon={<BookText />} title={tr("txn.none")} description={tr("txn.noneD")} />
       ) : (
         <>
           {/* phones: cards */}
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Transactions">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={tr("txn.title")}>
             {data.items.map((t) => {
               const ty = typeOf(t.type);
               return (
@@ -218,7 +222,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
                     </div>
                     <Money paise={t.amountPaise} className="shrink-0 text-sm font-bold" />
                   </div>
-                  <Entries t={t} names={names} className="mt-2.5 rounded-xl bg-muted/40 p-2.5" />
+                  <Entries t={t} names={names} tr={tr} className="mt-2.5 rounded-xl bg-muted/40 p-2.5" />
                   {reversible(t) && <div className="mt-1.5 flex justify-end">{reverse(t)}</div>}
                 </li>
               );
@@ -231,10 +235,10 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date / no.</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="min-w-72">Entries</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>{tr("txn.dateNo")}</TableHead>
+                    <TableHead>{tr("ap.description")}</TableHead>
+                    <TableHead className="min-w-72">{tr("txn.entries")}</TableHead>
+                    <TableHead className="text-right">{tr("ap.amount")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -263,7 +267,7 @@ export default async function TransactionsPage({ params, searchParams }: PagePro
                           </div>
                         </TableCell>
                         <TableCell className="whitespace-normal">
-                          <Entries t={t} names={names} />
+                          <Entries t={t} names={names} tr={tr} />
                         </TableCell>
                         <TableCell className="text-right">
                           <Money paise={t.amountPaise} className="font-semibold" />

@@ -11,6 +11,8 @@ export interface User {
   phone: string | null;
   emailVerified: boolean;
   isPlatformAdmin: boolean;
+  /** phone push notifications for the whole account (false = never pushed to any phone) */
+  pushEnabled?: boolean;
 }
 
 export interface MyOrg {

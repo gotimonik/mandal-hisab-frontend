@@ -20,10 +20,13 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { WithdrawalDialog } from "@/features/withdrawals/withdrawal-form";
 
+import { getT } from "@/i18n/server";
+
 export const metadata = { title: "Withdrawals" };
 
 export default async function WithdrawalsPage({ params, searchParams }: PageProps<"/org/[orgId]/withdrawals">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const f = { memberId: str("memberId"), from: str("from"), to: str("to") };
@@ -46,16 +49,16 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
   );
   const reverse = (w: Withdrawal) =>
     w.status === "paid" && canReverse ? (
-      <ActionButton path={`/orgs/${orgId}/withdrawals/${w._id}/reverse`} size="xs" variant="ghost" successMessage="Withdrawal reversed" confirm={{ title: `Reverse ${w.number}?`, description: "Use this only if the withdrawal was recorded by mistake. The member's balance and the cash are restored.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-        Reverse
+      <ActionButton path={`/orgs/${orgId}/withdrawals/${w._id}/reverse`} size="xs" variant="ghost" successMessage={t("wd.reversed")} confirm={{ title: t("wd.reverseQ", { number: w.number }), description: t("wd.reverseD"), reason: "required", destructive: true, confirmLabel: t("ap.reverse") }}>
+        {t("ap.reverse")}
       </ActionButton>
     ) : null;
 
   return (
     <>
       <PageHeader
-        title="Withdrawals"
-        description="Cash paid to members from their savings."
+        title={t("wd.title")}
+        description={t("wd.desc")}
         actions={
           canRecord ? (
             <WithdrawalDialog
@@ -70,14 +73,14 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
       <SummaryBand
         tone="warm"
         icon={<ArrowUpFromLine />}
-        label={memberName ? `Paid out to ${memberName}` : "Paid out to members in view"}
+        label={memberName ? t("wd.paidTo", { name: memberName }) : t("wd.paidInView")}
         value={<Money paise={data.totalPaidPaise} />}
-        sub={`${data.total} withdrawal${data.total === 1 ? "" : "s"}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : "start"} – ${f.to ? formatDate(f.to) : "today"}` : ""}`}
+        sub={`${data.total === 1 ? t("wd.count1") : t("wd.countN", { n: data.total })}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : t("ap.start")} – ${f.to ? formatDate(f.to) : t("ap.today")}` : ""}`}
       />
       <FilterBar resetHref={`/org/${orgId}/withdrawals`}>
-        <FilterField label="Member">
+        <FilterField label={t("ap.member")}>
           <NativeSelect name="memberId" defaultValue={f.memberId}>
-            <option value="">All members</option>
+            <option value="">{t("wd.allMembers")}</option>
             {members.map((m) => (
               <option key={m._id} value={m._id}>
                 {m.name}
@@ -85,18 +88,18 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="From">
+        <FilterField label={t("ap.from")}>
           <Input type="date" name="from" defaultValue={f.from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={t("ap.to")}>
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
       </FilterBar>
       {data.items.length === 0 ? (
-        <EmptyState icon={<ArrowUpFromLine />} title="No withdrawals yet" description="When a member takes cash out of their savings, record it here." />
+        <EmptyState icon={<ArrowUpFromLine />} title={t("wd.none")} description={t("wd.noneD")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Withdrawals">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("wd.title")}>
             {data.items.map((w) => (
               <li key={w._id} className={cn("rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]", w.status === "reversed" && "opacity-70")}>
                 <div className="flex items-start gap-3">
@@ -107,7 +110,7 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
                       {voucher(w)} · {formatDate(w.date)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Balance after <Money paise={w.balanceAfterPaise} colored />
+                      {t("wd.balAfter")} <Money paise={w.balanceAfterPaise} colored />
                     </p>
                     {w.note && <p className="truncate text-xs text-muted-foreground">{w.note}</p>}
                   </div>
@@ -116,7 +119,7 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
                     <StatusBadge status={w.status} />
                   </div>
                 </div>
-                {w.exceptionReason && <p className="mt-2 rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs text-warning-ink">Exception: {w.exceptionReason}</p>}
+                {w.exceptionReason && <p className="mt-2 rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs text-warning-ink">{t("wd.exception", { reason: w.exceptionReason })}</p>}
                 <div className="mt-2 flex flex-wrap items-center justify-end gap-1 empty:hidden">{reverse(w)}</div>
               </li>
             ))}
@@ -126,11 +129,11 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Voucher</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Balance after</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("ap.member")}</TableHead>
+                    <TableHead>{t("wd.voucher")}</TableHead>
+                    <TableHead className="text-right">{t("ap.amount")}</TableHead>
+                    <TableHead className="text-right">{t("wd.balAfter")}</TableHead>
+                    <TableHead>{t("ap.status")}</TableHead>
                     <TableHead className="text-right" />
                   </TableRow>
                 </TableHeader>
@@ -143,7 +146,7 @@ export default async function WithdrawalsPage({ params, searchParams }: PageProp
                           <div className="min-w-0">
                             <span className="font-semibold">{w.member?.name ?? "—"}</span>
                             {w.note && <div className="text-xs text-muted-foreground">{w.note}</div>}
-                            {w.exceptionReason && <div className="text-xs text-warning-ink">Exception: {w.exceptionReason}</div>}
+                            {w.exceptionReason && <div className="text-xs text-warning-ink">{t("wd.exception", { reason: w.exceptionReason })}</div>}
                           </div>
                         </div>
                       </TableCell>

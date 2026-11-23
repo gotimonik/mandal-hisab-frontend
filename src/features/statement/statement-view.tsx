@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { getT } from "@/i18n/server";
 import { Money } from "@/components/app/money";
 import { TableWrap } from "@/components/app/table-wrap";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,7 +20,8 @@ export interface Statement {
   loans: { loanNumber: string; status: string; principalPaise: number; summary: { outstandingPrincipalPaise: number; interestOutstandingPaise: number } }[];
 }
 
-export function StatementView({ s, csvHref }: { s: Statement; csvHref: string }) {
+export async function StatementView({ s, csvHref }: { s: Statement; csvHref: string }) {
+  const { t } = await getT();
   return (
     <div className="flex flex-col gap-3">
       <div className="no-print flex flex-wrap items-center justify-between gap-2">
@@ -37,17 +39,17 @@ export function StatementView({ s, csvHref }: { s: Statement; csvHref: string })
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Particulars</TableHead>
-              <TableHead className="text-right">Due (Dr)</TableHead>
-              <TableHead className="text-right">Paid (Cr)</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
+              <TableHead>{t("ap.date")}</TableHead>
+              <TableHead>{t("doc.particulars")}</TableHead>
+              <TableHead className="text-right">{t("doc.dr")}</TableHead>
+              <TableHead className="text-right">{t("doc.cr")}</TableHead>
+              <TableHead className="text-right">{t("doc.balance")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow className="bg-muted/40">
               <TableCell />
-              <TableCell className="font-medium">Opening balance</TableCell>
+              <TableCell className="font-medium">{t("doc.opening")}</TableCell>
               <TableCell />
               <TableCell />
               <TableCell className="text-right">
@@ -72,7 +74,7 @@ export function StatementView({ s, csvHref }: { s: Statement; csvHref: string })
           <TableFooter>
             <TableRow>
               <TableCell />
-              <TableCell className="font-medium">Closing balance</TableCell>
+              <TableCell className="font-medium">{t("doc.closing")}</TableCell>
               <TableCell className="text-right">
                 <Money paise={s.totalDebitPaise} />
               </TableCell>

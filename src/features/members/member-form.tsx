@@ -42,7 +42,7 @@ const Schema = z.object({
     .string()
     .trim()
     .regex(/^\d+$/, "Enter a whole number")
-    .refine((v) => Number(v) >= 1 && Number(v) <= 50, "From 1 to 50"),
+    .refine((v) => Number(v) >= 1 && Number(v) <= 50, "ax.from1to50"),
   inviteToApp: z.boolean(),
 });
 

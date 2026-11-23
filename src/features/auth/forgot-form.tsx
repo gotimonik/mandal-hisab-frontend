@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -17,6 +18,7 @@ import { track } from "@/lib/analytics";
 const Schema = z.object({ email });
 
 export function ForgotForm() {
+  const t = useT();
   const [pending, start] = useTransition();
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,17 +32,17 @@ export function ForgotForm() {
     }),
   );
   return (
-    <AuthCard title="Forgot password" description="We'll email you a link to reset it." footer={<Link href="/login" className="hover:underline">Back to sign in</Link>}>
+    <AuthCard title={t("misc.auth.forgotTitle")} description={t("misc.auth.forgotDesc")} footer={<Link href="/login" className="hover:underline">{t("misc.auth.backSignIn")}</Link>}>
       {sent ? (
-        <p className="text-sm">If an account exists for that email, a reset link is on its way. The link is valid for one hour.</p>
+        <p className="text-sm">{t("misc.auth.sent")}</p>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
           <FormError message={error} />
-          <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
+          <Field label={t("auth.email")} htmlFor="email" error={form.formState.errors.email?.message}>
             <Input id="email" type="email" autoComplete="email" {...form.register("email")} />
           </Field>
           <Button type="submit" disabled={pending}>
-            {pending && <Loader2 className="animate-spin" />} Send reset link
+            {pending && <Loader2 className="animate-spin" />} {t("misc.auth.send")}
           </Button>
         </form>
       )}

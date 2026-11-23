@@ -20,6 +20,7 @@ interface Result {
 }
 
 function ImportForm({ orgId }: { orgId: string }) {
+  const t = useT();
   const router = useRouter();
   const close = useDialogClose();
   const [csv, setCsv] = useState("");
@@ -44,12 +45,12 @@ function ImportForm({ orgId }: { orgId: string }) {
   return (
     <div className="flex flex-col gap-3 text-sm">
       <FormNote>
-        CSV columns: <code>name</code> (required), <code>membership number</code>, <code>phone</code>, <code>email</code>, <code>address</code>, <code>joining date</code> (YYYY-MM-DD or DD-MM-YYYY), <code>notes</code>. Duplicates by membership number or phone are skipped.
+        {t("mem.csvHelp")} <code>name</code> {t("mem.csvRequired")}, <code>membership number</code>, <code>phone</code>, <code>email</code>, <code>address</code>, <code>joining date</code> {t("mem.csvDate")}, <code>notes</code>. {t("mem.csvDup")}
       </FormNote>
       <label className={cn("flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-3 py-7 text-center transition-colors hover:bg-muted/50", fileName ? "border-sky-500/40 bg-sky-500/5" : "border-primary/25 bg-secondary/30")}>
         <span className="flex size-12 items-center justify-center rounded-2xl bg-sky-500/12 text-sky-600 dark:text-sky-300">{fileName ? <FileSpreadsheet className="size-6" /> : <Upload className="size-6" />}</span>
-        <span className="font-semibold">{fileName || "Choose a .csv file"}</span>
-        {!fileName && <span className="text-xs text-muted-foreground">Max 2 MB</span>}
+        <span className="font-semibold">{fileName || t("ax.chooseCsv")}</span>
+        {!fileName && <span className="text-xs text-muted-foreground">{t("ax.max2")}</span>}
         <input
           type="file"
           accept=".csv,text/csv"
@@ -99,7 +100,7 @@ function ImportForm({ orgId }: { orgId: string }) {
 export function ImportMembersDialog({ orgId }: { orgId: string }) {
   const t = useT();
   return (
-    <FormDialog trigger={<><Upload /> {t("members.importCsv")}</>} triggerVariant="outline" title="Import members from CSV" wide icon={<FileSpreadsheet />} tone="sky">
+    <FormDialog trigger={<><Upload /> {t("members.importCsv")}</>} triggerVariant="outline" title={t("mem.importTitle")} wide icon={<FileSpreadsheet />} tone="sky">
       <ImportForm orgId={orgId} />
     </FormDialog>
   );

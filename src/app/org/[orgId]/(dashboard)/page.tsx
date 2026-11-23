@@ -206,7 +206,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.25fr_1fr]">
         {/* ---- this month's hapta: the hero */}
-        <section aria-label="This month's hapta" className="bg-hero relative overflow-hidden rounded-3xl p-5 shadow-lg shadow-primary/20 sm:p-6">
+        <section aria-label={tr("ax.thisMonth")} className="bg-hero relative overflow-hidden rounded-3xl p-5 shadow-lg shadow-primary/20 sm:p-6">
           <div className="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-white/10" />
           <div className="pointer-events-none absolute right-16 -bottom-16 size-32 rounded-full bg-white/10" />
           <div className="relative flex items-start justify-between gap-3">
@@ -266,7 +266,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       </div>
 
       {quick.length > 0 && (
-        <section className="mt-5" aria-label="Shortcuts">
+        <section className="mt-5" aria-label={tr("ax.shortcuts")}>
           <SectionTitle>{tr("dash.quickActions")}</SectionTitle>
           <QuickGrid actions={quick} row />
         </section>
@@ -275,7 +275,7 @@ export default async function DashboardPage({ params }: PageProps<"/org/[orgId]"
       <SchemesOverview schemes={d.schemes} orgId={orgId} money={money} />
 
       {!noMoneyYet && (
-      <section className="mt-5" aria-label="Mandal fund">
+      <section className="mt-5" aria-label={tr("ax.fund")}>
         <SectionTitle>{tr("dash.glance")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-5">
           <StatCard label={tr("dash.cashOnHand")} value={money.compact(t.mandalCashPaise ?? 0)} icon={<Banknote />} accent="emerald" hint={tr("dash.cashOnHandHint")} href={can(org, "accounts.view") ? `${base}/cashbook` : undefined} />
@@ -505,7 +505,7 @@ function MemberShare({ cashPaise, upadPaise, pendingHaptaPaise, upadInterestPais
     [tr("dash.shareInterest"), upadInterestPaise, "amber"],
   ];
   return (
-    <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label="Each member's share">
+    <Card className="mt-3 gap-0 p-0 md:flex-row" aria-label={tr("ax.share")}>
       <div className="bg-hero-green flex flex-col justify-center gap-1 p-5 md:w-72 md:shrink-0">
         <p className="text-sm font-medium text-white/85">{byShares ? tr("dash.shareHapta") : tr("dash.shareMember")}</p>
         <p className="text-4xl font-extrabold tracking-tight tabular-nums">{money.short(each)}</p>

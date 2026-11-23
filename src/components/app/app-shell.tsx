@@ -89,6 +89,7 @@ export interface ShellData {
 const MenuCtx = createContext<{ open: boolean; setOpen: (o: boolean) => void }>({ open: false, setOpen: () => {} });
 
 export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileSheet, children }: { sidebar: ReactNode; mobileHeader: ReactNode; topbar: ReactNode; bottomNav: ReactNode; mobileSheet: ReactNode; children: ReactNode }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <MenuCtx value={{ open, setOpen }}>
@@ -96,7 +97,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
         <aside className="no-print sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-3 border-r bg-sidebar p-3 lg:flex">{sidebar}</aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="no-print sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center gap-1 border-b pt-[env(safe-area-inset-top)] border-border/60 bg-background/85 pr-2 pl-1 backdrop-blur-md lg:hidden">
-            <Button variant="ghost" size="icon" aria-label="Open menu" onClick={() => setOpen(true)}>
+            <Button variant="ghost" size="icon" aria-label={t("mem.openMenu")} onClick={() => setOpen(true)}>
               <Menu />
             </Button>
             {mobileHeader}
@@ -106,7 +107,7 @@ export function ShellFrame({ sidebar, mobileHeader, topbar, bottomNav, mobileShe
         </div>
         <nav
           className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_oklch(0.3_0.08_278/0.18)] backdrop-blur-md lg:hidden"
-          aria-label="Quick"
+          aria-label={t("mem.quick")}
         >
           <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-end px-1">{bottomNav}</div>
         </nav>

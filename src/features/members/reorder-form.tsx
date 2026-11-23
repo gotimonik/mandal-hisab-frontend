@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useRef, useState, useTransition, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ export function moveItem<T>(list: T[], from: number, to: number): T[] {
 export function ReorderForm({ orgId, rows }: { orgId: string; rows: OrderRow[] }) {
   const router = useRouter();
   const [order, setOrder] = useState(rows);
+  const t = useT();
   const [drag, setDrag] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -74,14 +76,14 @@ export function ReorderForm({ orgId, rows }: { orgId: string; rows: OrderRow[] }
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => sortBy("number")}>
-          <Hash /> By member no.
+          <Hash /> {t("misc.order.byNo")}
         </Button>
         <Button variant="outline" size="sm" onClick={() => sortBy("name")}>
           <ArrowDownAZ /> A → Z
         </Button>
-        <span className="text-xs text-muted-foreground">Drag a row by <GripVertical className="inline size-3.5" /> or use the arrows.</span>
+        <span className="text-xs text-muted-foreground">{t("misc.order.drag")} <GripVertical className="inline size-3.5" /> {t("misc.order.arrows")}</span>
       </div>
-      <ol className="flex flex-col gap-1.5" aria-label="Members in order">
+      <ol className="flex flex-col gap-1.5" aria-label={t("misc.order.aria")}>
         {order.map((r, i) => (
           <li
             key={r._id}
@@ -111,10 +113,10 @@ export function ReorderForm({ orgId, rows }: { orgId: string; rows: OrderRow[] }
               <span className="block truncate font-semibold">{r.name}</span>
               <span className="font-mono text-xs text-muted-foreground">{r.membershipNumber}</span>
             </span>
-            <Button variant="ghost" size="icon-sm" aria-label={`Move ${r.name} up`} disabled={i === 0} onClick={() => move(i, i - 1)}>
+            <Button variant="ghost" size="icon-sm" aria-label={t("misc.order.up", { name: r.name })} disabled={i === 0} onClick={() => move(i, i - 1)}>
               <ArrowUp />
             </Button>
-            <Button variant="ghost" size="icon-sm" aria-label={`Move ${r.name} down`} disabled={i === order.length - 1} onClick={() => move(i, i + 1)}>
+            <Button variant="ghost" size="icon-sm" aria-label={t("misc.order.down", { name: r.name })} disabled={i === order.length - 1} onClick={() => move(i, i + 1)}>
               <ArrowDown />
             </Button>
           </li>
@@ -130,13 +132,13 @@ export function ReorderForm({ orgId, rows }: { orgId: string; rows: OrderRow[] }
             setError(null);
             const r = await apiMutate({ path: `/orgs/${orgId}/members/order`, body: { memberIds: order.map((m) => m._id) } });
             if (!r.ok) return setError(r.error);
-            toast.success("Order saved");
+            toast.success(t("misc.order.saved"));
             router.push(`/org/${orgId}/members`);
             router.refresh();
           })
         }
       >
-        {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Save order
+        {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} {t("misc.order.save")}
       </Button>
     </div>
   );

@@ -7,17 +7,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IconChip } from "@/components/app/bits";
 import { getPref, isNativeApp, messaging, nativePlatform } from "@/lib/native-plugins";
-import { enablePush, PROMPT_AGAIN_MS, PUSH_CHANGED, PUSH_PROMPT_DISMISSED } from "@/components/app/native-push";
+import { enablePush, PROMPT_AGAIN_MS, PUSH_CHANGED, PUSH_PROMPT_DISMISSED, pushSwitchedOff } from "@/components/app/native-push";
 import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 
-type State = "web" | "on" | "off" | "blocked";
+/** "muted": the phone allows alerts, but push notifications were switched off for the account. */
+type State = "web" | "on" | "off" | "blocked" | "muted";
 
 /** Are alerts on for this phone? ("web" on the website, where there are no phone alerts.) */
 async function readPushState(): Promise<{ state: State; promptShowing: boolean }> {
   if (!isNativeApp()) return { state: "web", promptShowing: false };
   const { receive } = await messaging().checkPermissions();
-  if (receive === "granted") return { state: "on", promptShowing: false };
+  if (receive === "granted") return { state: (await pushSwitchedOff()) ? "muted" : "on", promptShowing: false };
   if (receive === "denied") return { state: "blocked", promptShowing: false };
   // the one-off "Get alerts" card is on screen right now: don't show two
   const dismissed = Number((await getPref(PUSH_PROMPT_DISMISSED)) ?? 0);
@@ -53,7 +54,8 @@ export function PushStatus({ variant = "full", hideOnWeb = false, className }: {
   const { state, promptShowing, check } = usePushState();
   const [busy, setBusy] = useState(false);
   if (!state) return null;
-  if (variant === "nudge" && (state === "on" || state === "web" || (state === "off" && promptShowing))) return null;
+  // switched off on purpose: no nagging on the dashboard
+  if (variant === "nudge" && (state === "on" || state === "web" || state === "muted" || (state === "off" && promptShowing))) return null;
 
   const turnOn = async () => {
     setBusy(true);
@@ -73,6 +75,20 @@ export function PushStatus({ variant = "full", hideOnWeb = false, className }: {
           {t("native.pushWeb")}{" "}
           <Link href="/download" className="font-semibold whitespace-nowrap text-primary hover:underline">
             {t("native.getApp")}
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
+  if (state === "muted") {
+    return (
+      <div className={cn("mb-4 flex items-start gap-3 rounded-2xl bg-muted/50 p-3.5 text-sm", className)}>
+        <BellOff className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <p className="text-muted-foreground">
+          {t("native.pushMutedDesc")}{" "}
+          <Link href="/account" className="font-semibold whitespace-nowrap text-primary hover:underline">
+            {t("native.pushMutedLink")}
           </Link>
         </p>
       </div>

@@ -13,7 +13,8 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { Money } from "@/components/app/money";
 import { useMoney } from "@/components/app/currency";
 import { apiMutate } from "@/app/actions/api";
-import { monthLabelYM } from "@/lib/months";
+import { useLang, useT } from "@/i18n/client";
+import { monthName } from "@/i18n/core";
 import { cn } from "@/lib/utils";
 import { TEMPLATE_CSV, addExisting, cleanAmount, emptyMember, emptyUpad, lastDayOfPrevMonth, mergeRows, monthAfter, moveClosingDate, notInList, parseSheet, toPaise, type MemberDraft, type UpadDraft } from "./sheet";
 
@@ -115,11 +116,12 @@ const noSubscribe = () => () => {};
 
 /** Renders only in the browser, so the saved draft can be read on the first render. */
 export function OpeningImportForm(props: { orgId: string; status: ImportStatus }) {
+  const tr = useT();
   const client = useSyncExternalStore(noSubscribe, () => true, () => false);
   if (!client)
     return (
       <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading…
+        <Loader2 className="size-4 animate-spin" /> {tr("oimp.loading")}
       </div>
     );
   return <Form {...props} />;
@@ -128,6 +130,9 @@ export function OpeningImportForm(props: { orgId: string; status: ImportStatus }
 function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
   const router = useRouter();
   const money = useMoney();
+  const tr = useT();
+  const lang = useLang();
+  const mn = (ym: string) => monthName(lang, ym);
   const [init] = useState(() => loadDraft(orgId, status));
   const [d, setD] = useState<Draft>(init.draft);
   const [restored, setRestored] = useState(init.restored);
@@ -159,8 +164,8 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
   const bringExisting = () => {
     const r = addExisting(d.members, status.members);
     set("members", r.members);
-    const parts = [r.added && `${r.added} added`, r.linked && `${r.linked} matched to cards you typed`].filter(Boolean);
-    toast.success(`Members already in the Mandal are in the list${parts.length ? ` · ${parts.join(" · ")}` : ""}. Fill in their old savings and upads.`);
+    const parts = [r.added && tr("oimp.added", { n: r.added }), r.linked && tr("oimp.linked", { n: r.linked })].filter(Boolean);
+    toast.success(parts.length ? tr("oimp.inListParts", { parts: parts.join(" · ") }) : tr("oimp.inList"));
   };
 
   /* --- live tally (the server checks again) */
@@ -190,12 +195,12 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
   const runCheck = () =>
     start(async () => {
       setError(null);
-      if (!d.haptaAmount.trim()) return setError("Enter the monthly hapta per share");
+      if (!d.haptaAmount.trim()) return setError(tr("oimp.needHapta"));
       const r = await apiMutate<CheckResult>({ path: `/orgs/${orgId}/opening-import`, body: toBody(d, true) });
       if (!r.ok) return setError(r.error);
       setCheck({ body, result: r.data });
       setAgreed(false);
-      if (r.data.errors.length) toast.error(`${r.data.errors.length} thing${r.data.errors.length === 1 ? "" : "s"} to fix`);
+      if (r.data.errors.length) toast.error(r.data.errors.length === 1 ? tr("oimp.toFixOne") : tr("oimp.toFixN", { n: r.data.errors.length }));
     });
 
   const runImport = () =>
@@ -205,14 +210,14 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
       if (!r.ok) return setError(r.error);
       if (!r.data.imported) {
         setCheck({ body, result: r.data });
-        return setError("Fix the problems below first");
+        return setError(tr("oimp.fixFirst"));
       }
       try {
         window.localStorage.removeItem(draftKey(orgId));
       } catch {
         /* ignore */
       }
-      toast.success("The old hisab is in. From now on, keep everything in the app.");
+      toast.success(tr("oimp.done"));
       router.refresh();
     });
 
@@ -240,17 +245,17 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
     <div className="flex flex-col gap-4">
       {restored && (
         <FormNote tone="good">
-          Your saved draft is back — carry on where you left off.
-          {missing.length > 0 && ` ${missing.length} member${missing.length === 1 ? " was" : "s were"} added to the Mandal since — see below.`}{" "}
+          {tr("oimp.draftBack")}
+          {missing.length > 0 && (missing.length === 1 ? tr("oimp.addedSinceOne") : tr("oimp.addedSinceN", { n: missing.length }))}{" "}
           <button type="button" className="font-semibold underline" onClick={startOver}>
-            Start again
+            {tr("oimp.startAgain")}
           </button>
         </FormNote>
       )}
 
-      <FormSection icon={<CalendarCheck />} tone="indigo" title="1. Close the paper books" description="Pick the day the registers stop. Everything up to that day comes in as one opening figure.">
+      <FormSection icon={<CalendarCheck />} tone="indigo" title={tr("oimp.s1")} description={tr("oimp.s1d")}>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Closing date" htmlFor="oi-date" hint={startMonth ? `Hapta from ${monthLabelYM(startMonth)} onwards is collected in the app.` : undefined}>
+          <Field label={tr("oimp.closingDate")} htmlFor="oi-date" hint={startMonth ? tr("oimp.fromMonth", { month: mn(startMonth) }) : undefined}>
             <Input id="oi-date" type="date" max={status.today} value={d.cutoverDate} onChange={(e) => {
                 const to = e.target.value;
                 // upads still on the old closing date (the default) move with it
@@ -258,36 +263,36 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
               }}
             />
           </Field>
-          <Field label={`Cash in hand on that day${status.cashAccount ? ` (${status.cashAccount.name})` : ""}`} htmlFor="oi-cash" hint="Count money kept on UPI here too." error={toPaise(d.cash) === null ? "Enter a valid amount" : undefined}>
+          <Field label={status.cashAccount ? tr("oimp.cashDayNamed", { name: status.cashAccount.name }) : tr("oimp.cashDay")} htmlFor="oi-cash" hint={tr("oimp.cashHint")} error={toPaise(d.cash) === null ? tr("oimp.validAmount") : undefined}>
             <AmountInput id="oi-cash" value={d.cash} onChange={(e) => set("cash", e.target.value)} placeholder="0" />
           </Field>
         </div>
       </FormSection>
 
-      <FormSection icon={<Banknote />} tone="emerald" title="2. Hapta and upad rate" description="Used from the month after the closing date.">
+      <FormSection icon={<Banknote />} tone="emerald" title={tr("oimp.s2")} description={tr("oimp.s2d")}>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Monthly hapta per share" htmlFor="oi-hapta">
+          <Field label={tr("oimp.haptaPerShare")} htmlFor="oi-hapta">
             <AmountInput id="oi-hapta" value={d.haptaAmount} onChange={(e) => set("haptaAmount", e.target.value)} placeholder="500" />
           </Field>
-          <Field label="Due by day" htmlFor="oi-due">
+          <Field label={tr("oimp.dueDay")} htmlFor="oi-due">
             <Input id="oi-due" type="number" inputMode="numeric" min={1} max={28} value={d.haptaDueDay} onChange={(e) => set("haptaDueDay", e.target.value)} />
           </Field>
-          <Field label="Usual upad rate (% a month)" htmlFor="oi-rate" hint="Each upad can have its own.">
+          <Field label={tr("oimp.upadRate")} htmlFor="oi-rate" hint={tr("oimp.upadRateHint")}>
             <Input id="oi-rate" inputMode="decimal" value={d.upadRate} onChange={(e) => set("upadRate", e.target.value)} placeholder="1.5" />
           </Field>
         </div>
       </FormSection>
 
-      <FormSection icon={<Users />} tone="sky" title="3. Members on the closing date" description="Savings = all hapta + interest credited − withdrawals. Upad = what is still owed, not what was first given.">
+      <FormSection icon={<Users />} tone="sky" title={tr("oimp.s3")} description={tr("oimp.s3d")}>
         {status.members.length > 0 && (
           <div className={cn("rounded-2xl p-3 text-sm ring-1", missing.length ? "bg-sky-500/8 ring-sky-500/25" : "bg-muted/40 ring-foreground/[0.06]")}>
             <p className="font-semibold">
-              {status.members.length} member{status.members.length === 1 ? " is" : "s are"} already in this Mandal
+              {status.members.length === 1 ? tr("oimp.alreadyOne") : tr("oimp.alreadyN", { n: status.members.length })}
             </p>
             <p className="mb-2 text-xs text-muted-foreground">
               {missing.length
-                ? `${missing.length} of them ${missing.length === 1 ? "isn't" : "aren't"} in the list below. Bring them in to add their old savings, shares and upads — anyone left out starts with ₹0.`
-                : "All of them are in the list below — fill in their old savings, shares and upads."}
+                ? tr("oimp.missing", { n: missing.length })
+                : tr("oimp.allIn")}
             </p>
             <ul className="mb-2 flex flex-wrap gap-1.5">
               {status.members.map((m) => {
@@ -303,22 +308,22 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
             </ul>
             {missing.length > 0 && (
               <Button size="sm" onClick={bringExisting}>
-                <UserPlus /> Show {missing.length === 1 ? "them" : `all ${missing.length}`} in the list
+                <UserPlus /> {missing.length === 1 ? tr("oimp.showOne") : tr("oimp.showAll", { n: missing.length })}
               </Button>
             )}
           </div>
         )}
 
         <div className="flex flex-wrap gap-2">
-          <FormDialog trigger={<><ClipboardPaste /> Paste from Excel</>} triggerVariant="outline" triggerSize="sm" title="Paste the closing sheet" wide icon={<ClipboardPaste />} tone="sky">
+          <FormDialog trigger={<><ClipboardPaste /> {tr("oimp.paste")}</>} triggerVariant="outline" triggerSize="sm" title={tr("oimp.pasteTitle")} wide icon={<ClipboardPaste />} tone="sky">
             <PasteForm onRead={(rows) => {
               const r = mergeRows(d.members, rows, d.cutoverDate);
               set("members", r.members);
-              toast.success(`${r.added} added · ${r.updated} filled in · ${r.upads} upad${r.upads === 1 ? "" : "s"}`);
+              toast.success(tr("oimp.pasted", { added: r.added, updated: r.updated, upads: r.upads }));
             }} />
           </FormDialog>
           <Button variant="ghost" size="sm" onClick={downloadTemplate}>
-            <Download /> Sample sheet
+            <Download /> {tr("oimp.sample")}
           </Button>
         </div>
 
@@ -330,20 +335,20 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
               <li key={m.key} className={cn("rounded-2xl bg-muted/40 p-3 ring-1 ring-foreground/[0.06]", errs.length > 0 && "bg-rose-500/5 ring-rose-500/30")}>
                 <div className="mb-2 flex items-center gap-2">
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-primary">{i + 1}</span>
-                  <Input aria-label="Name" value={m.name} onChange={(e) => setMember(m.key, { name: e.target.value })} placeholder="Member's name" className="font-semibold" readOnly={!!m.memberId} />
-                  <Button variant="ghost" size="icon-sm" aria-label={`Remove ${m.name || "member"} from the list`} onClick={() => set("members", d.members.filter((x) => x.key !== m.key))}>
+                  <Input aria-label={tr("oimp.name")} value={m.name} onChange={(e) => setMember(m.key, { name: e.target.value })} placeholder={tr("oimp.namePh")} className="font-semibold" readOnly={!!m.memberId} />
+                  <Button variant="ghost" size="icon-sm" aria-label={tr("oimp.removeX", { name: m.name || tr("oimp.member") })} onClick={() => set("members", d.members.filter((x) => x.key !== m.key))}>
                     <Trash2 />
                   </Button>
                 </div>
-                {(m.memberId || match) && <p className="mb-2 text-xs text-muted-foreground">Already in the app{match ? ` as ${match.name} (${match.membershipNumber})` : ""}</p>}
+                {(m.memberId || match) && <p className="mb-2 text-xs text-muted-foreground">{match ? tr("oimp.inAppAs", { name: match.name, no: match.membershipNumber }) : tr("oimp.inApp")}</p>}
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  <Field label="Phone" className="col-span-2 sm:col-span-1">
-                    <Input inputMode="tel" value={m.phone} onChange={(e) => setMember(m.key, { phone: e.target.value })} placeholder="Optional" />
+                  <Field label={tr("oimp.phone")} className="col-span-2 sm:col-span-1">
+                    <Input inputMode="tel" value={m.phone} onChange={(e) => setMember(m.key, { phone: e.target.value })} placeholder={tr("oimp.optional")} />
                   </Field>
-                  <Field label="Shares">
+                  <Field label={tr("oimp.shares")}>
                     <Input type="number" inputMode="numeric" min={1} max={50} value={m.shares} onChange={(e) => setMember(m.key, { shares: e.target.value })} />
                   </Field>
-                  <Field label="Savings" error={toPaise(m.savings) === null ? "Not a valid amount" : undefined}>
+                  <Field label={tr("oimp.savings")} error={toPaise(m.savings) === null ? tr("oimp.notValid") : undefined}>
                     <AmountInput value={m.savings} onChange={(e) => setMember(m.key, { savings: e.target.value })} placeholder="0" />
                   </Field>
                 </div>
@@ -352,30 +357,30 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
                   <div key={u.key} className="mt-2 rounded-xl bg-orange-500/6 p-2.5 ring-1 ring-orange-500/15">
                     <div className="mb-1.5 flex items-center justify-between text-xs font-semibold text-orange-800 dark:text-orange-200">
                       <span className="flex items-center gap-1.5">
-                        <HandCoins className="size-3.5" /> Upad {m.upads.length > 1 ? k + 1 : ""} still running
+                        <HandCoins className="size-3.5" /> {tr("oimp.upadRunning", { n: m.upads.length > 1 ? k + 1 : "" })}
                       </span>
-                      <Button variant="ghost" size="icon-xs" aria-label="Remove upad" onClick={() => setMember(m.key, { upads: m.upads.filter((x) => x.key !== u.key) })}>
+                      <Button variant="ghost" size="icon-xs" aria-label={tr("oimp.removeUpad")} onClick={() => setMember(m.key, { upads: m.upads.filter((x) => x.key !== u.key) })}>
                         <X />
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      <Field label="Still owed" error={toPaise(u.amount) === null ? "Not a valid amount" : undefined}>
+                      <Field label={tr("oimp.stillOwed")} error={toPaise(u.amount) === null ? tr("oimp.notValid") : undefined}>
                         <AmountInput value={u.amount} onChange={(e) => setUpad(m.key, u.key, { amount: e.target.value })} placeholder="0" />
                       </Field>
-                      <Field label="Rate % a month">
+                      <Field label={tr("oimp.rate")}>
                         <Input inputMode="decimal" value={u.monthlyRate} onChange={(e) => setUpad(m.key, u.key, { monthlyRate: e.target.value })} placeholder={d.upadRate || "1.5"} />
                       </Field>
-                      <Field label="Interest unpaid" error={toPaise(u.interestDue) === null ? "Not a valid amount" : undefined}>
+                      <Field label={tr("oimp.interestUnpaid")} error={toPaise(u.interestDue) === null ? tr("oimp.notValid") : undefined}>
                         <AmountInput value={u.interestDue} onChange={(e) => setUpad(m.key, u.key, { interestDue: e.target.value })} placeholder="0" />
                       </Field>
-                      <Field label="Given on">
+                      <Field label={tr("oimp.givenOn")}>
                         <Input type="date" max={d.cutoverDate || undefined} value={u.givenOn} onChange={(e) => setUpad(m.key, u.key, { givenOn: e.target.value })} />
                       </Field>
                     </div>
                   </div>
                 ))}
                 <Button variant="ghost" size="xs" className="mt-2" onClick={() => setMember(m.key, { upads: [...m.upads, emptyUpad(d.cutoverDate)] })}>
-                  <Plus /> Running upad
+                  <Plus /> {tr("oimp.addUpad")}
                 </Button>
                 {errs.map((e, k) => (
                   <p key={k} className="mt-1.5 text-xs text-destructive" role="alert">
@@ -387,7 +392,7 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
           })}
         </ol>
         <Button variant="outline" onClick={() => set("members", [...d.members, emptyMember()])}>
-          <Plus /> Add member
+          <Plus /> {tr("oimp.addMember")}
         </Button>
       </FormSection>
 
@@ -395,8 +400,8 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
         <label className="flex items-start gap-2.5 rounded-2xl bg-amber-500/8 px-3.5 py-3 text-sm ring-1 ring-amber-500/20">
           <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={!!d.interestInSavings} onChange={(e) => set("interestInSavings", e.target.checked)} />
           <span>
-            <b>The unpaid interest is already added to members&apos; savings</b>
-            <span className="block text-xs text-muted-foreground">Tick this if the savings above already include the {money.fmt(t.interest)} of upad interest not yet collected. When it is collected it then only adds to the cash — it isn&apos;t added to members&apos; savings a second time.</span>
+            <b>{tr("oimp.interestIn")}</b>
+            <span className="block text-xs text-muted-foreground">{tr("oimp.interestInHint", { amount: money.fmt(t.interest) })}</span>
           </span>
         </label>
       )}
@@ -418,7 +423,7 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
         </div>
       )}
 
-      <Field label="Note (optional)" htmlFor="oi-note" hint="e.g. Checked and signed at the meeting on 2 November">
+      <Field label={tr("oimp.note")} htmlFor="oi-note" hint={tr("oimp.noteHint")}>
         <Input id="oi-note" value={d.note} maxLength={300} onChange={(e) => set("note", e.target.value)} />
       </Field>
 
@@ -426,34 +431,34 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
 
       {!checked ? (
         <Button size="lg" className="h-12 rounded-2xl text-base sm:self-start sm:px-6" disabled={pending || t.bad || t.count === 0} onClick={runCheck}>
-          {pending ? <Loader2 className="animate-spin" /> : <ListChecks />} Check the figures
+          {pending ? <Loader2 className="animate-spin" /> : <ListChecks />} {tr("oimp.check")}
         </Button>
       ) : checked.errors.length > 0 ? (
         <div className="flex flex-col gap-2">
           <FormNote tone="warn">
-            {checked.errors.length} thing{checked.errors.length === 1 ? "" : "s"} to fix (marked in red above), then check again.
+            {checked.errors.length === 1 ? tr("oimp.fixThenOne") : tr("oimp.fixThenN", { n: checked.errors.length })}
           </FormNote>
           <Button size="lg" className="h-12 rounded-2xl text-base sm:self-start sm:px-6" disabled={pending} onClick={runCheck}>
-            {pending ? <Loader2 className="animate-spin" /> : <ListChecks />} Check again
+            {pending ? <Loader2 className="animate-spin" /> : <ListChecks />} {tr("oimp.checkAgain")}
           </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-3 rounded-2xl bg-emerald-500/8 p-4 ring-1 ring-emerald-500/25">
           <p className="flex items-center gap-2 font-semibold text-emerald-800 dark:text-emerald-200">
-            <CheckCircle2 className="size-5" /> Ready: {checked.totals.members} members ({checked.totals.newMembers} new), {checked.totals.upadCount} upad{checked.totals.upadCount === 1 ? "" : "s"}
+            <CheckCircle2 className="size-5" /> {tr("oimp.ready", { members: checked.totals.members, new: checked.totals.newMembers, upads: checked.totals.upadCount })}
           </p>
           <ul className="list-disc pl-5 text-sm text-muted-foreground">
-            <li>Each member&apos;s savings starts at the figure above, dated {checked.cutoverDate}.</li>
-            <li>Upads start charging interest from {monthLabelYM(checked.haptaStartMonth)}; unpaid interest ({money.fmt(checked.totals.interestDuePaise)}) is due now.</li>
-            <li>Hapta starts in {monthLabelYM(checked.haptaStartMonth)}: {money.fmt(checked.totals.haptaPerMonthPaise)} a month for {checked.totals.shares} shares.</li>
-            <li>This is done once. Small mistakes later are fixed per member with an adjustment.</li>
+            <li>{tr("oimp.r1", { date: checked.cutoverDate })}</li>
+            <li>{tr("oimp.r2", { month: mn(checked.haptaStartMonth), amount: money.fmt(checked.totals.interestDuePaise) })}</li>
+            <li>{tr("oimp.r3", { month: mn(checked.haptaStartMonth), amount: money.fmt(checked.totals.haptaPerMonthPaise), shares: checked.totals.shares })}</li>
+            <li>{tr("oimp.r4")}</li>
           </ul>
           <label className="flex items-start gap-2.5 text-sm">
             <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-            <span>The members have seen and agreed these figures.</span>
+            <span>{tr("oimp.agreed")}</span>
           </label>
           <Button size="lg" className="h-12 rounded-2xl text-base sm:self-start sm:px-6" disabled={pending || !agreed} onClick={runImport}>
-            {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Bring the old hisab in
+            {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} {tr("oimp.bringIn")}
           </Button>
         </div>
       )}
@@ -462,49 +467,50 @@ function Form({ orgId, status }: { orgId: string; status: ImportStatus }) {
 }
 
 function Tally({ t, cashName }: { t: { count: number; shares: number; savings: number; upad: number; upadCount: number; interest: number; cash: number; own: number; perMonth: number; inSavings: boolean }; cashName?: string }) {
+  const tr = useT();
   const short = t.own < 0;
   return (
     <section className={cn("rounded-3xl p-4 ring-1 sm:p-5", short ? "bg-rose-500/6 ring-rose-500/25" : "bg-indigo-500/6 ring-indigo-500/20")}>
       <h2 className="mb-3 flex items-center gap-2 font-bold">
-        <Scale className="size-5" /> Does it tally?
+        <Scale className="size-5" /> {tr("oimp.tally")}
       </h2>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-        <dt className="text-muted-foreground">{cashName ?? "Cash"} in hand</dt>
+        <dt className="text-muted-foreground">{tr("oimp.cashInHand", { name: cashName ?? tr("oimp.cash") })}</dt>
         <dd className="text-right">
           <Money paise={t.cash} />
         </dd>
-        <dt className="text-muted-foreground">+ Upad still out ({t.upadCount})</dt>
+        <dt className="text-muted-foreground">{tr("oimp.upadOut", { n: t.upadCount })}</dt>
         <dd className="text-right">
           <Money paise={t.upad} />
         </dd>
         {t.inSavings && (
           <>
-            <dt className="text-muted-foreground">+ Unpaid upad interest</dt>
+            <dt className="text-muted-foreground">{tr("oimp.unpaidInterest")}</dt>
             <dd className="text-right">
               <Money paise={t.interest} />
             </dd>
           </>
         )}
-        <dt className="text-muted-foreground">− Members&apos; savings ({t.count})</dt>
+        <dt className="text-muted-foreground">{tr("oimp.minusSavings", { n: t.count })}</dt>
         <dd className="text-right">
           <Money paise={-t.savings} />
         </dd>
-        <dt className="border-t pt-1.5 font-semibold">= Mandal&apos;s own money</dt>
+        <dt className="border-t pt-1.5 font-semibold">{tr("oimp.own")}</dt>
         <dd className={cn("border-t pt-1.5 text-right font-bold", short && "text-destructive")}>
           <Money paise={t.own} />
         </dd>
       </dl>
       {short && (
         <p className="mt-2 flex items-start gap-1.5 text-xs text-destructive">
-          <AlertTriangle className="mt-px size-3.5 shrink-0" /> Cash + upad is less than the savings. Usually a figure is missing — check the registers.
+          <AlertTriangle className="mt-px size-3.5 shrink-0" /> {tr("oimp.short")}
         </p>
       )}
       <p className="mt-3 text-xs text-muted-foreground">
-        {t.shares} share{t.shares === 1 ? "" : "s"} · hapta <Money paise={t.perMonth} /> a month
+        {tr("oimp.sharesHapta", { n: t.shares })} <Money paise={t.perMonth} /> {tr("oimp.aMonth")}
         {!t.inSavings && (
           <>
             {" "}
-            · upad interest unpaid <Money paise={t.interest} /> (shared among members when it&apos;s paid)
+            · {tr("oimp.interestUnpaidShared")} <Money paise={t.interest} /> {tr("oimp.sharedWhenPaid")}
           </>
         )}
       </p>
@@ -514,16 +520,17 @@ function Tally({ t, cashName }: { t: { count: number; shares: number; savings: n
 
 function PasteForm({ onRead }: { onRead: (rows: ReturnType<typeof parseSheet>["rows"]) => void }) {
   const close = useDialogClose();
+  const tr = useT();
   const [text, setText] = useState("");
   const parsed = useMemo(() => (text.trim() ? parseSheet(text) : null), [text]);
   return (
     <div className="flex flex-col gap-3 text-sm">
       <FormNote>
-        Copy the rows from Excel or Google Sheets (or open a .csv) and paste them here. Columns: <b>Name, Phone, Shares, Savings, Upad, Rate, Interest due, Upad date</b>. With a header row the order doesn&apos;t matter. Two upads? Two rows with the same name.
+        {tr("oimp.pasteHelp")} <b>{tr("oimp.pasteCols")}</b>. {tr("oimp.pasteHelp2")}
       </FormNote>
       <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder={TEMPLATE_CSV} className="font-mono text-xs" />
       <label className="text-xs text-muted-foreground">
-        …or choose a .csv file:{" "}
+        {tr("oimp.orCsv")}{" "}
         <input
           type="file"
           accept=".csv,text/csv,.txt"
@@ -537,7 +544,8 @@ function PasteForm({ onRead }: { onRead: (rows: ReturnType<typeof parseSheet>["r
       {parsed && (
         <div className={cn("rounded-xl p-2.5 text-xs ring-1", parsed.problems.length ? "bg-amber-500/8 ring-amber-500/25" : "bg-emerald-500/8 ring-emerald-500/25")}>
           <p className="font-semibold">
-            {parsed.rows.length} row{parsed.rows.length === 1 ? "" : "s"} read{parsed.problems.length ? ` · ${parsed.problems.length} to look at` : ""}
+            {tr("oimp.rowsRead", { n: parsed.rows.length })}
+            {parsed.problems.length ? tr("oimp.toLook", { n: parsed.problems.length }) : ""}
           </p>
           <ul className="mt-1 max-h-32 overflow-y-auto">
             {parsed.problems.map((p, i) => (
@@ -554,7 +562,7 @@ function PasteForm({ onRead }: { onRead: (rows: ReturnType<typeof parseSheet>["r
           close();
         }}
       >
-        <ClipboardPaste /> Put {parsed?.rows.length ?? 0} rows in the list
+        <ClipboardPaste /> {tr("oimp.putRows", { n: parsed?.rows.length ?? 0 })}
       </Button>
     </div>
   );

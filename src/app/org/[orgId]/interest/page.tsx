@@ -1,7 +1,6 @@
 import { Percent } from "lucide-react";
 import { SummaryBand } from "@/components/app/summary-band";
 import { IconChip, SectionTitle } from "@/components/app/bits";
-import { monthLabelYM } from "@/lib/months";
 import { api } from "@/lib/server/api";
 import { can, getOrg } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
@@ -12,6 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDate } from "@/lib/format";
 import { requestMonth } from "@/lib/server/today";
 import { InterestDistributor } from "@/features/interest/interest-distributor";
+
+import { getT } from "@/i18n/server";
+import { monthName } from "@/i18n/core";
 
 export const metadata = { title: "Interest" };
 
@@ -29,23 +31,25 @@ interface Run {
 
 export default async function InterestPage({ params }: PageProps<"/org/[orgId]/interest">) {
   const { orgId } = await params;
+  const { t, lang } = await getT();
+  const monthLabelYM = (ym: string) => monthName(lang, ym);
   const [org, runs, thisMonth] = await Promise.all([getOrg(orgId), api<Run[]>(`/orgs/${orgId}/interest/runs`), requestMonth()]);
   const canDistribute = can(org, "interest.distribute") && org.status === "active";
   const total = runs.reduce((s, r) => s + r.totalPaise, 0);
   const last = runs[0];
-  const method = (r: Run) => (r.mode === "rate" ? `${r.monthlyRate}% per month` : "Entered manually");
-  const basis = (r: Run) => (r.basis ? (r.basis === "hapta_contributions" ? "on hapta contributions" : "on previous month's balance") : null);
+  const method = (r: Run) => (r.mode === "rate" ? t("int.perMonth", { rate: r.monthlyRate ?? "" }) : t("int.manual"));
+  const basis = (r: Run) => (r.basis ? (r.basis === "hapta_contributions" ? t("int.onHapta") : t("int.onPrev")) : null);
   return (
     <>
-      <PageHeader title="Interest" description="Monthly interest added to members' savings balances. No cash moves until a member withdraws." />
+      <PageHeader title={t("int.title")} description={t("int.desc")} />
       <SummaryBand
         icon={<Percent />}
-        label="Interest credited to members, all time"
+        label={t("int.allTime")}
         value={<Money paise={total} />}
-        sub={last ? `Last credited for ${monthLabelYM(last.period)} on ${formatDate(last.creditDate)}` : "Nothing credited yet"}
+        sub={last ? t("int.last", { month: monthLabelYM(last.period), date: formatDate(last.creditDate) }) : t("int.nothing")}
         stats={[
-          { label: "Months credited", value: runs.length },
-          { label: "Last month", value: last ? <Money paise={last.totalPaise} short /> : "—" },
+          { label: t("int.months"), value: runs.length },
+          { label: t("int.lastMonth"), value: last ? <Money paise={last.totalPaise} short /> : "—" },
         ]}
       />
       {canDistribute && (
@@ -53,12 +57,12 @@ export default async function InterestPage({ params }: PageProps<"/org/[orgId]/i
           <InterestDistributor defaults={org.settings.interest} defaultPeriod={thisMonth} />
         </div>
       )}
-      <SectionTitle>Interest credited</SectionTitle>
+      <SectionTitle>{t("int.credited")}</SectionTitle>
       {runs.length === 0 ? (
-        <EmptyState icon={<Percent />} title="No interest credited yet" description="Credit the first month above." />
+        <EmptyState icon={<Percent />} title={t("int.none")} description={t("int.noneD")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Interest credited">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("int.credited")}>
             {runs.map((r) => (
               <li key={r._id} className="flex items-start gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
                 <IconChip tone="pink" size="sm">
@@ -72,7 +76,7 @@ export default async function InterestPage({ params }: PageProps<"/org/[orgId]/i
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(r.creditDate)}
-                    {r.createdByName ? ` · by ${r.createdByName}` : ""}
+                    {r.createdByName ? t("int.by", { name: r.createdByName }) : ""}
                   </p>
                   {r.note && <p className="mt-1 text-xs text-muted-foreground">{r.note}</p>}
                 </div>
@@ -85,11 +89,11 @@ export default async function InterestPage({ params }: PageProps<"/org/[orgId]/i
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Month</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Credited on</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>By</TableHead>
+                    <TableHead>{t("int.month")}</TableHead>
+                    <TableHead>{t("int.method")}</TableHead>
+                    <TableHead>{t("int.creditedOn")}</TableHead>
+                    <TableHead className="text-right">{t("int.total")}</TableHead>
+                    <TableHead>{t("int.byCol")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

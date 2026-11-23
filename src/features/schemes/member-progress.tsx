@@ -41,7 +41,7 @@ export function MemberProgress({ e, defaultOpen = false }: { e: EnrollmentProgre
         <ChevronDown className="size-3.5 shrink-0 transition-transform group-open:rotate-180" />
       </summary>
       <div className="mt-2 flex flex-col gap-2">
-        <ul className="flex flex-wrap gap-1.5" aria-label="Installments">
+        <ul className="flex flex-wrap gap-1.5" aria-label={t("ax.installments")}>
           {e.schedule.map((i) => (
             <li key={i.sequence} title={`${i.periodLabel} · ${formatDate(i.dueDate)} · ${word(i.status)}`} className={cn("flex flex-col rounded-lg px-2 py-1 text-[11px] leading-tight ring-1", CHIP[i.status])}>
               <span className="font-semibold">{i.periodLabel}</span>

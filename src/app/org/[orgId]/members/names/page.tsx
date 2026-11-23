@@ -3,17 +3,19 @@ import { can, getOrg } from "@/lib/server/data";
 import { PageHeader } from "@/components/app/page-header";
 import { FormNote } from "@/components/app/form-bits";
 import { RenameForm, type RenameRow } from "@/features/members/rename-form";
+import { getT } from "@/i18n/server";
 
 export const metadata = { title: "Edit member names" };
 
 export default async function MemberNamesPage({ params }: PageProps<"/org/[orgId]/members/names">) {
   const { orgId } = await params;
+  const { t } = await getT();
   const org = await getOrg(orgId);
   if (!can(org, "members.manage")) {
     return (
       <div className="max-w-3xl">
-        <PageHeader title="Edit member names" />
-        <FormNote tone="warn">Only the Mandal&apos;s admin can change member names.</FormNote>
+        <PageHeader title={t("misc.names.title")} />
+        <FormNote tone="warn">{t("misc.names.onlyAdmin")}</FormNote>
       </div>
     );
   }
@@ -26,7 +28,7 @@ export default async function MemberNamesPage({ params }: PageProps<"/org/[orgId
   }
   return (
     <div className="max-w-3xl">
-      <PageHeader title="Edit member names" description="Change all the names at once — for example to Gujarati. Type them here, or paste a list." />
+      <PageHeader title={t("misc.names.title")} description={t("misc.names.desc")} />
       <RenameForm orgId={orgId} rows={rows} />
     </div>
   );

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { CalendarCheck2, ChevronRight, Users } from "lucide-react";
 import { Money } from "@/components/app/money";
 import { IconChip, MemberAvatar, ProgressBar } from "@/components/app/bits";
-import { FREQUENCY_LABEL, formatDate, label } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import type { T } from "@/i18n/core";
+import { frequencyLabel } from "@/i18n/labels";
 import { cn } from "@/lib/utils";
 
 export type InstallmentGroup = {
@@ -25,9 +27,9 @@ export type InstallmentGroup = {
 };
 
 /** One card per scheme or per member; tapping it opens that scheme's / member's installments. */
-export function InstallmentGroups({ by, items, hrefFor }: { by: "scheme" | "member"; items: InstallmentGroup[]; hrefFor: (g: InstallmentGroup) => string }) {
+export function InstallmentGroups({ by, items, hrefFor, t }: { by: "scheme" | "member"; items: InstallmentGroup[]; hrefFor: (g: InstallmentGroup) => string; t: T }) {
   return (
-    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label={by === "scheme" ? "Installments by scheme" : "Installments by member"}>
+    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label={by === "scheme" ? t("inst.g.aria.scheme") : t("inst.g.aria.member")}>
       {items.map((g) => {
         const pct = g.plannedPaise > 0 ? Math.round((g.paidPaise / g.plannedPaise) * 100) : 0;
         return (
@@ -49,12 +51,12 @@ export function InstallmentGroups({ by, items, hrefFor }: { by: "scheme" | "memb
                   <p className="truncate text-xs text-muted-foreground">
                     {by === "scheme" ? (
                       <>
-                        {label(FREQUENCY_LABEL, g.frequency ?? "")}
+                        {frequencyLabel(t, g.frequency ?? "")}
                         {g.amountPaise ? <> · <Money paise={g.amountPaise} short /></> : null}
                       </>
                     ) : (
                       <>
-                        {g.membershipNumber} · {g.others} scheme{g.others === 1 ? "" : "s"}
+                        {g.membershipNumber} · {g.others === 1 ? t("inst.g.scheme1") : t("inst.g.schemesN", { n: g.others })}
                       </>
                     )}
                   </p>
@@ -69,32 +71,32 @@ export function InstallmentGroups({ by, items, hrefFor }: { by: "scheme" | "memb
               <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                 <ProgressBar value={pct} className="h-1.5 flex-1" barClassName="bg-emerald-500" />
                 <span className="shrink-0 tabular-nums">
-                  {g.paidCount} of {g.count} paid
+                  {t("inst.g.paidOf", { paid: g.paidCount, count: g.count })}
                 </span>
               </div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <div className={cn("rounded-xl px-1.5 py-1.5", g.outstandingPaise > 0 ? "bg-amber-500/10" : "bg-muted/60")}>
-                  <dt className="text-[11px] text-muted-foreground">Due now</dt>
+                  <dt className="text-[11px] text-muted-foreground">{t("inst.dueNow")}</dt>
                   <dd className={cn("text-sm font-bold", g.outstandingPaise > 0 && "text-warning-ink")}>
                     <Money paise={g.outstandingPaise} short />
                   </dd>
                 </div>
                 <div className={cn("rounded-xl px-1.5 py-1.5", g.overduePaise > 0 ? "bg-rose-500/8" : "bg-muted/60")}>
-                  <dt className="text-[11px] text-muted-foreground">Overdue</dt>
+                  <dt className="text-[11px] text-muted-foreground">{t("inst.overdue")}</dt>
                   <dd className={cn("text-sm font-bold", g.overduePaise > 0 && "text-rose-700 dark:text-rose-300")}>
                     <Money paise={g.overduePaise} short />
                   </dd>
                 </div>
                 <div className="rounded-xl bg-sky-500/8 px-1.5 py-1.5">
-                  <dt className="text-[11px] text-muted-foreground">Paid ahead</dt>
+                  <dt className="text-[11px] text-muted-foreground">{t("inst.paidAhead")}</dt>
                   <dd className="text-sm font-bold text-sky-700 dark:text-sky-300">
                     <Money paise={g.paidAheadPaise} short />
                   </dd>
                 </div>
               </dl>
               <p className="mt-2 text-xs text-muted-foreground">
-                Collected <Money paise={g.paidPaise} short className="font-semibold text-foreground" /> of <Money paise={g.plannedPaise} short />
-                {g.nextDue ? <> · next due {formatDate(g.nextDue)}</> : <> · all paid</>}
+                {t("inst.g.collected")} <Money paise={g.paidPaise} short className="font-semibold text-foreground" /> {t("inst.g.of")} <Money paise={g.plannedPaise} short />
+                {g.nextDue ? t("inst.g.nextDue", { date: formatDate(g.nextDue) }) : t("inst.g.allPaid")}
               </p>
             </Link>
           </li>

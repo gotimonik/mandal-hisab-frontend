@@ -14,7 +14,10 @@ import { TableWrap } from "@/components/app/table-wrap";
 import { ActionButton } from "@/components/app/action-button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { METHOD_LABEL, formatDate, label } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { getT } from "@/i18n/server";
+import { methodLabel } from "@/i18n/labels";
+import type { Key } from "@/i18n/core";
 import { RecordPaymentDialog } from "@/features/collections/record-payment";
 import { SummaryBand } from "@/components/app/summary-band";
 import { ChipLinks } from "@/components/app/chip-links";
@@ -25,7 +28,7 @@ import { VerifyDialog } from "@/features/collections/verify-dialog";
 
 export const metadata = { title: "Collections" };
 
-const KIND: Record<string, string> = { hapta: "Hapta", membership_fee: "Membership fee", event: "Event", other_income: "Other income" };
+const KINDS = ["hapta", "membership_fee", "event", "other_income"] as const;
 const KIND_LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
   hapta: { tone: "emerald", icon: <CalendarDays /> },
   membership_fee: { tone: "sky", icon: <Ticket /> },
@@ -33,16 +36,12 @@ const KIND_LOOK: Record<string, { tone: Tone; icon: React.ReactNode }> = {
   other_income: { tone: "indigo", icon: <ArrowDownToLine /> },
 };
 const look = (k: string) => KIND_LOOK[k] ?? { tone: "slate" as Tone, icon: <HandCoins /> };
-const STATUSES = [
-  ["", "All"],
-  ["pending", "To verify"],
-  ["verified", "Verified"],
-  ["rejected", "Rejected"],
-  ["reversed", "Reversed"],
-] as const;
+const STATUSES = ["", "pending", "verified", "rejected", "reversed"] as const;
 
 export default async function CollectionsPage({ params, searchParams }: PageProps<"/org/[orgId]/collections">) {
   const { orgId } = await params;
+  const { t } = await getT();
+  const kindLabel = (k: string) => ((KINDS as readonly string[]).includes(k) ? t(`ap.col.kind.${k}` as Key) : k);
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const f = { status: str("status"), kind: str("kind"), method: str("method"), from: str("from"), to: str("to"), memberId: str("memberId") };
@@ -71,31 +70,31 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
     <>
       {p.receiptId && (
         <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-          <Receipt className="size-3.5" /> Receipt
+          <Receipt className="size-3.5" /> {t("ap.receipt")}
         </Link>
       )}
       {p.status === "pending" && canVerify && (
         <>
-          <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reject`} size="xs" variant="ghost" successMessage="Payment rejected" confirm={{ title: "Reject this payment?", description: "It will not count towards any dues.", reason: "required", destructive: true, confirmLabel: "Reject" }}>
-            Reject
+          <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reject`} size="xs" variant="ghost" successMessage={t("ap.col.rejected")} confirm={{ title: t("ap.col.rejectQ"), description: t("ap.col.rejectD"), reason: "required", destructive: true, confirmLabel: t("ap.reject") }}>
+            {t("ap.reject")}
           </ActionButton>
           <VerifyDialog paymentId={p._id} accounts={accounts.filter((a) => a.isActive)} accountId={p.accountId} payer={p.payerName ?? ""} amountPaise={p.amountPaise} date={p.date} path={`/payments/${p._id}/verify`} />
         </>
       )}
       {p.status === "verified" && canReverse && (
-        <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: "A reversal entry is posted, the receipt is cancelled and the member's dues are restored. The original record is kept.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-          Reverse
+        <ActionButton path={`/orgs/${orgId}/payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage={t("ap.col.reversed")} confirm={{ title: t("ap.col.reverseQ"), description: t("ap.col.reverseD"), reason: "required", destructive: true, confirmLabel: t("ap.reverse") }}>
+          {t("ap.reverse")}
         </ActionButton>
       )}
     </>
   );
-  const methodLine = (p: Payment) => [label(METHOD_LABEL, p.method), p.reference, p.accountName && `→ ${p.accountName}`].filter(Boolean).join(" · ");
+  const methodLine = (p: Payment) => [methodLabel(t, p.method), p.reference, p.accountName && `→ ${p.accountName}`].filter(Boolean).join(" · ");
 
   return (
     <>
       <PageHeader
-        title="Collections"
-        description="All money received — hapta, fees, events and other income."
+        title={t("ap.col.title")}
+        description={t("ap.col.desc")}
         actions={
           canRecord ? (
             <RecordPaymentDialog
@@ -112,45 +111,45 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
       <SummaryBand
         tone="green"
         icon={<HandCoins />}
-        label={f.status === "pending" ? "Waiting for verification" : "Total of the listed collections"}
+        label={f.status === "pending" ? t("ap.col.waiting") : t("ap.col.listedTotal")}
         value={<Money paise={data.totalAmountPaise} />}
-        sub={`${data.total} record${data.total === 1 ? "" : "s"}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : "start"} – ${f.to ? formatDate(f.to) : "today"}` : ""}`}
+        sub={`${data.total === 1 ? t("ap.record1") : t("ap.records", { n: data.total })}${f.from || f.to ? ` · ${f.from ? formatDate(f.from) : t("ap.start")} – ${f.to ? formatDate(f.to) : t("ap.today")}` : ""}`}
       />
-      <ChipLinks label="Status" current={f.status} items={STATUSES.map(([k, l]) => ({ key: k, label: l, href: href({ status: k, page: "" }) }))} />
+      <ChipLinks label={t("ap.status")} current={f.status} items={STATUSES.map((k) => ({ key: k, label: k ? t(`ap.col.st.${k}` as Key) : t("ap.all"), href: href({ status: k, page: "" }) }))} />
       <FilterBar resetHref={`/org/${orgId}/collections`}>
         {f.status && <input type="hidden" name="status" value={f.status} />}
-        <FilterField label="Type">
+        <FilterField label={t("ap.type")}>
           <NativeSelect name="kind" defaultValue={f.kind}>
-            <option value="">All</option>
-            {Object.entries(KIND).map(([k, v]) => (
+            <option value="">{t("ap.all")}</option>
+            {KINDS.map((k) => (
               <option key={k} value={k}>
-                {v}
+                {kindLabel(k)}
               </option>
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="Method">
+        <FilterField label={t("ap.method")}>
           <NativeSelect name="method" defaultValue={f.method}>
-            <option value="">All</option>
+            <option value="">{t("ap.all")}</option>
             {org.settings.paymentMethods.map((m) => (
               <option key={m} value={m}>
-                {label(METHOD_LABEL, m)}
+                {methodLabel(t, m)}
               </option>
             ))}
           </NativeSelect>
         </FilterField>
-        <FilterField label="From">
+        <FilterField label={t("ap.from")}>
           <Input type="date" name="from" defaultValue={f.from} />
         </FilterField>
-        <FilterField label="To">
+        <FilterField label={t("ap.to")}>
           <Input type="date" name="to" defaultValue={f.to} />
         </FilterField>
       </FilterBar>
       {data.items.length === 0 ? (
-        <EmptyState icon={<HandCoins />} title="No collections found" description="Try another status or date range." />
+        <EmptyState icon={<HandCoins />} title={t("ap.col.none")} description={t("ap.col.noneD")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Collections">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("ap.col.title")}>
             {data.items.map((p) => {
               const lk = look(p.kind);
               return (
@@ -162,7 +161,7 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
                     <div className="min-w-0 flex-1 text-sm">
                       {payer(p)}
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(p.date)} · {KIND[p.kind] ?? p.kind}
+                        {formatDate(p.date)} · {kindLabel(p.kind)}
                         {p.eventName ? ` · ${p.eventName}` : ""}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">{methodLine(p)}</p>
@@ -173,7 +172,7 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
                     </div>
                   </div>
                   {(p.rejectedReason || p.reversalReason) && <p className="mt-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">{p.rejectedReason ?? p.reversalReason}</p>}
-                  {p.source === "member_request" && <p className="mt-1 text-xs text-muted-foreground">Reported by the member</p>}
+                  {p.source === "member_request" && <p className="mt-1 text-xs text-muted-foreground">{t("ap.col.reportedByMember")}</p>}
                   <div className="mt-2 flex flex-wrap items-center justify-end gap-1 empty:hidden">{actions(p)}</div>
                 </li>
               );
@@ -184,11 +183,11 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Payer</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("ap.payer")}</TableHead>
+                    <TableHead>{t("ap.type")}</TableHead>
+                    <TableHead>{t("ap.method")}</TableHead>
+                    <TableHead className="text-right">{t("ap.amount")}</TableHead>
+                    <TableHead>{t("ap.status")}</TableHead>
                     <TableHead className="text-right" />
                   </TableRow>
                 </TableHeader>
@@ -204,7 +203,7 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
                               {payer(p)}
                               <div className="text-xs text-muted-foreground">
                                 {formatDate(p.date)}
-                                {p.source === "member_request" ? " · reported by member" : ""}
+                                {p.source === "member_request" ? t("ap.col.reportedShort") : ""}
                               </div>
                             </div>
                           </div>
@@ -215,13 +214,13 @@ export default async function CollectionsPage({ params, searchParams }: PageProp
                               {lk.icon}
                             </IconChip>
                             <span>
-                              {KIND[p.kind] ?? p.kind}
+                              {kindLabel(p.kind)}
                               {p.eventName && <span className="block text-xs text-muted-foreground">{p.eventName}</span>}
                             </span>
                           </span>
                         </TableCell>
                         <TableCell className="max-w-56 whitespace-normal text-sm">
-                          {label(METHOD_LABEL, p.method)}
+                          {methodLabel(t, p.method)}
                           {(p.reference || p.accountName) && <div className="text-xs text-muted-foreground">{[p.reference, p.accountName && `→ ${p.accountName}`].filter(Boolean).join(" · ")}</div>}
                         </TableCell>
                         <TableCell className="text-right">

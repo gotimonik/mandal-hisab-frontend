@@ -125,7 +125,7 @@ export default async function MonthlyPage({ params, searchParams }: PageProps<"/
       <MonthList orgId={orgId} rows={view.rows} period={monthName(m)} canCollect={canCollect} initialFilter={filter} />
 
       {loans.rows.length > 0 && (
-        <section className="mt-8" aria-label="Upad interest">
+        <section className="mt-8" aria-label={t("ax.upadInterest")}>
           <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-base font-bold">{t("monthly.upadInterest", { month: monthName(m) })}</h2>

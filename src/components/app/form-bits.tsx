@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { IconChip } from "@/components/app/bits";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 import type { Tone } from "@/lib/tones";
 
 /**
@@ -114,12 +115,13 @@ export function SubmitButton({ pending, icon, children, page = false, className,
 }
 
 /** "Cash", shown where there is no method to choose (cash-only Mandals, and cash-only steps). */
-export function PaidInCash({ label = "Method", value = "Cash", className }: { label?: ReactNode; value?: ReactNode; className?: string }) {
+export function PaidInCash({ label, value, className }: { label?: ReactNode; value?: ReactNode; className?: string }) {
+  const t = useT();
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-sm font-medium">{label ?? t("ap.method")}</span>
       <span className="flex h-11 items-center gap-2 rounded-xl bg-emerald-500/10 px-3 text-sm font-semibold text-emerald-800 md:h-9 md:rounded-lg dark:text-emerald-200">
-        <Banknote className="size-4" /> {value}
+        <Banknote className="size-4" /> {value ?? t("pay.method.cash")}
       </span>
     </div>
   );
@@ -133,8 +135,8 @@ export function MethodField({
   methods,
   value,
   onChange,
-  label = "Method",
-  cashLabel = "Cash",
+  label: labelIn,
+  cashLabel: cashIn,
   upiLabel = "UPI",
   className,
 }: {
@@ -146,12 +148,15 @@ export function MethodField({
   upiLabel?: ReactNode;
   className?: string;
 }) {
+  const t = useT();
+  const label = labelIn ?? t("ap.method");
+  const cashLabel = cashIn ?? t("pay.method.cash");
   if (!methods.includes("upi")) return <PaidInCash label={label} value={cashLabel} className={className} />;
   return (
     <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <span className="text-sm font-medium">{label}</span>
       <ChoicePills
-        label={typeof label === "string" ? label : "Method"}
+        label={typeof label === "string" ? label : t("ap.method")}
         value={value}
         onChange={onChange}
         className="min-h-11 items-center md:min-h-9"

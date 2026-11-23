@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useState, useTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface Props {
 /** Put a running upad on fixed installments: what is outstanding now, from next month. */
 function Form({ loanId, outstandingPaise, monthlyRate, defaultCount }: Props) {
   const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const router = useRouter();
   const close = useDialogClose();
@@ -42,38 +44,39 @@ function Form({ loanId, outstandingPaise, monthlyRate, defaultCount }: Props) {
       className="grid grid-cols-1 gap-3"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!valid) return setError("Number of installments must be between 2 and 60");
-        if (!MONTH.test(startMonth) || startMonth < thisMonth) return setError("Installments can start from this month at the earliest");
+        if (!valid) return setError(t("sch.si.count"));
+        if (!MONTH.test(startMonth) || startMonth < thisMonth) return setError(t("sch.si.earliest"));
         start(async () => {
           setError(null);
           const res = await apiMutate({ path: `/orgs/${orgId}/fund-loans/${loanId}/installments`, body: { count: n, startMonth } });
           if (!res.ok) return setError(res.error);
-          toast.success("Installments started");
+          toast.success(t("sch.si.started"));
           close();
           router.refresh();
         });
       }}
     >
       <FormError message={error} />
-      <Field label="Number of monthly installments" htmlFor="si-count" hint="2–60 months">
+      <Field label={t("sch.si.label")} htmlFor="si-count" hint={t("sch.si.hint")}>
         <Input id="si-count" type="number" inputMode="numeric" min={2} max={60} value={count} onChange={(e) => setCount(e.target.value)} />
       </Field>
       <InstallmentStartField id="si-start" value={startMonth} min={thisMonth} onChange={setStartMonth} />
       {valid && (
         <FormNote tone="warn">
-          {money.fmt(outstandingPaise)} still outstanding → {n} installments of {money.fmt(per)} a month, with the interest. First installment: {money.fmt(per)} + {money.fmt(interest)} interest = {money.fmt(per + interest)}.
+          {t("sch.si.note", { out: money.fmt(outstandingPaise), n, per: money.fmt(per), interest: money.fmt(interest), first: money.fmt(per + interest) })}
         </FormNote>
       )}
       <SubmitButton pending={pending} icon={<CalendarRange />}>
-        Start installments
+        {t("sch.si.start")}
       </SubmitButton>
     </form>
   );
 }
 
 export function StartInstallmentsDialog(props: Props) {
+  const t = useT();
   return (
-    <FormDialog trigger={<><CalendarRange /> Start installments</>} triggerVariant="outline" title={`Installments for ${props.number}`} description="Return what is left of this upad in fixed monthly installments." icon={<CalendarRange />} tone="orange" openParam="installments">
+    <FormDialog trigger={<><CalendarRange /> {t("sch.si.start")}</>} triggerVariant="outline" title={t("sch.si.title", { number: props.number })} description={t("sch.si.desc")} icon={<CalendarRange />} tone="orange" openParam="installments">
       <Form {...props} />
     </FormDialog>
   );

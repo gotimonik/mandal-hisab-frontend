@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/i18n/client";
+import type { Key } from "@/i18n/core";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -13,7 +15,6 @@ import { FormDialog, useDialogClose } from "@/components/app/form-dialog";
 import { useApiSubmit } from "@/components/app/use-api-form";
 import { newIdempotencyKey, todayISO } from "@/lib/format";
 import { rupees } from "@/lib/schemas";
-import { useMoney } from "@/components/app/currency";
 import { AmountInput, SubmitButton } from "@/components/app/form-bits";
 import { IconChip } from "@/components/app/bits";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,7 @@ const Schema = z.object({
   direction: z.enum(["in", "out"]),
   amount: rupees,
   date: z.string().min(10),
-  description: z.string().trim().min(2, "Describe the entry").max(200),
+  description: z.string().trim().min(2, "cb.e.describe").max(200),
   categoryKey: z.string().optional(),
   accountId: z.string().optional(),
 });
@@ -33,7 +34,7 @@ interface Props {
 }
 
 function Form({ accounts, categories }: Props) {
-  const money = useMoney();
+  const t = useT();
   const { orgId } = useParams<{ orgId: string }>();
   const close = useDialogClose();
   const [key] = useState(() => newIdempotencyKey("cash"));
@@ -45,7 +46,7 @@ function Form({ accounts, categories }: Props) {
     <form
       noValidate
       className="grid grid-cols-1 gap-3"
-      onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/cashbook/entries`, body: { ...v, categoryKey: v.direction === "out" ? v.categoryKey || undefined : undefined, idempotencyKey: key } }, { success: "Cash entry recorded", onSuccess: close }))}
+      onSubmit={form.handleSubmit((v) => submit({ path: `/orgs/${orgId}/cashbook/entries`, body: { ...v, categoryKey: v.direction === "out" ? v.categoryKey || undefined : undefined, idempotencyKey: key } }, { success: t("cb.e.saved"), onSuccess: close }))}
     >
       <FormError message={error} />
       <div className="grid grid-cols-2 gap-2">
@@ -61,23 +62,23 @@ function Form({ accounts, categories }: Props) {
             <IconChip tone={d === "in" ? "emerald" : "rose"} size="sm">
               {d === "in" ? <ArrowDownToLine /> : <ArrowUpFromLine />}
             </IconChip>
-            <span className="min-w-0 leading-tight">{d === "in" ? "Cash in (receipt)" : "Cash out (expense)"}</span>
+            <span className="min-w-0 leading-tight">{d === "in" ? t("cb.e.in") : t("cb.e.out")}</span>
           </label>
         ))}
       </div>
-      <Field label={`Amount (${money.symbol})`} htmlFor="ce-amt" error={e.amount?.message}>
+      <Field label={t("cb.e.amount")} htmlFor="ce-amt" error={e.amount?.message}>
         <AmountInput id="ce-amt" {...form.register("amount")} />
       </Field>
-      <Field label="Date" htmlFor="ce-date">
+      <Field label={t("ap.date")} htmlFor="ce-date">
         <Input id="ce-date" type="date" max={todayISO()} {...form.register("date")} />
       </Field>
-      <Field label="Description" htmlFor="ce-desc" error={e.description?.message}>
-        <Input id="ce-desc" placeholder={dir === "in" ? "e.g. Bank interest received in cash" : "e.g. Register and pens"} {...form.register("description")} />
+      <Field label={t("ap.description")} htmlFor="ce-desc" error={e.description?.message && t(e.description.message as Key)}>
+        <Input id="ce-desc" placeholder={dir === "in" ? t("cb.e.phIn") : t("cb.e.phOut")} {...form.register("description")} />
       </Field>
       {dir === "out" && categories.length > 0 && (
-        <Field label="Category" htmlFor="ce-cat">
+        <Field label={t("ap.category")} htmlFor="ce-cat">
           <NativeSelect id="ce-cat" {...form.register("categoryKey")}>
-            <option value="">Miscellaneous</option>
+            <option value="">{t("cb.e.misc")}</option>
             {categories.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.name}
@@ -87,7 +88,7 @@ function Form({ accounts, categories }: Props) {
         </Field>
       )}
       {accounts.length > 1 && (
-        <Field label="Account" htmlFor="ce-acc">
+        <Field label={t("ap.account")} htmlFor="ce-acc">
           <NativeSelect id="ce-acc" {...form.register("accountId")}>
             {accounts.map((a) => (
               <option key={a._id} value={a._id}>
@@ -98,15 +99,16 @@ function Form({ accounts, categories }: Props) {
         </Field>
       )}
       <SubmitButton pending={pending} icon={<CheckCircle2 />}>
-        Save entry
+        {t("cb.e.save")}
       </SubmitButton>
     </form>
   );
 }
 
 export function CashEntryDialog(props: Props & { defaultOpen?: boolean }) {
+  const t = useT();
   return (
-    <FormDialog defaultOpen={props.defaultOpen} trigger={<><Plus /> Cash in / out</>} triggerVariant="outline" title="Record a cash entry" icon={<Wallet />} tone="emerald" description="Other money received or spent in cash. Hapta and withdrawals are recorded from their own screens.">
+    <FormDialog defaultOpen={props.defaultOpen} trigger={<><Plus /> {t("cb.e.trigger")}</>} triggerVariant="outline" title={t("cb.e.title")} icon={<Wallet />} tone="emerald" description={t("cb.e.desc")}>
       <Form {...props} />
     </FormDialog>
   );

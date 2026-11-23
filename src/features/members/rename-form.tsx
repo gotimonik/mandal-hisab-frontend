@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -51,18 +52,20 @@ export function readNameList(text: string, rows: RenameRow[]): { names: Record<s
 
 function PasteNames({ rows, onRead }: { rows: RenameRow[]; onRead: (names: Record<string, string>) => void }) {
   const close = useDialogClose();
+  const t = useT();
   const [text, setText] = useState("");
   const read = useMemo(() => (text.trim() ? readNameList(text, rows) : null), [text, rows]);
   const count = read ? Object.keys(read.names).length : 0;
   return (
     <div className="flex flex-col gap-3 text-sm">
       <FormNote>
-        One member per line: the member number, then the new name — e.g. <code>M0003 અભિષેક ગોટી</code>. Or just the names, one per line, in the same order as the list.
+        {t("misc.names.pasteHelp")} <code>M0003 અભિષેક ગોટી</code>. {t("misc.names.pasteHelp2")}
       </FormNote>
       <Textarea rows={10} value={text} onChange={(e) => setText(e.target.value)} placeholder={"M0003 અભિષેક ગોટી\nM0024 આર્યન ગોટી"} />
       {read && (
         <p className={cn("text-xs", read.unmatched.length ? "text-amber-700" : "text-muted-foreground")}>
-          {count} name{count === 1 ? "" : "s"} matched{read.unmatched.length ? ` · not matched: ${read.unmatched.slice(0, 3).join(" | ")}${read.unmatched.length > 3 ? " …" : ""}` : ""}
+          {t("misc.names.matched", { n: count })}
+          {read.unmatched.length ? t("misc.names.notMatched", { list: `${read.unmatched.slice(0, 3).join(" | ")}${read.unmatched.length > 3 ? " …" : ""}` }) : ""}
         </p>
       )}
       <Button
@@ -73,7 +76,7 @@ function PasteNames({ rows, onRead }: { rows: RenameRow[]; onRead: (names: Recor
           close();
         }}
       >
-        <ClipboardPaste /> Fill in {count} name{count === 1 ? "" : "s"}
+        <ClipboardPaste /> {t("misc.names.fill", { n: count })}
       </Button>
     </div>
   );
@@ -81,6 +84,7 @@ function PasteNames({ rows, onRead }: { rows: RenameRow[]; onRead: (names: Recor
 
 export function RenameForm({ orgId, rows }: { orgId: string; rows: RenameRow[] }) {
   const router = useRouter();
+  const t = useT();
   const [names, setNames] = useState<Record<string, string>>(() => Object.fromEntries(rows.map((r) => [r._id, r.name])));
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -90,10 +94,10 @@ export function RenameForm({ orgId, rows }: { orgId: string; rows: RenameRow[] }
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <FormDialog trigger={<><ClipboardPaste /> Paste a list</>} triggerVariant="outline" triggerSize="sm" title="Paste the new names" wide icon={<ClipboardPaste />} tone="sky">
+        <FormDialog trigger={<><ClipboardPaste /> {t("misc.names.paste")}</>} triggerVariant="outline" triggerSize="sm" title={t("misc.names.pasteTitle")} wide icon={<ClipboardPaste />} tone="sky">
           <PasteNames rows={rows} onRead={(n) => setNames((x) => ({ ...x, ...n }))} />
         </FormDialog>
-        <span className="text-xs text-muted-foreground">The English name is kept for search, so typing “abhishek” still finds the member.</span>
+        <span className="text-xs text-muted-foreground">{t("misc.names.searchNote")}</span>
       </div>
       <ol className="divide-y rounded-2xl bg-card shadow-card ring-1 ring-foreground/[0.06]">
         {rows.map((r) => {
@@ -105,12 +109,12 @@ export function RenameForm({ orgId, rows }: { orgId: string; rows: RenameRow[] }
                 {r.name}
                 {r.nameEnglish && r.nameEnglish !== r.name ? ` (${r.nameEnglish})` : ""}
               </span>
-              <Input aria-label={`New name for ${r.name}`} value={names[r._id] ?? ""} onChange={(e) => setNames((x) => ({ ...x, [r._id]: e.target.value }))} className="col-span-2 sm:col-span-1" lang="gu" />
+              <Input aria-label={t("misc.names.newFor", { name: r.name })} value={names[r._id] ?? ""} onChange={(e) => setNames((x) => ({ ...x, [r._id]: e.target.value }))} className="col-span-2 sm:col-span-1" lang="gu" />
             </li>
           );
         })}
       </ol>
-      <FormError message={error ?? (tooShort ? "A name needs at least 2 letters" : null)} />
+      <FormError message={error ?? (tooShort ? t("misc.names.tooShort") : null)} />
       <Button
         size="lg"
         className="h-12 rounded-2xl text-base sm:self-start sm:px-6"
@@ -120,13 +124,13 @@ export function RenameForm({ orgId, rows }: { orgId: string; rows: RenameRow[] }
             setError(null);
             const r = await apiMutate<{ renamed: number }>({ path: `/orgs/${orgId}/members/rename`, body: { items: changed.map((m) => ({ memberId: m._id, name: names[m._id].trim() })) } });
             if (!r.ok) return setError(r.error);
-            toast.success(`${r.data.renamed} name${r.data.renamed === 1 ? "" : "s"} changed`);
+            toast.success(t("misc.names.changed", { n: r.data.renamed }));
             router.push(`/org/${orgId}/members`);
             router.refresh();
           })
         }
       >
-        {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} Save {changed.length || ""} name{changed.length === 1 ? "" : "s"}
+        {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />} {changed.length ? t("misc.names.save", { n: changed.length }) : t("misc.names.saveNone")}
       </Button>
     </div>
   );

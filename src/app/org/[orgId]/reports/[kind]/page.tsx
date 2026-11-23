@@ -8,8 +8,10 @@ import { NativeSelect } from "@/components/app/native-select";
 import { PrintButton } from "@/components/app/print-button";
 import { Input } from "@/components/ui/input";
 
-import { METHOD_LABEL, formatDate, label } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { REPORTS } from "@/features/reports-meta";
+import { getT } from "@/i18n/server";
+import { methodLabel } from "@/i18n/labels";
 import { renderReport } from "@/features/reports/renderers";
 import { reportLook } from "@/features/reports/look";
 import { IconChip } from "@/components/app/bits";
@@ -19,6 +21,7 @@ import { OrgLogo } from "@/components/app/org-logo";
 
 export default async function ReportPage({ params, searchParams }: PageProps<"/org/[orgId]/reports/[kind]">) {
   const { orgId, kind } = await params;
+  const { t } = await getT();
   const meta = REPORTS.find((r) => r.kind === kind);
   if (!meta) notFound();
   const sp = await searchParams;
@@ -32,16 +35,16 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
     meta.filters.includes("account") ? getAccounts(orgId) : Promise.resolve([]),
   ]);
   const lk = reportLook(kind);
-  const period = data.from && data.to ? `${formatDate(data.from as string)} – ${formatDate(data.to as string)}` : data.asOf ? `As of ${formatDate(data.asOf as string)}` : "";
+  const period = data.from && data.to ? `${formatDate(data.from as string)} – ${formatDate(data.to as string)}` : data.asOf ? t("rep.asOf", { date: formatDate(data.asOf as string) }) : "";
   return (
     <>
       <PageHeader
         eyebrow={
           <Link href={`/org/${orgId}/reports`} className="hover:underline">
-            Reports
+            {t("rep.title")}
           </Link>
         }
-        title={meta.title}
+        title={t(meta.title)}
         description={`${org.name} · ${period}`}
         actions={
           <>
@@ -55,7 +58,7 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
       <section className="no-print mb-4 flex items-start gap-3 rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]">
         <IconChip tone={lk.tone}>{lk.icon}</IconChip>
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-muted-foreground">{meta.description}</p>
+          <p className="text-sm text-muted-foreground">{t(meta.description)}</p>
           {period && <p className="mt-1.5 inline-flex rounded-full bg-violet-500/10 px-2.5 py-0.5 text-xs font-semibold text-violet-700 dark:text-violet-300">{period}</p>}
         </div>
       </section>
@@ -63,33 +66,33 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
         <FilterBar resetHref={`/org/${orgId}/reports/${kind}`}>
           {meta.filters.includes("range") && (
             <>
-              <FilterField label="From">
+              <FilterField label={t("rep.from")}>
                 <Input type="date" name="from" defaultValue={f.from} />
               </FilterField>
-              <FilterField label="To">
+              <FilterField label={t("rep.to")}>
                 <Input type="date" name="to" defaultValue={f.to} />
               </FilterField>
             </>
           )}
           {meta.filters.includes("asOf") && (
-            <FilterField label="As of">
+            <FilterField label={t("rep.asOfLabel")}>
               <Input type="date" name="asOf" defaultValue={f.asOf} />
             </FilterField>
           )}
           {meta.filters.includes("groupBy") && (
-            <FilterField label="Group by">
+            <FilterField label={t("rep.groupBy")}>
               <NativeSelect name="groupBy" defaultValue={f.groupBy}>
-                <option value="day">Day</option>
-                <option value="month">Month</option>
-                <option value="quarter">Quarter (FY)</option>
-                <option value="year">Financial year</option>
+                <option value="day">{t("rep.day")}</option>
+                <option value="month">{t("rep.month")}</option>
+                <option value="quarter">{t("rep.quarter")}</option>
+                <option value="year">{t("rep.fy")}</option>
               </NativeSelect>
             </FilterField>
           )}
           {meta.filters.includes("scheme") && (
-            <FilterField label="Scheme">
+            <FilterField label={t("rep.scheme")}>
               <NativeSelect name="schemeId" defaultValue={f.schemeId}>
-                <option value="">All</option>
+                <option value="">{t("rep.allOpt")}</option>
                 {schemes.map((s) => (
                   <option key={s._id} value={s._id}>
                     {s.name}
@@ -99,9 +102,9 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
             </FilterField>
           )}
           {meta.filters.includes("account") && (
-            <FilterField label="Account">
+            <FilterField label={t("rep.account")}>
               <NativeSelect name="accountId" defaultValue={f.accountId}>
-                <option value="">All</option>
+                <option value="">{t("rep.allOpt")}</option>
                 {accounts.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.name}
@@ -111,17 +114,17 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
             </FilterField>
           )}
           {meta.filters.includes("event") && (
-            <FilterField label="Event">
+            <FilterField label={t("rep.event")}>
               <Input name="eventName" defaultValue={f.eventName} />
             </FilterField>
           )}
           {meta.filters.includes("method") && (
-            <FilterField label="Method">
+            <FilterField label={t("rep.method")}>
               <NativeSelect name="method" defaultValue={f.method}>
-                <option value="">All</option>
+                <option value="">{t("rep.allOpt")}</option>
                 {org.settings.paymentMethods.map((m) => (
                   <option key={m} value={m}>
-                    {label(METHOD_LABEL, m)}
+                    {methodLabel(t, m)}
                   </option>
                 ))}
               </NativeSelect>
@@ -135,12 +138,12 @@ export default async function ReportPage({ params, searchParams }: PageProps<"/o
         </OrgLogo>
         <div>
           <h2 className="text-lg font-semibold">
-            {org.name} — {meta.title}
+            {org.name} — {t(meta.title)}
           </h2>
           <p className="text-sm">{period}</p>
         </div>
       </div>
-      {renderReport(kind, data, orgId)}
+      {renderReport(kind, data, orgId, t)}
     </>
   );
 }

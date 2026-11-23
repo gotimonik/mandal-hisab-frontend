@@ -46,10 +46,13 @@ interface Payment {
   advanceAddedPaise?: number;
 }
 
-const monthName = (m: string) => new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${m}-01T00:00:00Z`));
+import { getT } from "@/i18n/server";
+import { monthName as monthNameIn } from "@/i18n/core";
 
 export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/fund-loans/[loanId]">) {
   const { orgId, loanId } = await params;
+  const { t, lang } = await getT();
+  const monthName = (m: string) => monthNameIn(lang, m, "short");
   const [org, data] = await Promise.all([getOrg(orgId), api<{ loan: FundLoan; dues: Due[]; payments: Payment[]; installments?: (UpadInstallmentNow & { rows: UpadInstallmentRow[] }) | null }>(`/orgs/${orgId}/fund-loans/${loanId}`)]);
   // getOrg is already in flight above (and cached), so this resolves without a second wait
   const money = await getMoney(orgId);
@@ -71,19 +74,19 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
   const latestValid = payments.find((p) => p.status === "valid");
   const staffView = can(org, "members.view");
   const CARD = "rounded-2xl bg-card p-3.5 shadow-card ring-1 ring-foreground/[0.06]";
-  const months = (p: Payment) => [p.allocations.length ? p.allocations.map((a) => monthName(a.period)).join(", ") : "", p.recordedByName ? `by ${p.recordedByName}` : ""].filter(Boolean).join(" · ");
+  const months = (p: Payment) => [p.allocations.length ? p.allocations.map((a) => monthName(a.period)).join(", ") : "", p.recordedByName ? t("upd.by", { name: p.recordedByName }) : ""].filter(Boolean).join(" · ");
   const paymentActions = (p: Payment) => (
     <>
       {p.receiptId ? (
         <Link href={`/org/${orgId}/receipts/${p.receiptId}`} className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-          <Receipt className="size-3.5" /> Receipt
+          <Receipt className="size-3.5" /> {t("upd.receipt")}
         </Link>
       ) : (
-        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">Paid from advance</span>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{t("upd.fromAdvance")}</span>
       )}
       {staffView && latestValid?._id === p._id && can(org, "transactions.adjust") && live && (
-        <ActionButton path={`/orgs/${orgId}/fund-loan-payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage="Payment reversed" confirm={{ title: "Reverse this payment?", description: p.groupId ? "It covered several upads (or was paid from the advance): all of it is reversed together. The interest shares are taken back from members' balances." : "Use only if it was recorded by mistake. The interest shares are taken back from members' balances.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-          Reverse
+        <ActionButton path={`/orgs/${orgId}/fund-loan-payments/${p._id}/reverse`} size="xs" variant="ghost" successMessage={t("upd.reversed")} confirm={{ title: t("upd.reverseQ"), description: p.groupId ? t("upd.reverseGroup") : t("upd.reverseOne"), reason: "required", destructive: true, confirmLabel: t("upd.reverse") }}>
+          {t("upd.reverse")}
         </ActionButton>
       )}
     </>
@@ -91,11 +94,11 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
   return (
     <>
       <PageHeader
-        eyebrow={`Upad ${l.number}`}
-        title={l.member?.name ?? "Member"}
+        eyebrow={t("upd.eyebrow", { number: l.number })}
+        title={l.member?.name ?? t("upd.member")}
         description={
           <>
-            <Money paise={l.principalPaise} /> given on {formatDate(l.date)} at {l.monthlyRate}% per month · <StatusBadge status={l.status} />
+            <Money paise={l.principalPaise} /> {t("upd.given", { date: formatDate(l.date), rate: l.monthlyRate })} · <StatusBadge status={l.status} />
             {l.note ? ` · ${l.note}` : ""}
           </>
         }
@@ -108,8 +111,8 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
               <StartInstallmentsDialog loanId={l._id} number={l.number} outstandingPaise={l.outstandingPaise} monthlyRate={l.monthlyRate} defaultCount={org.settings.fundLoans.installments?.count ?? 10} />
             )}
             {staffView && l.status === "active" && payments.every((p) => p.status === "reversed") && can(org, "transactions.adjust") && live && (
-              <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/cancel`} variant="ghost" successMessage="Upad cancelled" confirm={{ title: `Cancel ${l.number}?`, description: "Only for an upad recorded by mistake. The cash goes back into the fund.", reason: "required", destructive: true, confirmLabel: "Cancel upad" }}>
-                Cancel upad
+              <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/cancel`} variant="ghost" successMessage={t("upd.cancelled")} confirm={{ title: t("upd.cancelQ", { number: l.number }), description: t("upd.cancelD"), reason: "required", destructive: true, confirmLabel: t("upd.cancel") }}>
+                {t("upd.cancel")}
               </ActionButton>
             )}
           </>
@@ -118,39 +121,39 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
       <SummaryBand
         tone="warm"
         icon={<HandCoins />}
-        label="Upad outstanding"
+        label={t("upd.outstanding")}
         value={<Money paise={l.outstandingPaise} />}
-        sub={`of ${money.fmt(l.principalPaise)} given · next month's interest ${money.fmt(l.nextInterestPaise)} (${l.monthlyRate}% of the outstanding amount)`}
+        sub={t("upd.sub", { given: money.fmt(l.principalPaise), next: money.fmt(l.nextInterestPaise), rate: l.monthlyRate })}
         stats={[
-          { label: "Interest due now", value: <Money paise={l.interestDuePaise} short /> },
-          { label: "Interest paid so far", value: <Money paise={l.interestPaidPaise} short /> },
-          { label: "Next month", value: <Money paise={l.nextInterestPaise} short /> },
+          { label: t("upd.dueNow"), value: <Money paise={l.interestDuePaise} short /> },
+          { label: t("upd.paidSoFar"), value: <Money paise={l.interestPaidPaise} short /> },
+          { label: t("upd.nextMonth"), value: <Money paise={l.nextInterestPaise} short /> },
         ]}
       />
       {l.interestDuePaise > 0 ? (
         <p className="mb-5 rounded-2xl bg-amber-500/12 px-3.5 py-2.5 text-sm font-medium text-amber-800 ring-1 ring-amber-500/30 dark:text-amber-300">
-          {money.fmt(l.interestDuePaise)} interest unpaid{l.unpaidMonths.length ? ` — ${l.unpaidMonths.map(monthName).join(", ")}` : ""}
+          {t("upd.unpaid", { amount: money.fmt(l.interestDuePaise) })}{l.unpaidMonths.length ? ` — ${l.unpaidMonths.map(monthName).join(", ")}` : ""}
         </p>
       ) : (
-        l.status === "active" && <p className="mb-5 rounded-2xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-300">Nothing unpaid — interest is up to date.</p>
+        l.status === "active" && <p className="mb-5 rounded-2xl bg-emerald-500/10 px-3.5 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-500/25 dark:text-emerald-300">{t("upd.upToDate")}</p>
       )}
 
       {(l.memberAdvancePaise ?? 0) > 0 && (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl bg-emerald-500/10 px-3.5 py-2.5 text-sm ring-1 ring-emerald-500/25">
           <p className="min-w-0 flex-1">
             <b>
-              Upad interest paid ahead: <Money paise={l.memberAdvancePaise!} />
+              {t("upd.ahead")} <Money paise={l.memberAdvancePaise!} />
             </b>
-            <span className="block text-xs text-muted-foreground">Used automatically for the next interest due on {l.member?.name ?? "the member"}&apos;s upads.</span>
+            <span className="block text-xs text-muted-foreground">{t("upd.aheadD", { name: l.member?.name ?? t("upd.theMember") })}</span>
           </p>
           {staffView && can(org, "withdrawals.record") && live && (
             <ActionButton
               path={`/orgs/${orgId}/members/${l.memberId}/upad-advance/return`}
               size="xs"
-              successMessage="Advance returned"
-              confirm={{ title: `Return ${money.fmt(l.memberAdvancePaise!)} to ${l.member?.name ?? "the member"}?`, description: "Pays the advance back in cash. Do this when their upads are closed, or before closing the Mandal.", confirmLabel: "Return advance" }}
+              successMessage={t("upd.returned")}
+              confirm={{ title: t("upd.returnQ", { amount: money.fmt(l.memberAdvancePaise!), name: l.member?.name ?? t("upd.theMember") }), description: t("upd.returnD"), confirmLabel: t("upd.return") }}
             >
-              Return advance
+              {t("upd.return")}
             </ActionButton>
           )}
         </div>
@@ -161,22 +164,24 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
           <SectionTitle
             action={
               staffView && can(org, "withdrawals.record") && live ? (
-                <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/installments/stop`} size="xs" variant="ghost" successMessage="Installments stopped" confirm={{ title: "Stop installments on this upad?", description: "It goes back to being returned any time. Interest is not affected.", confirmLabel: "Stop installments" }}>
-                  Stop installments
+                <ActionButton path={`/orgs/${orgId}/fund-loans/${l._id}/installments/stop`} size="xs" variant="ghost" successMessage={t("upd.stopped")} confirm={{ title: t("upd.stopQ"), description: t("upd.stopD"), confirmLabel: t("upd.stop") }}>
+                  {t("upd.stop")}
                 </ActionButton>
               ) : undefined
             }
           >
-            Installments · {inst.paidCount}/{inst.count} paid
+            {t("upd.instTitle", { paid: inst.paidCount, count: inst.count })}
           </SectionTitle>
           <p className={cn("mb-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium ring-1", inst.duePaise > 0 ? "bg-amber-500/12 text-amber-800 ring-amber-500/30 dark:text-amber-300" : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300")}>
             {inst.duePaise > 0
-              ? `${money.fmt(inst.duePaise)} installment due now${inst.overduePaise > 0 ? ` (${money.fmt(inst.overduePaise)} from earlier months)` : ""} — record it as "Upad amount returned".`
+              ? inst.overduePaise > 0
+                ? t("upd.instDueOver", { amount: money.fmt(inst.duePaise), over: money.fmt(inst.overduePaise) })
+                : t("upd.instDue", { amount: money.fmt(inst.duePaise) })
               : inst.next
-                ? `Installments are up to date. Next: ${money.fmt(inst.next.amountPaise)} in ${monthName(inst.next.period)}.`
-                : "All installments returned."}
+                ? t("upd.instOk", { amount: money.fmt(inst.next.amountPaise), month: monthName(inst.next.period) })
+                : t("upd.instAll")}
             <span className="block text-xs font-normal opacity-80">
-              {money.fmt(inst.amountPaise)} a month for {inst.count} months ({monthName(inst.firstMonth)} – {monthName(inst.lastMonth)}), with the interest on what is left.
+              {t("upd.instPlan", { amount: money.fmt(inst.amountPaise), count: inst.count, from: monthName(inst.firstMonth), to: monthName(inst.lastMonth) })}
             </span>
           </p>
           <div className="mb-6">
@@ -185,11 +190,11 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                 <TableHeader>
                   <TableRow>
                     <TableHead>#</TableHead>
-                    <TableHead>Month</TableHead>
-                    <TableHead className="text-right">Installment</TableHead>
-                    <TableHead className="text-right">Interest</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("upd.month")}</TableHead>
+                    <TableHead className="text-right">{t("upd.installment")}</TableHead>
+                    <TableHead className="text-right">{t("upd.interest")}</TableHead>
+                    <TableHead className="text-right">{t("upd.total")}</TableHead>
+                    <TableHead>{t("upd.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -201,7 +206,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                           <CalendarRange className="size-4 text-muted-foreground" />
                           <span>
                             <span className="font-semibold">{monthName(r.period)}</span>
-                            <span className="block text-xs text-muted-foreground">due {formatDate(r.dueDate)}</span>
+                            <span className="block text-xs text-muted-foreground">{t("upd.due", { date: formatDate(r.dueDate) })}</span>
                           </span>
                         </span>
                       </TableCell>
@@ -209,7 +214,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                         <Money paise={r.amountPaise} className="font-semibold" />
                         {r.paidPaise > 0 && r.paidPaise < r.amountPaise && (
                           <span className="block text-xs text-muted-foreground">
-                            paid <Money paise={r.paidPaise} />
+                            {t("upd.paid")} <Money paise={r.paidPaise} />
                           </span>
                         )}
                       </TableCell>
@@ -229,17 +234,17 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                 </TableBody>
               </Table>
             </TableWrap>
-            <p className="mt-1.5 text-xs text-muted-foreground">≈ interest of coming months if each installment is paid on time.</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">{t("upd.approx")}</p>
           </div>
         </>
       )}
 
-      <SectionTitle>Monthly interest</SectionTitle>
+      <SectionTitle>{t("upd.monthly")}</SectionTitle>
       {dues.length === 0 ? (
-        <EmptyState icon={<CalendarDays />} title="No interest due yet" description={`Interest starts from ${monthName(l.firstInterestMonth)}.`} />
+        <EmptyState icon={<CalendarDays />} title={t("upd.noDue")} description={t("upd.startsFrom", { month: monthName(l.firstInterestMonth) })} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Monthly interest">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("upd.monthly")}>
             {dues.map((d) => (
               <li key={d._id} className={cn(CARD, "flex items-center gap-3", d.unpaidPaise > 0 && d.status !== "paid" && "ring-2 ring-amber-400/40")}>
                 <IconChip tone="orange" size="sm">
@@ -248,11 +253,11 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                 <div className="min-w-0 flex-1 text-sm">
                   <p className="font-semibold">{monthName(d.period)}</p>
                   <p className="text-xs text-muted-foreground">
-                    <Money paise={d.principalBasisPaise} /> × {d.monthlyRate}% · due {formatDate(d.dueDate)}
+                    <Money paise={d.principalBasisPaise} /> × {d.monthlyRate}% · {t("upd.due", { date: formatDate(d.dueDate) })}
                   </p>
                   {d.paidPaise > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      paid <Money paise={d.paidPaise} />
+                      {t("upd.paid")} <Money paise={d.paidPaise} />
                     </p>
                   )}
                 </div>
@@ -268,11 +273,11 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Month</TableHead>
-                    <TableHead className="text-right">On amount</TableHead>
-                    <TableHead className="text-right">Interest</TableHead>
-                    <TableHead className="text-right">Paid</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("upd.month")}</TableHead>
+                    <TableHead className="text-right">{t("upd.onAmount")}</TableHead>
+                    <TableHead className="text-right">{t("upd.interest")}</TableHead>
+                    <TableHead className="text-right">{t("upd.paidCol")}</TableHead>
+                    <TableHead>{t("upd.status")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -285,7 +290,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                           </IconChip>
                           <span>
                             <span className="font-semibold">{monthName(d.period)}</span>
-                            <span className="block text-xs text-muted-foreground">due {formatDate(d.dueDate)}</span>
+                            <span className="block text-xs text-muted-foreground">{t("upd.due", { date: formatDate(d.dueDate) })}</span>
                           </span>
                         </span>
                       </TableCell>
@@ -310,12 +315,12 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
         </>
       )}
 
-      <SectionTitle className="mt-6">Payments received</SectionTitle>
+      <SectionTitle className="mt-6">{t("upd.received")}</SectionTitle>
       {payments.length === 0 ? (
-        <EmptyState icon={<Receipt />} title="No payments yet" />
+        <EmptyState icon={<Receipt />} title={t("upd.noPayments")} />
       ) : (
         <>
-          <ul className="flex flex-col gap-2 md:hidden" aria-label="Payments received">
+          <ul className="flex flex-col gap-2 md:hidden" aria-label={t("upd.received")}>
             {payments.map((p) => (
               <li key={p._id} className={cn(CARD, p.status === "reversed" && "opacity-70")}>
                 <div className="flex items-start gap-3">
@@ -326,13 +331,13 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                     <p className="text-xs text-muted-foreground">
                       {p.interestPaise ? (
                         <>
-                          Interest <Money paise={p.interestPaise} />
+                          {t("upd.interest")} <Money paise={p.interestPaise} />
                         </>
                       ) : null}
                       {p.interestPaise && p.principalPaise ? " · " : null}
                       {p.principalPaise ? (
                         <>
-                          Upad returned <Money paise={p.principalPaise} />
+                          {t("upd.returnedAmt")} <Money paise={p.principalPaise} />
                         </>
                       ) : null}
                     </p>
@@ -342,7 +347,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                     <StatusBadge status={p.status === "valid" ? "paid" : "reversed"} />
                   </div>
                 </div>
-                {p.reversalReason && <p className="mt-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-destructive">Reversed: {p.reversalReason}</p>}
+                {p.reversalReason && <p className="mt-2 rounded-lg bg-muted/60 px-2.5 py-1.5 text-xs text-destructive">{t("upd.reversedX", { reason: p.reversalReason })}</p>}
                 <div className="mt-2 flex flex-wrap items-center justify-end gap-1">{paymentActions(p)}</div>
               </li>
             ))}
@@ -352,10 +357,10 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Interest</TableHead>
-                    <TableHead className="text-right">Upad returned</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("upd.date")}</TableHead>
+                    <TableHead className="text-right">{t("upd.interest")}</TableHead>
+                    <TableHead className="text-right">{t("upd.returnedAmt")}</TableHead>
+                    <TableHead>{t("upd.status")}</TableHead>
                     <TableHead className="text-right" />
                   </TableRow>
                 </TableHeader>
@@ -365,7 +370,7 @@ export default async function FundLoanPage({ params }: PageProps<"/org/[orgId]/f
                       <TableCell className="whitespace-nowrap">
                         <span className="font-semibold">{formatDate(p.date)}</span>
                         <div className="text-xs text-muted-foreground">{months(p)}</div>
-                        {p.reversalReason && <div className="text-xs text-destructive">Reversed: {p.reversalReason}</div>}
+                        {p.reversalReason && <div className="text-xs text-destructive">{t("upd.reversedX", { reason: p.reversalReason })}</div>}
                       </TableCell>
                       <TableCell className="text-right">{p.interestPaise ? <Money paise={p.interestPaise} className="font-semibold" /> : ""}</TableCell>
                       <TableCell className="text-right">{p.principalPaise ? <Money paise={p.principalPaise} className="font-semibold" /> : ""}</TableCell>

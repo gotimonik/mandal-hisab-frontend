@@ -6,9 +6,11 @@ import { ActionButton } from "@/components/app/action-button";
 
 import { LoanDetail, type LoanDetailData } from "@/features/loans/loan-detail";
 import { ApproveLoanDialog, DisburseLoanDialog, RateChangeDialog, RepayLoanDialog } from "@/features/loans/loan-dialogs";
+import { getT } from "@/i18n/server";
 
 export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans/[loanId]">) {
   const { orgId, loanId } = await params;
+  const { t } = await getT();
   const [org, data, accounts] = await Promise.all([getOrg(orgId), api<LoanDetailData>(`/orgs/${orgId}/loans/${loanId}`), getAccounts(orgId)]);
   // getOrg is already in flight above (and cached), so this resolves without a second wait
   const money = await getMoney(orgId);
@@ -19,8 +21,8 @@ export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans
   return (
     <>
       <PageHeader
-        eyebrow="Loan"
-        title={data.member?.name ?? `Loan ${l.loanNumber}`}
+        eyebrow={t("loan.eyebrow")}
+        title={data.member?.name ?? t("loan.loanX", { number: l.loanNumber })}
         description={
           <>
             <StatusBadge status={l.status} /> <span className="ml-1 font-mono text-xs">{l.loanNumber}</span>
@@ -30,8 +32,8 @@ export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans
           <>
             {l.status === "applied" && canApprove && <ApproveLoanDialog loanId={loanId} requestedPaise={l.requestedPaise} canChangeRate={can(org, "interest.manage")} tenure={l.tenure} rate={l.annualRate} />}
             {(l.status === "applied" || l.status === "approved") && canApprove && (
-              <ActionButton path={`/orgs/${orgId}/loans/${loanId}/reject`} variant="ghost" successMessage="Loan rejected" confirm={{ title: "Reject this loan?", reason: "required", destructive: true, confirmLabel: "Reject" }}>
-                Reject
+              <ActionButton path={`/orgs/${orgId}/loans/${loanId}/reject`} variant="ghost" successMessage={t("loan.rejectedMsg")} confirm={{ title: t("loan.rejectQ"), reason: "required", destructive: true, confirmLabel: t("ap.reject") }}>
+                {t("ap.reject")}
               </ActionButton>
             )}
             {l.status === "approved" && canApprove && <DisburseLoanDialog loanId={loanId} accounts={active} amountPaise={l.approvedPaise ?? 0} />}
@@ -43,7 +45,7 @@ export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans
         }
       />
       {l.status === "applied" && (
-        <p className="mb-4 rounded-2xl bg-amber-500/12 px-3.5 py-2.5 text-sm font-medium text-amber-800 ring-1 ring-amber-500/30 dark:text-amber-300">Requested {money.fmt(l.requestedPaise)} — awaiting approval.</p>
+        <p className="mb-4 rounded-2xl bg-amber-500/12 px-3.5 py-2.5 text-sm font-medium text-amber-800 ring-1 ring-amber-500/30 dark:text-amber-300">{t("loan.awaiting", { amount: money.fmt(l.requestedPaise) })}</p>
       )}
       <LoanDetail
         data={data}
@@ -51,8 +53,8 @@ export default async function LoanPage({ params }: PageProps<"/org/[orgId]/loans
         receiptBase={`/org/${orgId}/receipts`}
         repaymentAction={(r, isLatest) =>
           isLatest && r.status === "verified" && can(org, "payments.reverse") && writable ? (
-            <ActionButton path={`/orgs/${orgId}/loans/${loanId}/repayments/${r._id}/reverse`} size="xs" variant="ghost" successMessage="Repayment reversed" confirm={{ title: "Reverse this repayment?", description: "The schedule is restored to how it was before this payment, and a reversal entry is posted.", reason: "required", destructive: true, confirmLabel: "Reverse" }}>
-              Reverse
+            <ActionButton path={`/orgs/${orgId}/loans/${loanId}/repayments/${r._id}/reverse`} size="xs" variant="ghost" successMessage={t("loan.repReversed")} confirm={{ title: t("loan.repReverseQ"), description: t("loan.repReverseD"), reason: "required", destructive: true, confirmLabel: t("ap.reverse") }}>
+              {t("ap.reverse")}
             </ActionButton>
           ) : null
         }
