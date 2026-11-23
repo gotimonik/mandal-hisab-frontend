@@ -53,11 +53,17 @@ export function DemoVideo({ src, poster, labels, source, variant = "card", class
         </button>
       )}
       <Dialog open={open} onOpenChange={setOpen} disablePointerDismissal={false}>
-        <DialogContent className="w-[min(92vw,24rem)] gap-2 p-2 pt-10 sm:max-w-sm">
+        {/* centred on every screen (not the phone bottom sheet), sized by height so the 9:16 video fits */}
+        <DialogContent
+          className={cn(
+            "inset-0 m-auto h-fit max-h-[96dvh] w-fit max-w-[94vw] translate-x-0 translate-y-0 gap-0 overflow-visible rounded-2xl p-2 pt-12 sm:inset-0 sm:max-h-[96dvh] sm:max-w-[94vw] sm:translate-x-0 sm:translate-y-0 sm:p-2 sm:pt-12",
+            "data-open:zoom-in-95 data-open:slide-in-from-bottom-0 data-closed:zoom-out-95 data-closed:slide-out-to-bottom-0 [&>span[aria-hidden]]:hidden",
+          )}
+        >
           <DialogTitle className="sr-only">{labels.title}</DialogTitle>
           {open && (
             // captions are burnt into the video itself
-            <video src={src} poster={poster ?? undefined} controls autoPlay playsInline preload="metadata" className="aspect-[9/16] max-h-[78vh] w-full rounded-xl bg-black" />
+            <video src={src} poster={poster ?? undefined} controls autoPlay playsInline preload="metadata" className="block aspect-[9/16] h-auto w-[min(calc(78dvh*9/16),24.75rem,calc(94vw-1rem))] rounded-xl bg-black object-contain" />
           )}
         </DialogContent>
       </Dialog>
