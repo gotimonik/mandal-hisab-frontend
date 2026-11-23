@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   BellRing,
   BookOpen,
   BookOpenCheck,
+  Calculator,
   CalendarDays,
   Camera,
   FileText,
@@ -14,7 +16,10 @@ import {
   FileSpreadsheet,
   HandCoins,
   History,
+  Languages,
   Lock,
+  MessageCircle,
+  PlayCircle,
   MessageSquareWarning,
   PiggyBank,
   RefreshCw,
@@ -22,6 +27,7 @@ import {
   Smartphone,
   Tags,
   Target,
+  Timer,
   Undo2,
   UserCog,
   UserPlus,
@@ -43,6 +49,8 @@ import { NativeRedirect } from "@/features/public/native-redirect";
 import { getGuide } from "@/features/public/guides";
 import { GuideCard } from "@/features/public/guides/render";
 import { DemoVideo } from "@/components/app/demo-video";
+import { MandalStats } from "@/features/public/home/mandal-stats";
+import { Testimonials } from "@/features/public/home/testimonials";
 
 const HOME_GUIDES = ["what-is-a-mandal", "collect-hapta-at-the-monthly-meeting", "how-upad-interest-is-calculated"].map((s) => getGuide(s)!);
 
@@ -138,6 +146,54 @@ const PERSONAL: { icon: React.ReactNode; tone: Tone; title: string; text: string
   { icon: <FileText />, tone: "slate", title: "Passbook to share", text: "Every entry with the balance after it, for any period — share it as a PDF on WhatsApp, or print it." },
   { icon: <Camera />, tone: "violet", title: "Scan a bill", text: "Snap a bill or UPI screenshot — the amount, date and shop are read on your phone and filled in for you to check." },
   { icon: <RefreshCw />, tone: "sky", title: "Mandal money, added for you", text: "Optional: the hapta you pay and upad you take can be copied in automatically." },
+];
+
+/** Why it's easy to keep up — the Gujarati app first. */
+const EASY: { icon: React.ReactNode; tone: Tone; title: string; text: string }[] = [
+  {
+    icon: <Languages />,
+    tone: "pink",
+    title: "The whole app in ગુજરાતી",
+    text: "Every screen and button in Gujarati — or English or हिन्दी. Each person picks their own language on their phone and can switch any time.",
+  },
+  {
+    icon: <Calculator />,
+    tone: "indigo",
+    title: "No accounting knowledge needed",
+    text: "Totals, balances and upad interest are worked out for you. The treasurer just taps Collect as the cash comes in.",
+  },
+  {
+    icon: <Timer />,
+    tone: "emerald",
+    title: "Set up in minutes",
+    text: "Create the Mandal, add members from a list or with a join code, and carry on from the balances you already have on paper.",
+  },
+  {
+    icon: <Smartphone />,
+    tone: "sky",
+    title: "Any phone, no training",
+    text: "Big buttons, amounts in Indian format (₹1,25,000) and familiar words like hapta and upad. Works in any phone browser too.",
+  },
+  ...(site.demoVideo
+    ? [
+        {
+          icon: <PlayCircle />,
+          tone: "orange" as Tone,
+          title: "Demo video in Gujarati",
+          text: `A ${site.demoVideo.minutes}-minute video, in Gujarati, shows the whole month's work — from creating the Mandal to receiving interest.`,
+        },
+      ]
+    : []),
+  ...(site.contact.whatsapp
+    ? [
+        {
+          icon: <MessageCircle />,
+          tone: "amber" as Tone,
+          title: "Help on WhatsApp",
+          text: "Stuck somewhere? Send us a message on WhatsApp and a real person will help you get your Mandal going.",
+        },
+      ]
+    : []),
 ];
 
 const STEPS = [
@@ -242,10 +298,11 @@ export default function HomePage() {
             </p>
             <Link
               href="#personal-hisab"
-              className="mt-3 inline-flex items-center gap-2 rounded-full bg-amber-300/95 px-3 py-1.5 text-xs font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-200 sm:mt-4 sm:text-sm"
+              className="mt-4 flex w-full items-center gap-2.5 rounded-2xl bg-amber-300/95 py-2.5 pr-3.5 pl-2.5 text-sm font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-200 sm:inline-flex sm:w-auto sm:rounded-full sm:py-1.5 sm:pr-3 sm:pl-1.5"
             >
-              <span className="rounded-full bg-amber-950/10 px-1.5 py-0.5 text-[10px] tracking-wider uppercase sm:text-[11px]">New</span>
-              Personal Hisab — track your own money too <ArrowRight className="size-3.5" />
+              <span className="shrink-0 rounded-full bg-amber-950/10 px-2 py-1 text-[10px] leading-none tracking-wider uppercase sm:text-[11px]">New</span>
+              <span className="min-w-0 flex-1 leading-snug sm:flex-none">Personal Hisab — track your own money too</span>
+              <ArrowRight className="size-4 shrink-0 sm:size-3.5" />
             </Link>
             <div className="mt-5 flex flex-col gap-2 sm:mt-7 sm:flex-row sm:flex-wrap sm:gap-3">
               <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "h-12 w-full rounded-2xl bg-white px-5 text-base text-primary hover:bg-white/90 sm:w-auto")}>
@@ -279,6 +336,11 @@ export default function HomePage() {
         </Container>
       </section>
 
+      {/* 1b. Live totals — hidden until enough Mandals are running */}
+      <Suspense fallback={null}>
+        <MandalStats />
+      </Suspense>
+
       {/* 2. Before → after */}
       <Section>
         <SectionHeading
@@ -307,6 +369,38 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      </Section>
+
+      {/* 2b. Easy to keep up — Gujarati first */}
+      <Section id="easy">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[22rem_1fr] lg:gap-14">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <SectionHeading
+              eyebrow="Easy to keep up"
+              title="Your hisab, in your own language"
+              description="MandalHisab is made for treasurers who are not accountants. Use it in Gujarati, and the monthly hisab takes minutes instead of an evening with a calculator."
+              className="mb-4 sm:mb-6"
+            />
+            <ul className="flex flex-wrap gap-2" aria-label="Languages">
+              {site.languages.map((l) => (
+                <li key={l} className="rounded-full bg-pink-500/10 px-3.5 py-1.5 text-sm font-bold text-pink-700 ring-1 ring-pink-500/20 dark:text-pink-300">
+                  {l}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <ul className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+            {EASY.map((f) => (
+              <li key={f.title} className="flex gap-3.5 border-b border-foreground/[0.08] py-4 sm:py-5">
+                <IconChip tone={f.tone}>{f.icon}</IconChip>
+                <div className="min-w-0">
+                  <h3 className="font-bold">{f.title}</h3>
+                  <p className="mt-1 text-sm text-pretty text-muted-foreground">{f.text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </Section>
 
@@ -425,6 +519,9 @@ export default function HomePage() {
           </Link>
         </div>
       </Section>
+
+      {/* 4b. Real feedback from Mandals — hidden while site.testimonials is empty */}
+      <Testimonials />
 
       {/* 5. Calculator */}
       <Section tinted id="calculator">
