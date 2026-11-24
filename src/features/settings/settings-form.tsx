@@ -200,11 +200,11 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+    <form onSubmit={onSubmit} className="flex min-w-0 max-w-full flex-col gap-4" noValidate>
       <FormError message={error} />
       <SettingsPanel tab="mandal">
         <FormSection icon={<Building2 />} tone="indigo" title={t("setf.profile.title")} description={t("setf.profile.desc")}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <Field label={t("setf.profile.name")} htmlFor="o-name" className="sm:col-span-2">
               <Input id="o-name" {...form.register("name")} />
             </Field>
@@ -242,7 +242,7 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
 
       <SettingsPanel tab="money">
         <FormSection icon={<PiggyBank />} tone="violet" title={t("setf.money.title")} description={t("setf.money.desc")}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <Field label={t("setf.money.treat")} htmlFor="o-treat" className="sm:col-span-2" hint={t("setf.money.treatHint")}>
               <NativeSelect id="o-treat" {...form.register("haptaTreatment")}>
                 <option value="member_savings">{t("setf.money.treatSavings")}</option>
@@ -285,7 +285,7 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
                 </span>
               </label>
               {form.watch("upadInstallmentsOn") && (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
                   <Field label={t("setf.money.instCount")} htmlFor="o-linst" hint={t("setf.money.instCountHint")}>
                     <Input id="o-linst" type="number" inputMode="numeric" min={2} max={60} {...form.register("upadInstallmentCount")} />
                   </Field>
@@ -371,7 +371,7 @@ export function SettingsForm({ org, upiAccounts = [] }: { org: Org; upiAccounts?
 
       <SettingsPanel tab="more">
         <FormSection icon={<Landmark />} tone="emerald" title={t("setf.fin.title")} description={t("setf.fin.desc")}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
             <Field label={t("setf.fin.fy")} htmlFor="o-fy" hint={t("setf.fin.fyHint")}>
               <NativeSelect id="o-fy" {...form.register("financialYearStartMonth")}>
                 {months.map((m, i) => (

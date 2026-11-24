@@ -87,7 +87,7 @@ export function SettingsPanel({ tab, className, children }: { tab: SettingsTab |
       id={tabs.length === 1 ? `settings-${tabs[0]}` : undefined}
       role={tabs.length === 1 ? "tabpanel" : undefined}
       hidden={!shown}
-      className={cn(shown && "animate-in fade-in-0 duration-200", className)}
+      className={cn("min-w-0 max-w-full", shown && "animate-in fade-in-0 duration-200", className)}
     >
       {children}
     </div>

@@ -187,6 +187,14 @@
   h1, h2, h3 {
     letter-spacing: -0.015em;
   }
+  /* Never let the page scroll sideways (iOS widens it for any over-wide child, e.g. a <select>
+     with a long option). `clip`, not `hidden`: it makes no scroll box, so sticky bars still stick. */
+  @supports (overflow: clip) {
+    html,
+    body {
+      overflow-x: clip;
+    }
+  }
   html {
     /* No double-tap zoom (taps also respond without the 300 ms wait); pinch-to-zoom still works. */
     touch-action: manipulation;

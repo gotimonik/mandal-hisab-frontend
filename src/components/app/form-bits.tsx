@@ -18,7 +18,7 @@ import type { Tone } from "@/lib/tones";
 /** A titled block of a full-page form: coloured icon, heading, optional line of help, then fields. */
 export function FormSection({ icon, tone, title, description, children, className }: { icon: ReactNode; tone: Tone; title: ReactNode; description?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("flex flex-col gap-3 rounded-3xl bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5", className)}>
+    <section className={cn("flex min-w-0 max-w-full flex-col gap-3 rounded-3xl [overflow-wrap:anywhere] bg-card p-4 shadow-card ring-1 ring-foreground/[0.06] sm:p-5", className)}>
       <div className="flex items-center gap-2.5">
         <IconChip tone={tone} size="sm">
           {icon}
